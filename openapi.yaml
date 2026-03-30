@@ -1,0 +1,44 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: Analysis API
+    version: 0.0.1
+paths:
+    /seas/api/v1/analysis/analyze:
+        post:
+            tags:
+                - Analysis
+            operationId: Analysis_Analyze
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/seas.v1.AnalyzeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.AnalyzeReply'
+components:
+    schemas:
+        seas.v1.AnalyzeReply:
+            type: object
+            properties:
+                resultSummary:
+                    type: string
+                suggestions:
+                    type: array
+                    items:
+                        type: string
+        seas.v1.AnalyzeRequest:
+            type: object
+            properties:
+                studentNlInput:
+                    type: string
+tags:
+    - name: Analysis

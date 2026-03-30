@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package seas.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "api/seas/v1;v1";
+option java_multiple_files = true;
+option java_package = "dev.kratos.api.seas.v1";
+option java_outer_classname = "seasProtoV1";
+
+service Analysis {
+  rpc Analyze (AnalyzeRequest) returns (AnalyzeReply) {
+    option (google.api.http) = {
+      post: "/seas/api/v1/analysis/analyze",
+      body: "*"
+    };
+  }
+}
+
+message AnalyzeRequest {
+  string student_nl_input = 1;
+}
+
+message AnalyzeReply {
+  string result_summary = 1;
+  repeated string suggestions = 2;
+}

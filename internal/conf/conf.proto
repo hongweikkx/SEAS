@@ -1,0 +1,49 @@
+syntax = "proto3";
+package kratos.api;
+
+option go_package = "seas/internal/conf;conf";
+
+import "google/protobuf/duration.proto";
+
+message Bootstrap {
+  string env = 1;
+  Server server = 2;
+  Data data = 3;
+  LLM llm = 4;
+}
+
+message Server {
+  message HTTP {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
+  }
+  message GRPC {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
+  }
+  HTTP http = 1;
+  GRPC grpc = 2;
+}
+
+message Data {
+  message Database {
+    string driver = 1;
+    string source = 2;
+  }
+  message Redis {
+    string addr = 1;
+    string pw = 2;
+    int32 db = 3;
+    int64  warn_limit = 4;
+  }
+  Database database = 1;
+  Redis redis = 2;
+}
+
+message LLM {
+  string model = 1;
+  string api_key = 2;
+  string api_base = 3;
+}
