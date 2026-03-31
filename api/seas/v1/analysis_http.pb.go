@@ -20,14 +20,35 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationAnalysisAnalyze = "/seas.v1.Analysis/Analyze"
+const OperationAnalysisGetClassSummary = "/seas.v1.Analysis/GetClassSummary"
+const OperationAnalysisGetRatingDistribution = "/seas.v1.Analysis/GetRatingDistribution"
+const OperationAnalysisGetSubjectSummary = "/seas.v1.Analysis/GetSubjectSummary"
+const OperationAnalysisListExams = "/seas.v1.Analysis/ListExams"
+const OperationAnalysisListSubjectsByExam = "/seas.v1.Analysis/ListSubjectsByExam"
 
 type AnalysisHTTPServer interface {
+	// Analyze 原有接口
 	Analyze(context.Context, *AnalyzeRequest) (*AnalyzeReply, error)
+	// GetClassSummary 新增接口：班级情况汇总
+	GetClassSummary(context.Context, *GetClassSummaryRequest) (*GetClassSummaryReply, error)
+	// GetRatingDistribution 新增接口：四率分析
+	GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error)
+	// GetSubjectSummary 新增接口：学科情况汇总
+	GetSubjectSummary(context.Context, *GetSubjectSummaryRequest) (*GetSubjectSummaryReply, error)
+	// ListExams 新增接口：考试列表
+	ListExams(context.Context, *ListExamsRequest) (*ListExamsReply, error)
+	// ListSubjectsByExam 新增接口：获取考试关联的学科列表
+	ListSubjectsByExam(context.Context, *ListSubjectsByExamRequest) (*ListSubjectsByExamReply, error)
 }
 
 func RegisterAnalysisHTTPServer(s *http.Server, srv AnalysisHTTPServer) {
 	r := s.Route("/")
 	r.POST("/seas/api/v1/analysis/analyze", _Analysis_Analyze0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams", _Analysis_ListExams0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/subjects", _Analysis_ListSubjectsByExam0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/analysis/subject-summary", _Analysis_GetSubjectSummary0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/analysis/class-summary", _Analysis_GetClassSummary0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/analysis/rating-distribution", _Analysis_GetRatingDistribution0_HTTP_Handler(srv))
 }
 
 func _Analysis_Analyze0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
@@ -52,8 +73,126 @@ func _Analysis_Analyze0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Conte
 	}
 }
 
+func _Analysis_ListExams0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListExamsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisListExams)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListExams(ctx, req.(*ListExamsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListExamsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Analysis_ListSubjectsByExam0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListSubjectsByExamRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisListSubjectsByExam)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListSubjectsByExam(ctx, req.(*ListSubjectsByExamRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListSubjectsByExamReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Analysis_GetSubjectSummary0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSubjectSummaryRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetSubjectSummary)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSubjectSummary(ctx, req.(*GetSubjectSummaryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetSubjectSummaryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Analysis_GetClassSummary0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetClassSummaryRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetClassSummary)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetClassSummary(ctx, req.(*GetClassSummaryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetClassSummaryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Analysis_GetRatingDistribution0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetRatingDistributionRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetRatingDistribution)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetRatingDistribution(ctx, req.(*GetRatingDistributionRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetRatingDistributionReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AnalysisHTTPClient interface {
+	// Analyze 原有接口
 	Analyze(ctx context.Context, req *AnalyzeRequest, opts ...http.CallOption) (rsp *AnalyzeReply, err error)
+	// GetClassSummary 新增接口：班级情况汇总
+	GetClassSummary(ctx context.Context, req *GetClassSummaryRequest, opts ...http.CallOption) (rsp *GetClassSummaryReply, err error)
+	// GetRatingDistribution 新增接口：四率分析
+	GetRatingDistribution(ctx context.Context, req *GetRatingDistributionRequest, opts ...http.CallOption) (rsp *GetRatingDistributionReply, err error)
+	// GetSubjectSummary 新增接口：学科情况汇总
+	GetSubjectSummary(ctx context.Context, req *GetSubjectSummaryRequest, opts ...http.CallOption) (rsp *GetSubjectSummaryReply, err error)
+	// ListExams 新增接口：考试列表
+	ListExams(ctx context.Context, req *ListExamsRequest, opts ...http.CallOption) (rsp *ListExamsReply, err error)
+	// ListSubjectsByExam 新增接口：获取考试关联的学科列表
+	ListSubjectsByExam(ctx context.Context, req *ListSubjectsByExamRequest, opts ...http.CallOption) (rsp *ListSubjectsByExamReply, err error)
 }
 
 type AnalysisHTTPClientImpl struct {
@@ -64,6 +203,7 @@ func NewAnalysisHTTPClient(client *http.Client) AnalysisHTTPClient {
 	return &AnalysisHTTPClientImpl{client}
 }
 
+// Analyze 原有接口
 func (c *AnalysisHTTPClientImpl) Analyze(ctx context.Context, in *AnalyzeRequest, opts ...http.CallOption) (*AnalyzeReply, error) {
 	var out AnalyzeReply
 	pattern := "/seas/api/v1/analysis/analyze"
@@ -71,6 +211,76 @@ func (c *AnalysisHTTPClientImpl) Analyze(ctx context.Context, in *AnalyzeRequest
 	opts = append(opts, http.Operation(OperationAnalysisAnalyze))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetClassSummary 新增接口：班级情况汇总
+func (c *AnalysisHTTPClientImpl) GetClassSummary(ctx context.Context, in *GetClassSummaryRequest, opts ...http.CallOption) (*GetClassSummaryReply, error) {
+	var out GetClassSummaryReply
+	pattern := "/seas/api/v1/exams/{exam_id}/analysis/class-summary"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetClassSummary))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetRatingDistribution 新增接口：四率分析
+func (c *AnalysisHTTPClientImpl) GetRatingDistribution(ctx context.Context, in *GetRatingDistributionRequest, opts ...http.CallOption) (*GetRatingDistributionReply, error) {
+	var out GetRatingDistributionReply
+	pattern := "/seas/api/v1/exams/{exam_id}/analysis/rating-distribution"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetRatingDistribution))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetSubjectSummary 新增接口：学科情况汇总
+func (c *AnalysisHTTPClientImpl) GetSubjectSummary(ctx context.Context, in *GetSubjectSummaryRequest, opts ...http.CallOption) (*GetSubjectSummaryReply, error) {
+	var out GetSubjectSummaryReply
+	pattern := "/seas/api/v1/exams/{exam_id}/analysis/subject-summary"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetSubjectSummary))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListExams 新增接口：考试列表
+func (c *AnalysisHTTPClientImpl) ListExams(ctx context.Context, in *ListExamsRequest, opts ...http.CallOption) (*ListExamsReply, error) {
+	var out ListExamsReply
+	pattern := "/seas/api/v1/exams"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisListExams))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListSubjectsByExam 新增接口：获取考试关联的学科列表
+func (c *AnalysisHTTPClientImpl) ListSubjectsByExam(ctx context.Context, in *ListSubjectsByExamRequest, opts ...http.CallOption) (*ListSubjectsByExamReply, error) {
+	var out ListSubjectsByExamReply
+	pattern := "/seas/api/v1/exams/{exam_id}/subjects"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisListSubjectsByExam))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

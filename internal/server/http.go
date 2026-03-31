@@ -12,15 +12,16 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/middleware/validate"
-	"github.com/go-kratos/kratos/v2/transport/http"
+	httptransport "github.com/go-kratos/kratos/v2/transport/http"
+	gorilla "github.com/gorilla/handlers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel/trace"
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, tp trace.TracerProvider, logger log.Logger) *http.Server {
-	var opts = []http.ServerOption{
-		http.Middleware(
+func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
+	var opts = []httptransport.ServerOption{
+		httptransport.Middleware(
 			recovery.Recovery(),
 			tracing.Server(tracing.WithTracerProvider(tp)),
 			logging.Server(logger),
@@ -30,17 +31,21 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, tp trace.T
 				metrics.WithRequests(prometheusmetrics.MetricRequests),
 			),
 		),
+		httptransport.Filter(gorilla.CORS(
+			gorilla.AllowedOrigins([]string{"*"}),
+			gorilla.AllowedMethods([]string{"GET", "POST"}),
+		)),
 	}
 	if c.Http.Network != "" {
-		opts = append(opts, http.Network(c.Http.Network))
+		opts = append(opts, httptransport.Network(c.Http.Network))
 	}
 	if c.Http.Addr != "" {
-		opts = append(opts, http.Address(c.Http.Addr))
+		opts = append(opts, httptransport.Address(c.Http.Addr))
 	}
 	if c.Http.Timeout != nil {
-		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
+		opts = append(opts, httptransport.Timeout(c.Http.Timeout.AsDuration()))
 	}
-	srv := http.NewServer(opts...)
+	srv := httptransport.NewServer(opts...)
 	v1.RegisterAnalysisHTTPServer(srv, analysis)
 	srv.Handle("/metrics", promhttp.Handler())
 	return srv

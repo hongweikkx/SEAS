@@ -19,14 +19,30 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Analysis_Analyze_FullMethodName = "/seas.v1.Analysis/Analyze"
+	Analysis_Analyze_FullMethodName               = "/seas.v1.Analysis/Analyze"
+	Analysis_ListExams_FullMethodName             = "/seas.v1.Analysis/ListExams"
+	Analysis_ListSubjectsByExam_FullMethodName    = "/seas.v1.Analysis/ListSubjectsByExam"
+	Analysis_GetSubjectSummary_FullMethodName     = "/seas.v1.Analysis/GetSubjectSummary"
+	Analysis_GetClassSummary_FullMethodName       = "/seas.v1.Analysis/GetClassSummary"
+	Analysis_GetRatingDistribution_FullMethodName = "/seas.v1.Analysis/GetRatingDistribution"
 )
 
 // AnalysisClient is the client API for Analysis service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AnalysisClient interface {
+	// 原有接口
 	Analyze(ctx context.Context, in *AnalyzeRequest, opts ...grpc.CallOption) (*AnalyzeReply, error)
+	// 新增接口：考试列表
+	ListExams(ctx context.Context, in *ListExamsRequest, opts ...grpc.CallOption) (*ListExamsReply, error)
+	// 新增接口：获取考试关联的学科列表
+	ListSubjectsByExam(ctx context.Context, in *ListSubjectsByExamRequest, opts ...grpc.CallOption) (*ListSubjectsByExamReply, error)
+	// 新增接口：学科情况汇总
+	GetSubjectSummary(ctx context.Context, in *GetSubjectSummaryRequest, opts ...grpc.CallOption) (*GetSubjectSummaryReply, error)
+	// 新增接口：班级情况汇总
+	GetClassSummary(ctx context.Context, in *GetClassSummaryRequest, opts ...grpc.CallOption) (*GetClassSummaryReply, error)
+	// 新增接口：四率分析
+	GetRatingDistribution(ctx context.Context, in *GetRatingDistributionRequest, opts ...grpc.CallOption) (*GetRatingDistributionReply, error)
 }
 
 type analysisClient struct {
@@ -47,11 +63,72 @@ func (c *analysisClient) Analyze(ctx context.Context, in *AnalyzeRequest, opts .
 	return out, nil
 }
 
+func (c *analysisClient) ListExams(ctx context.Context, in *ListExamsRequest, opts ...grpc.CallOption) (*ListExamsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListExamsReply)
+	err := c.cc.Invoke(ctx, Analysis_ListExams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analysisClient) ListSubjectsByExam(ctx context.Context, in *ListSubjectsByExamRequest, opts ...grpc.CallOption) (*ListSubjectsByExamReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSubjectsByExamReply)
+	err := c.cc.Invoke(ctx, Analysis_ListSubjectsByExam_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analysisClient) GetSubjectSummary(ctx context.Context, in *GetSubjectSummaryRequest, opts ...grpc.CallOption) (*GetSubjectSummaryReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSubjectSummaryReply)
+	err := c.cc.Invoke(ctx, Analysis_GetSubjectSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analysisClient) GetClassSummary(ctx context.Context, in *GetClassSummaryRequest, opts ...grpc.CallOption) (*GetClassSummaryReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetClassSummaryReply)
+	err := c.cc.Invoke(ctx, Analysis_GetClassSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analysisClient) GetRatingDistribution(ctx context.Context, in *GetRatingDistributionRequest, opts ...grpc.CallOption) (*GetRatingDistributionReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRatingDistributionReply)
+	err := c.cc.Invoke(ctx, Analysis_GetRatingDistribution_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AnalysisServer is the server API for Analysis service.
 // All implementations must embed UnimplementedAnalysisServer
 // for forward compatibility.
 type AnalysisServer interface {
+	// 原有接口
 	Analyze(context.Context, *AnalyzeRequest) (*AnalyzeReply, error)
+	// 新增接口：考试列表
+	ListExams(context.Context, *ListExamsRequest) (*ListExamsReply, error)
+	// 新增接口：获取考试关联的学科列表
+	ListSubjectsByExam(context.Context, *ListSubjectsByExamRequest) (*ListSubjectsByExamReply, error)
+	// 新增接口：学科情况汇总
+	GetSubjectSummary(context.Context, *GetSubjectSummaryRequest) (*GetSubjectSummaryReply, error)
+	// 新增接口：班级情况汇总
+	GetClassSummary(context.Context, *GetClassSummaryRequest) (*GetClassSummaryReply, error)
+	// 新增接口：四率分析
+	GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error)
 	mustEmbedUnimplementedAnalysisServer()
 }
 
@@ -64,6 +141,21 @@ type UnimplementedAnalysisServer struct{}
 
 func (UnimplementedAnalysisServer) Analyze(context.Context, *AnalyzeRequest) (*AnalyzeReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Analyze not implemented")
+}
+func (UnimplementedAnalysisServer) ListExams(context.Context, *ListExamsRequest) (*ListExamsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListExams not implemented")
+}
+func (UnimplementedAnalysisServer) ListSubjectsByExam(context.Context, *ListSubjectsByExamRequest) (*ListSubjectsByExamReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSubjectsByExam not implemented")
+}
+func (UnimplementedAnalysisServer) GetSubjectSummary(context.Context, *GetSubjectSummaryRequest) (*GetSubjectSummaryReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSubjectSummary not implemented")
+}
+func (UnimplementedAnalysisServer) GetClassSummary(context.Context, *GetClassSummaryRequest) (*GetClassSummaryReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetClassSummary not implemented")
+}
+func (UnimplementedAnalysisServer) GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRatingDistribution not implemented")
 }
 func (UnimplementedAnalysisServer) mustEmbedUnimplementedAnalysisServer() {}
 func (UnimplementedAnalysisServer) testEmbeddedByValue()                  {}
@@ -104,6 +196,96 @@ func _Analysis_Analyze_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Analysis_ListExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListExamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysisServer).ListExams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Analysis_ListExams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysisServer).ListExams(ctx, req.(*ListExamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Analysis_ListSubjectsByExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSubjectsByExamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysisServer).ListSubjectsByExam(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Analysis_ListSubjectsByExam_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysisServer).ListSubjectsByExam(ctx, req.(*ListSubjectsByExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Analysis_GetSubjectSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSubjectSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysisServer).GetSubjectSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Analysis_GetSubjectSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysisServer).GetSubjectSummary(ctx, req.(*GetSubjectSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Analysis_GetClassSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClassSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysisServer).GetClassSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Analysis_GetClassSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysisServer).GetClassSummary(ctx, req.(*GetClassSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Analysis_GetRatingDistribution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRatingDistributionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysisServer).GetRatingDistribution(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Analysis_GetRatingDistribution_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysisServer).GetRatingDistribution(ctx, req.(*GetRatingDistributionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Analysis_ServiceDesc is the grpc.ServiceDesc for Analysis service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +296,26 @@ var Analysis_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Analyze",
 			Handler:    _Analysis_Analyze_Handler,
+		},
+		{
+			MethodName: "ListExams",
+			Handler:    _Analysis_ListExams_Handler,
+		},
+		{
+			MethodName: "ListSubjectsByExam",
+			Handler:    _Analysis_ListSubjectsByExam_Handler,
+		},
+		{
+			MethodName: "GetSubjectSummary",
+			Handler:    _Analysis_GetSubjectSummary_Handler,
+		},
+		{
+			MethodName: "GetClassSummary",
+			Handler:    _Analysis_GetClassSummary_Handler,
+		},
+		{
+			MethodName: "GetRatingDistribution",
+			Handler:    _Analysis_GetRatingDistribution_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

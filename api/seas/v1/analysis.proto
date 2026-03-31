@@ -10,14 +10,51 @@ option java_package = "dev.kratos.api.seas.v1";
 option java_outer_classname = "seasProtoV1";
 
 service Analysis {
+  // 原有接口
   rpc Analyze (AnalyzeRequest) returns (AnalyzeReply) {
     option (google.api.http) = {
       post: "/seas/api/v1/analysis/analyze",
       body: "*"
     };
   }
+
+  // 新增接口：考试列表
+  rpc ListExams (ListExamsRequest) returns (ListExamsReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams"
+    };
+  }
+
+  // 新增接口：获取考试关联的学科列表
+  rpc ListSubjectsByExam (ListSubjectsByExamRequest) returns (ListSubjectsByExamReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/subjects"
+    };
+  }
+
+  // 新增接口：学科情况汇总
+  rpc GetSubjectSummary (GetSubjectSummaryRequest) returns (GetSubjectSummaryReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/analysis/subject-summary"
+    };
+  }
+
+  // 新增接口：班级情况汇总
+  rpc GetClassSummary (GetClassSummaryRequest) returns (GetClassSummaryReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/analysis/class-summary"
+    };
+  }
+
+  // 新增接口：四率分析
+  rpc GetRatingDistribution (GetRatingDistributionRequest) returns (GetRatingDistributionReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/analysis/rating-distribution"
+    };
+  }
 }
 
+// ============ 原有消息类型 ============
 message AnalyzeRequest {
   string student_nl_input = 1;
 }
@@ -25,4 +62,143 @@ message AnalyzeRequest {
 message AnalyzeReply {
   string result_summary = 1;
   repeated string suggestions = 2;
+}
+
+// ============ 新增消息类型 ============
+
+// 1. 考试列表
+message ListExamsRequest {
+  int32 page_index = 1;  // 默认1
+  int32 page_size = 2;   // 默认20
+}
+
+message ExamInfo {
+  int64 id = 1;
+  string name = 2;
+  string exam_date = 3;  // RFC3339格式
+  string created_at = 4; // RFC3339格式
+}
+
+message ListExamsReply {
+  repeated ExamInfo exams = 1;
+  int64 total_count = 2;
+  int32 page_index = 3;
+  int32 page_size = 4;
+}
+
+// 2. 学科列表
+message ListSubjectsByExamRequest {
+  int64 exam_id = 1;
+  int32 page_index = 2;  // 默认1
+  int32 page_size = 3;   // 默认20
+}
+
+message SubjectBasicInfo {
+  int64 id = 1;
+  string name = 2;
+  double full_score = 3;
+}
+
+message ListSubjectsByExamReply {
+  int64 exam_id = 1;
+  repeated SubjectBasicInfo subjects = 2;
+  int64 total_count = 3;
+  int32 page_index = 4;
+  int32 page_size = 5;
+}
+
+// 3. 学科情况汇总
+message GetSubjectSummaryRequest {
+  int64 exam_id = 1;
+  string scope = 2;           // "all_subjects" 或 "single_subject"
+  int64 subject_id = 3;       // scope=single_subject时必传
+}
+
+message SubjectSummaryItem {
+  int64 id = 1;
+  string name = 2;
+  double full_score = 3;
+  double avg_score = 4;
+  double highest_score = 5;
+  double lowest_score = 6;
+  double difficulty = 7;      // 平均分/满分*100
+  int64 student_count = 8;
+}
+
+message GetSubjectSummaryReply {
+  int64 exam_id = 1;
+  string exam_name = 2;
+  string scope = 3;
+  int64 total_participants = 4;
+  int32 subjects_involved = 5;    // 仅在 scope=all_subjects 时有意义
+  int32 classes_involved = 6;     // 仅在 scope=all_subjects 时有意义
+  repeated SubjectSummaryItem subjects = 7;
+}
+
+// 4. 班级情况汇总
+message GetClassSummaryRequest {
+  int64 exam_id = 1;
+  string scope = 2;           // "all_subjects" 或 "single_subject"
+  int64 subject_id = 3;       // scope=single_subject时必传
+}
+
+message ClassSummaryItem {
+  int64 class_id = 1;
+  string class_name = 2;
+  int64 total_students = 3;
+  double avg_score = 4;
+  double highest_score = 5;
+  double lowest_score = 6;
+  double score_deviation = 7; // 离均差：班级平均分-全年级平均分，全年级固定为0
+  double difficulty = 8;      // 平均分/满分*100
+  double std_dev = 9;         // 标准差
+}
+
+message GetClassSummaryReply {
+  int64 exam_id = 1;
+  string exam_name = 2;
+  string scope = 3;
+  int64 total_participants = 4;
+  ClassSummaryItem overall_grade = 5;
+  repeated ClassSummaryItem class_details = 6;
+}
+
+// 5. 四率分析
+message RatingConfig {
+  double excellent_threshold = 1;  // 优秀分数线，默认90
+  double good_threshold = 2;       // 良好分数线，默认70
+  double pass_threshold = 3;       // 合格分数线，默认60
+}
+
+message GetRatingDistributionRequest {
+  int64 exam_id = 1;
+  string scope = 2;                // "all_subjects" 或 "single_subject"
+  int64 subject_id = 3;            // scope=single_subject时必传
+  RatingConfig config = 4;         // 可选，不提供则使用默认值
+}
+
+message RatingItem {
+  int64 count = 1;
+  double percentage = 2;  // 百分比，保留2位小数
+}
+
+message ClassRatingDistribution {
+  int64 class_id = 1;
+  string class_name = 2;
+  int64 total_students = 3;
+  double avg_score = 4;
+  RatingItem excellent = 5;  // 优秀
+  RatingItem good = 6;       // 良好
+  RatingItem pass = 7;       // 合格
+  RatingItem fail = 8;       // 低分
+}
+
+message GetRatingDistributionReply {
+  int64 exam_id = 1;
+  string exam_name = 2;
+  string scope = 3;
+  int64 total_participants = 4;
+  RatingConfig config = 5;
+  ClassRatingDistribution overall_grade = 6;
+  repeated ClassRatingDistribution class_details = 7;
 }

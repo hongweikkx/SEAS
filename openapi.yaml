@@ -10,6 +10,7 @@ paths:
         post:
             tags:
                 - Analysis
+            description: 原有接口
             operationId: Analysis_Analyze
             requestBody:
                 content:
@@ -24,6 +25,155 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.AnalyzeReply'
+    /seas/api/v1/exams:
+        get:
+            tags:
+                - Analysis
+            description: 新增接口：考试列表
+            operationId: Analysis_ListExams
+            parameters:
+                - name: pageIndex
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.ListExamsReply'
+    /seas/api/v1/exams/{examId}/analysis/class-summary:
+        get:
+            tags:
+                - Analysis
+            description: 新增接口：班级情况汇总
+            operationId: Analysis_GetClassSummary
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: scope
+                  in: query
+                  schema:
+                    type: string
+                - name: subjectId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.GetClassSummaryReply'
+    /seas/api/v1/exams/{examId}/analysis/rating-distribution:
+        get:
+            tags:
+                - Analysis
+            description: 新增接口：四率分析
+            operationId: Analysis_GetRatingDistribution
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: scope
+                  in: query
+                  schema:
+                    type: string
+                - name: subjectId
+                  in: query
+                  schema:
+                    type: string
+                - name: config.excellentThreshold
+                  in: query
+                  schema:
+                    type: number
+                    format: double
+                - name: config.goodThreshold
+                  in: query
+                  schema:
+                    type: number
+                    format: double
+                - name: config.passThreshold
+                  in: query
+                  schema:
+                    type: number
+                    format: double
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.GetRatingDistributionReply'
+    /seas/api/v1/exams/{examId}/analysis/subject-summary:
+        get:
+            tags:
+                - Analysis
+            description: 新增接口：学科情况汇总
+            operationId: Analysis_GetSubjectSummary
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: scope
+                  in: query
+                  schema:
+                    type: string
+                - name: subjectId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.GetSubjectSummaryReply'
+    /seas/api/v1/exams/{examId}/subjects:
+        get:
+            tags:
+                - Analysis
+            description: 新增接口：获取考试关联的学科列表
+            operationId: Analysis_ListSubjectsByExam
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: pageIndex
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.ListSubjectsByExamReply'
 components:
     schemas:
         seas.v1.AnalyzeReply:
@@ -39,6 +189,209 @@ components:
             type: object
             properties:
                 studentNlInput:
+                    type: string
+            description: ============ 原有消息类型 ============
+        seas.v1.ClassRatingDistribution:
+            type: object
+            properties:
+                classId:
+                    type: string
+                className:
+                    type: string
+                totalStudents:
+                    type: string
+                avgScore:
+                    type: number
+                    format: double
+                excellent:
+                    $ref: '#/components/schemas/seas.v1.RatingItem'
+                good:
+                    $ref: '#/components/schemas/seas.v1.RatingItem'
+                pass:
+                    $ref: '#/components/schemas/seas.v1.RatingItem'
+                fail:
+                    $ref: '#/components/schemas/seas.v1.RatingItem'
+        seas.v1.ClassSummaryItem:
+            type: object
+            properties:
+                classId:
+                    type: string
+                className:
+                    type: string
+                totalStudents:
+                    type: string
+                avgScore:
+                    type: number
+                    format: double
+                highestScore:
+                    type: number
+                    format: double
+                lowestScore:
+                    type: number
+                    format: double
+                scoreDeviation:
+                    type: number
+                    format: double
+                difficulty:
+                    type: number
+                    format: double
+                stdDev:
+                    type: number
+                    format: double
+        seas.v1.ExamInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                examDate:
+                    type: string
+                createdAt:
+                    type: string
+        seas.v1.GetClassSummaryReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                examName:
+                    type: string
+                scope:
+                    type: string
+                totalParticipants:
+                    type: string
+                overallGrade:
+                    $ref: '#/components/schemas/seas.v1.ClassSummaryItem'
+                classDetails:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.ClassSummaryItem'
+        seas.v1.GetRatingDistributionReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                examName:
+                    type: string
+                scope:
+                    type: string
+                totalParticipants:
+                    type: string
+                config:
+                    $ref: '#/components/schemas/seas.v1.RatingConfig'
+                overallGrade:
+                    $ref: '#/components/schemas/seas.v1.ClassRatingDistribution'
+                classDetails:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.ClassRatingDistribution'
+        seas.v1.GetSubjectSummaryReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                examName:
+                    type: string
+                scope:
+                    type: string
+                totalParticipants:
+                    type: string
+                subjectsInvolved:
+                    type: integer
+                    format: int32
+                classesInvolved:
+                    type: integer
+                    format: int32
+                subjects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.SubjectSummaryItem'
+        seas.v1.ListExamsReply:
+            type: object
+            properties:
+                exams:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.ExamInfo'
+                totalCount:
+                    type: string
+                pageIndex:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        seas.v1.ListSubjectsByExamReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                subjects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.SubjectBasicInfo'
+                totalCount:
+                    type: string
+                pageIndex:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        seas.v1.RatingConfig:
+            type: object
+            properties:
+                excellentThreshold:
+                    type: number
+                    format: double
+                goodThreshold:
+                    type: number
+                    format: double
+                passThreshold:
+                    type: number
+                    format: double
+            description: 5. 四率分析
+        seas.v1.RatingItem:
+            type: object
+            properties:
+                count:
+                    type: string
+                percentage:
+                    type: number
+                    format: double
+        seas.v1.SubjectBasicInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                fullScore:
+                    type: number
+                    format: double
+        seas.v1.SubjectSummaryItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                fullScore:
+                    type: number
+                    format: double
+                avgScore:
+                    type: number
+                    format: double
+                highestScore:
+                    type: number
+                    format: double
+                lowestScore:
+                    type: number
+                    format: double
+                difficulty:
+                    type: number
+                    format: double
+                studentCount:
                     type: string
 tags:
     - name: Analysis
