@@ -2,7 +2,7 @@ server:
   env: dev
   http:
     addr: 0.0.0.0:8000
-    timeout: 1s
+    timeout: 30s
   grpc:
     addr: 0.0.0.0:9000
     timeout: 1s
@@ -10,3 +10,7 @@ data:
   database:
     driver: mysql
     source: {username}:{password}@tcp({host}:{port})/{dbname}?parseTime=True&loc=Local
+llm:
+  model: gpt-4.1-mini
+  api_key: your-api-key
+  api_base: https://api.openai.com/v1

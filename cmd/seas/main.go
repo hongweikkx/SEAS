@@ -20,7 +20,6 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
-
 	_ "go.uber.org/automaxprocs"
 )
 
@@ -32,8 +31,7 @@ var (
 	Version = "0.0.1"
 	// flagConf is the config flag.
 	flagConf string
-
-	id, _ = os.Hostname()
+	id, _    = os.Hostname()
 )
 
 func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
@@ -49,7 +47,6 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
 		),
 	)
 }
-
 func NewTraceProvider() trace.TracerProvider {
 	exporter, err := stdouttrace.New(stdouttrace.WithWriter(io.Discard))
 	if err != nil {
@@ -65,10 +62,7 @@ func main() {
 	// log
 	zapLogger := zaplog.InitLogger()
 	defer func(zapLogger *zaplog.Logger) {
-		err := zapLogger.Close()
-		if err != nil {
-			log.Errorf("close zap logger error: %s", err)
-		}
+		_ = zapLogger.Close()
 	}(zapLogger)
 	logger := log.With(zapLogger,
 		"ts", log.DefaultTimestamp,
@@ -83,8 +77,11 @@ func main() {
 
 	// config
 	flag.StringVar(&flagConf, "conf", "../../configs/config.yaml", "config path, eg: -conf config.yaml")
+	flag.Parse()
+
 	c := config.New(
 		config.WithSource(
+
 			file.NewSource(flagConf),
 		),
 	)
@@ -112,4 +109,5 @@ func main() {
 	if err = app.Run(); err != nil {
 		panic(err)
 	}
+	log.Info("seas stop")
 }

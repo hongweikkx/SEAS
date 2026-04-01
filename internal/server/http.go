@@ -19,7 +19,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
+func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, mcpServer *MCPServer, chatHandler *ChatHandler, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
 	var opts = []httptransport.ServerOption{
 		httptransport.Middleware(
 			recovery.Recovery(),
@@ -33,7 +33,9 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, tp trace.T
 		),
 		httptransport.Filter(gorilla.CORS(
 			gorilla.AllowedOrigins([]string{"*"}),
-			gorilla.AllowedMethods([]string{"GET", "POST"}),
+			gorilla.AllowedMethods([]string{"GET", "POST", "DELETE", "OPTIONS"}),
+			gorilla.AllowedHeaders([]string{"Accept", "Authorization", "Content-Type", "Last-Event-ID", "Mcp-Protocol-Version", "Mcp-Session-Id", "Origin"}),
+			gorilla.ExposedHeaders([]string{"Mcp-Session-Id"}),
 		)),
 	}
 	if c.Http.Network != "" {
@@ -47,6 +49,8 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, tp trace.T
 	}
 	srv := httptransport.NewServer(opts...)
 	v1.RegisterAnalysisHTTPServer(srv, analysis)
+	srv.Handle("/chat", chatHandler)
+	srv.Handle("/mcp", mcpServer.Handler())
 	srv.Handle("/metrics", promhttp.Handler())
 	return srv
 }

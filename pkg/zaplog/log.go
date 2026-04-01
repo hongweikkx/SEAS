@@ -18,7 +18,7 @@ func InitLogger() *Logger {
 	})
 	core := zapcore.NewTee(
 		zapcore.NewCore(fileEncoder(), fileWriteSyncer, zapcore.DebugLevel),
-		zapcore.NewCore(consoleEncoder(), zapcore.Lock(os.Stdout), zapcore.DebugLevel),
+		zapcore.NewCore(consoleEncoder(), zapcore.Lock(os.Stderr), zapcore.DebugLevel),
 	)
 	logger := zap.New(core,
 		zap.AddCaller(),
