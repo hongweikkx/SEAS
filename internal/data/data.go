@@ -3,7 +3,6 @@ package data
 import (
 	"seas/internal/conf"
 	gormsql "seas/pkg/gorm"
-	redispkg "seas/pkg/redis"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
@@ -23,8 +22,7 @@ var ProviderSet = wire.NewSet(
 
 // Data 是对所有数据库资源的统一封装
 type Data struct {
-	db    *gorm.DB
-	redis *redispkg.Client
+	db *gorm.DB
 }
 
 // NewData 创建 Data 并注入所有 repo 所需依赖
@@ -33,15 +31,9 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	redis, closeRedisF, err := redispkg.Init(c)
-	if err != nil {
-		closeSqlF()
-		return nil, nil, err
-	}
-	d := &Data{db: db, redis: redis}
+	d := &Data{db: db}
 	closeF := func() {
 		closeSqlF()
-		closeRedisF()
 	}
 	return d, closeF, nil
 }

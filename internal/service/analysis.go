@@ -11,27 +11,15 @@ import (
 
 type AnalysisService struct {
 	pb.UnimplementedAnalysisServer
-	analysisUC    *biz.AnalysisUseCase
+	analysisUC     *biz.AnalysisUseCase
 	examAnalysisUC *biz.ExamAnalysisUseCase
 }
 
 func NewAnalysisService(analysisUC *biz.AnalysisUseCase, examAnalysisUC *biz.ExamAnalysisUseCase) *AnalysisService {
 	return &AnalysisService{
-		analysisUC:    analysisUC,
+		analysisUC:     analysisUC,
 		examAnalysisUC: examAnalysisUC,
 	}
-}
-
-func (s *AnalysisService) Analyze(ctx context.Context, req *pb.AnalyzeRequest) (*pb.AnalyzeReply, error) {
-	log.Context(ctx).Infof("Received AnalyzeRequest: %v", req)
-	summary, suggestions, err := s.analysisUC.Analyze(ctx, req.GetStudentNlInput())
-	if err != nil {
-		return nil, err
-	}
-	return &pb.AnalyzeReply{
-		ResultSummary: summary,
-		Suggestions:   suggestions,
-	}, nil
 }
 
 // ListExams 获取考试列表
@@ -72,10 +60,10 @@ func (s *AnalysisService) ListSubjectsByExam(ctx context.Context, req *pb.ListSu
 	}
 
 	reply := &pb.ListSubjectsByExamReply{
-		ExamId:    req.GetExamId(),
+		ExamId:     req.GetExamId(),
 		TotalCount: total,
-		PageIndex: req.GetPageIndex(),
-		PageSize:  req.GetPageSize(),
+		PageIndex:  req.GetPageIndex(),
+		PageSize:   req.GetPageSize(),
 	}
 
 	reply.Subjects = make([]*pb.SubjectBasicInfo, len(subjects))
@@ -108,9 +96,9 @@ func (s *AnalysisService) GetSubjectSummary(ctx context.Context, req *pb.GetSubj
 	}
 
 	reply := &pb.GetSubjectSummaryReply{
-		ExamId:           req.GetExamId(),
-		ExamName:         examName,
-		Scope:            req.GetScope(),
+		ExamId:            req.GetExamId(),
+		ExamName:          examName,
+		Scope:             req.GetScope(),
 		TotalParticipants: stats.TotalParticipants,
 		SubjectsInvolved:  stats.SubjectsInvolved,
 		ClassesInvolved:   stats.ClassesInvolved,
@@ -150,38 +138,38 @@ func (s *AnalysisService) GetClassSummary(ctx context.Context, req *pb.GetClassS
 	}
 
 	reply := &pb.GetClassSummaryReply{
-		ExamId:           req.GetExamId(),
-		ExamName:         examName,
-		Scope:            req.GetScope(),
+		ExamId:            req.GetExamId(),
+		ExamName:          examName,
+		Scope:             req.GetScope(),
 		TotalParticipants: stats.TotalParticipants,
 	}
 
 	if stats.OverallGrade != nil {
 		reply.OverallGrade = &pb.ClassSummaryItem{
-			ClassId:       stats.OverallGrade.ClassID,
-			ClassName:     stats.OverallGrade.ClassName,
-			TotalStudents: stats.OverallGrade.TotalStudents,
-			AvgScore:      stats.OverallGrade.AvgScore,
-			HighestScore:  stats.OverallGrade.HighestScore,
-			LowestScore:   stats.OverallGrade.LowestScore,
+			ClassId:        stats.OverallGrade.ClassID,
+			ClassName:      stats.OverallGrade.ClassName,
+			TotalStudents:  stats.OverallGrade.TotalStudents,
+			AvgScore:       stats.OverallGrade.AvgScore,
+			HighestScore:   stats.OverallGrade.HighestScore,
+			LowestScore:    stats.OverallGrade.LowestScore,
 			ScoreDeviation: stats.OverallGrade.ScoreDeviation,
-			Difficulty:    stats.OverallGrade.Difficulty,
-			StdDev:        stats.OverallGrade.StdDev,
+			Difficulty:     stats.OverallGrade.Difficulty,
+			StdDev:         stats.OverallGrade.StdDev,
 		}
 	}
 
 	reply.ClassDetails = make([]*pb.ClassSummaryItem, len(stats.ClassDetails))
 	for i, class := range stats.ClassDetails {
 		reply.ClassDetails[i] = &pb.ClassSummaryItem{
-			ClassId:       class.ClassID,
-			ClassName:     class.ClassName,
-			TotalStudents: class.TotalStudents,
-			AvgScore:      class.AvgScore,
-			HighestScore:  class.HighestScore,
-			LowestScore:   class.LowestScore,
+			ClassId:        class.ClassID,
+			ClassName:      class.ClassName,
+			TotalStudents:  class.TotalStudents,
+			AvgScore:       class.AvgScore,
+			HighestScore:   class.HighestScore,
+			LowestScore:    class.LowestScore,
 			ScoreDeviation: class.ScoreDeviation,
-			Difficulty:    class.Difficulty,
-			StdDev:        class.StdDev,
+			Difficulty:     class.Difficulty,
+			StdDev:         class.StdDev,
 		}
 	}
 
@@ -193,9 +181,9 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 	log.Context(ctx).Infof("Received GetRatingDistributionRequest: %v", req)
 
 	// 使用默认值或请求中的配置
-	excellentThreshold := req.GetConfig().GetExcellentThreshold()
-	goodThreshold := req.GetConfig().GetGoodThreshold()
-	passThreshold := req.GetConfig().GetPassThreshold()
+	excellentThreshold := req.GetExcellentThreshold()
+	goodThreshold := req.GetGoodThreshold()
+	passThreshold := req.GetPassThreshold()
 
 	if excellentThreshold == 0 {
 		excellentThreshold = 90
@@ -220,9 +208,9 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 	}
 
 	reply := &pb.GetRatingDistributionReply{
-		ExamId:           req.GetExamId(),
-		ExamName:         examName,
-		Scope:            req.GetScope(),
+		ExamId:            req.GetExamId(),
+		ExamName:          examName,
+		Scope:             req.GetScope(),
 		TotalParticipants: stats.TotalParticipants,
 		Config: &pb.RatingConfig{
 			ExcellentThreshold: excellentThreshold,

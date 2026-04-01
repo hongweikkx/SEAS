@@ -10,14 +10,6 @@ option java_package = "dev.kratos.api.seas.v1";
 option java_outer_classname = "seasProtoV1";
 
 service Analysis {
-  // 原有接口
-  rpc Analyze (AnalyzeRequest) returns (AnalyzeReply) {
-    option (google.api.http) = {
-      post: "/seas/api/v1/analysis/analyze",
-      body: "*"
-    };
-  }
-
   // 新增接口：考试列表
   rpc ListExams (ListExamsRequest) returns (ListExamsReply) {
     option (google.api.http) = {
@@ -52,16 +44,6 @@ service Analysis {
       get: "/seas/api/v1/exams/{exam_id}/analysis/rating-distribution"
     };
   }
-}
-
-// ============ 原有消息类型 ============
-message AnalyzeRequest {
-  string student_nl_input = 1;
-}
-
-message AnalyzeReply {
-  string result_summary = 1;
-  repeated string suggestions = 2;
 }
 
 // ============ 新增消息类型 ============
@@ -172,9 +154,11 @@ message RatingConfig {
 
 message GetRatingDistributionRequest {
   int64 exam_id = 1;
-  string scope = 2;                // "all_subjects" 或 "single_subject"
-  int64 subject_id = 3;            // scope=single_subject时必传
-  RatingConfig config = 4;         // 可选，不提供则使用默认值
+  string scope = 2;                     // "all_subjects" 或 "single_subject"
+  int64 subject_id = 3;                 // scope=single_subject时必传
+  double excellent_threshold = 4;       // 优秀分数线，默认90（可选）
+  double good_threshold = 5;            // 良好分数线，默认70（可选）
+  double pass_threshold = 6;            // 合格分数线，默认60（可选）
 }
 
 message RatingItem {

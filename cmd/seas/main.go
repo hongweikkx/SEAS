@@ -4,7 +4,6 @@ import (
 	"flag"
 	"io"
 	"os"
-	prometheusmetrics "seas/pkg/prometheus"
 	"seas/pkg/zaplog"
 
 	"seas/internal/conf"
@@ -102,9 +101,6 @@ func main() {
 	if err := c.Scan(&bc); err != nil {
 		panic(err)
 	}
-
-	// metrics
-	prometheusmetrics.Init()
 
 	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Llm, logger)
 	if err != nil {
