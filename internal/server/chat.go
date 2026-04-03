@@ -43,9 +43,25 @@ type ChatMessage struct {
 	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
 }
 
+type ChatRatingConfig struct {
+	ExcellentThreshold float64 `json:"excellent_threshold,omitempty"`
+	GoodThreshold      float64 `json:"good_threshold,omitempty"`
+	PassThreshold      float64 `json:"pass_threshold,omitempty"`
+}
+
+type ChatContext struct {
+	Scope        string            `json:"scope,omitempty"`
+	ExamID       string            `json:"examId,omitempty"`
+	ExamName     string            `json:"examName,omitempty"`
+	SubjectID    string            `json:"subjectId,omitempty"`
+	SubjectName  string            `json:"subjectName,omitempty"`
+	RatingConfig *ChatRatingConfig `json:"ratingConfig,omitempty"`
+}
+
 type ChatRequest struct {
 	Message string        `json:"message"`
 	History []ChatMessage `json:"history,omitempty"`
+	Context ChatContext   `json:"context,omitempty"`
 }
 
 type toolResultRecorder struct {
@@ -83,6 +99,7 @@ func (h *ChatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logChatRequest(req)
 	h.streamChat(w, r, req)
 }
 
@@ -376,7 +393,11 @@ func (h *ChatHandler) buildRunner() error {
 }
 
 func buildMessages(req ChatRequest) ([]*schema.Message, error) {
-	messages := make([]*schema.Message, 0, len(req.History)+1)
+	messages := make([]*schema.Message, 0, len(req.History)+2)
+
+	if systemPrompt := buildContextSystemPrompt(req.Context); strings.TrimSpace(systemPrompt) != "" {
+		messages = append(messages, schema.SystemMessage(systemPrompt))
+	}
 
 	for _, item := range req.History {
 		msg, err := toSchemaMessage(item)
@@ -388,6 +409,86 @@ func buildMessages(req ChatRequest) ([]*schema.Message, error) {
 
 	messages = append(messages, schema.UserMessage(req.Message))
 	return messages, nil
+}
+
+func (h *ChatHandler) logChatRequest(req ChatRequest) {
+	if h == nil || h.logger == nil {
+		return
+	}
+
+	historyPreview := make([]string, 0, len(req.History))
+	for _, item := range req.History {
+		content := strings.TrimSpace(item.Content)
+		if content == "" {
+			content = "<empty>"
+		}
+		if len(content) > 120 {
+			content = content[:120] + "…"
+		}
+		historyPreview = append(historyPreview, fmt.Sprintf("%s:%s", item.Role, content))
+	}
+
+	h.logger.Infof(
+		"chat request received: message=%q history_count=%d history=%v context=%+v",
+		strings.TrimSpace(req.Message),
+		len(req.History),
+		historyPreview,
+		req.Context,
+	)
+}
+
+func buildContextSystemPrompt(ctx ChatContext) string {
+	var b strings.Builder
+	base := strings.TrimSpace(defaultSystemPrompt)
+	if base != "" {
+		b.WriteString(base)
+		b.WriteString("\n\n")
+	}
+
+	b.WriteString("你会收到一个来自前端界面的分析上下文。它是权威信息，优先于用户的自然语言描述。\n")
+	b.WriteString("除非用户明确要求切换或浏览列表，否则不要为了“确认”而调用 list_exams 或 list_subjects_by_exam。\n")
+
+	scope := strings.TrimSpace(ctx.Scope)
+	examName := strings.TrimSpace(ctx.ExamName)
+	examID := strings.TrimSpace(ctx.ExamID)
+	subjectName := strings.TrimSpace(ctx.SubjectName)
+	subjectID := strings.TrimSpace(ctx.SubjectID)
+
+	switch scope {
+	case "exam_list":
+		b.WriteString("当前范围：考试列表。\n")
+		b.WriteString("只有当用户明确要求查看、筛选或切换考试时，才调用 list_exams。\n")
+	case "all_subjects":
+		b.WriteString("当前范围：某次考试的全科分析。\n")
+		if examName != "" || examID != "" {
+			b.WriteString(fmt.Sprintf("当前考试：%s%s。\n", examName, formatIDSuffix(examID)))
+		}
+		b.WriteString("不要调用 list_exams 来确认考试，也不要调用 list_subjects_by_exam 来枚举科目；直接基于当前考试执行分析。\n")
+	case "single_subject":
+		b.WriteString("当前范围：某次考试的单科分析。\n")
+		if examName != "" || examID != "" {
+			b.WriteString(fmt.Sprintf("当前考试：%s%s。\n", examName, formatIDSuffix(examID)))
+		}
+		if subjectName != "" || subjectID != "" {
+			b.WriteString(fmt.Sprintf("当前学科：%s%s。\n", subjectName, formatIDSuffix(subjectID)))
+		}
+		b.WriteString("不要调用 list_exams，也不要调用 list_subjects_by_exam 来重新枚举科目；直接基于已选学科进行分析。\n")
+	default:
+		b.WriteString("当前范围未知，但如果前端已经提供考试或学科，请优先使用这些上下文。\n")
+	}
+
+	if cfg := ctx.RatingConfig; cfg != nil {
+		b.WriteString(fmt.Sprintf("四率阈值：优秀 %.2f，良好 %.2f，合格 %.2f。\n", cfg.ExcellentThreshold, cfg.GoodThreshold, cfg.PassThreshold))
+	}
+
+	return b.String()
+}
+
+func formatIDSuffix(id string) string {
+	if strings.TrimSpace(id) == "" {
+		return ""
+	}
+	return fmt.Sprintf(" (ID: %s)", strings.TrimSpace(id))
 }
 
 func toSchemaMessage(msg ChatMessage) (*schema.Message, error) {
