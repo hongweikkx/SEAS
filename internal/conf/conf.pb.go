@@ -196,9 +196,16 @@ func (x *Data) GetRedis() *Data_Redis {
 
 type LLM struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Model         string                 `protobuf:"bytes,1,opt,name=model,proto3" json:"model,omitempty"`
-	ApiKey        string                 `protobuf:"bytes,2,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
-	ApiBase       string                 `protobuf:"bytes,3,opt,name=api_base,json=apiBase,proto3" json:"api_base,omitempty"`
+	Provider      string                 `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
+	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
+	ApiKey        string                 `protobuf:"bytes,3,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	ApiBase       string                 `protobuf:"bytes,4,opt,name=api_base,json=apiBase,proto3" json:"api_base,omitempty"`
+	Region        string                 `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
+	AccessKey     string                 `protobuf:"bytes,6,opt,name=access_key,json=accessKey,proto3" json:"access_key,omitempty"`
+	SecretKey     string                 `protobuf:"bytes,7,opt,name=secret_key,json=secretKey,proto3" json:"secret_key,omitempty"`
+	Temperature   float64                `protobuf:"fixed64,8,opt,name=temperature,proto3" json:"temperature,omitempty"`
+	MaxIterations int32                  `protobuf:"varint,9,opt,name=max_iterations,json=maxIterations,proto3" json:"max_iterations,omitempty"`
+	SystemPrompt  string                 `protobuf:"bytes,10,opt,name=system_prompt,json=systemPrompt,proto3" json:"system_prompt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -233,6 +240,13 @@ func (*LLM) Descriptor() ([]byte, []int) {
 	return file_conf_conf_proto_rawDescGZIP(), []int{3}
 }
 
+func (x *LLM) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
 func (x *LLM) GetModel() string {
 	if x != nil {
 		return x.Model
@@ -250,6 +264,48 @@ func (x *LLM) GetApiKey() string {
 func (x *LLM) GetApiBase() string {
 	if x != nil {
 		return x.ApiBase
+	}
+	return ""
+}
+
+func (x *LLM) GetRegion() string {
+	if x != nil {
+		return x.Region
+	}
+	return ""
+}
+
+func (x *LLM) GetAccessKey() string {
+	if x != nil {
+		return x.AccessKey
+	}
+	return ""
+}
+
+func (x *LLM) GetSecretKey() string {
+	if x != nil {
+		return x.SecretKey
+	}
+	return ""
+}
+
+func (x *LLM) GetTemperature() float64 {
+	if x != nil {
+		return x.Temperature
+	}
+	return 0
+}
+
+func (x *LLM) GetMaxIterations() int32 {
+	if x != nil {
+		return x.MaxIterations
+	}
+	return 0
+}
+
+func (x *LLM) GetSystemPrompt() string {
+	if x != nil {
+		return x.SystemPrompt
 	}
 	return ""
 }
@@ -527,11 +583,21 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x02pw\x18\x02 \x01(\tR\x02pw\x12\x0e\n" +
 	"\x02db\x18\x03 \x01(\x05R\x02db\x12\x1d\n" +
 	"\n" +
-	"warn_limit\x18\x04 \x01(\x03R\twarnLimit\"O\n" +
-	"\x03LLM\x12\x14\n" +
-	"\x05model\x18\x01 \x01(\tR\x05model\x12\x17\n" +
-	"\aapi_key\x18\x02 \x01(\tR\x06apiKey\x12\x19\n" +
-	"\bapi_base\x18\x03 \x01(\tR\aapiBaseB\x19Z\x17seas/internal/conf;confb\x06proto3"
+	"warn_limit\x18\x04 \x01(\x03R\twarnLimit\"\xaf\x02\n" +
+	"\x03LLM\x12\x1a\n" +
+	"\bprovider\x18\x01 \x01(\tR\bprovider\x12\x14\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\x12\x17\n" +
+	"\aapi_key\x18\x03 \x01(\tR\x06apiKey\x12\x19\n" +
+	"\bapi_base\x18\x04 \x01(\tR\aapiBase\x12\x16\n" +
+	"\x06region\x18\x05 \x01(\tR\x06region\x12\x1d\n" +
+	"\n" +
+	"access_key\x18\x06 \x01(\tR\taccessKey\x12\x1d\n" +
+	"\n" +
+	"secret_key\x18\a \x01(\tR\tsecretKey\x12 \n" +
+	"\vtemperature\x18\b \x01(\x01R\vtemperature\x12%\n" +
+	"\x0emax_iterations\x18\t \x01(\x05R\rmaxIterations\x12#\n" +
+	"\rsystem_prompt\x18\n" +
+	" \x01(\tR\fsystemPromptB\x19Z\x17seas/internal/conf;confb\x06proto3"
 
 var (
 	file_conf_conf_proto_rawDescOnce sync.Once

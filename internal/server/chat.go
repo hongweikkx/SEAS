@@ -1,31 +1,39 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
-	pb "seas/api/seas/v1"
+	v1 "seas/api/seas/v1"
 	"seas/internal/conf"
 
+	"github.com/cloudwego/eino-ext/components/model/ark"
+	"github.com/cloudwego/eino/adk"
+	"github.com/cloudwego/eino/compose"
+	"github.com/cloudwego/eino/schema"
 	"github.com/go-kratos/kratos/v2/log"
 )
 
 const (
-	defaultChatTimeout   = 10000 * time.Second
-	defaultChatMaxRounds = 8
+	defaultChatTimeout       = 10 * time.Minute
+	defaultChatMaxIterations = 8
+	defaultSystemPrompt      = "You are a data analysis assistant for school exam reporting. Use tools whenever user requests depend on exam, subject, class, or rating data. If a tool result is insufficient, explain what is missing instead of guessing."
 )
 
 type ChatHandler struct {
 	llm    *conf.LLM
 	tools  *AnalysisToolBridge
 	logger *log.Helper
-	client *http.Client
+
+	runnerOnce sync.Once
+	runner     *adk.Runner
+	runnerErr  error
 }
 
 type ChatMessage struct {
@@ -40,59 +48,18 @@ type ChatRequest struct {
 	History []ChatMessage `json:"history,omitempty"`
 }
 
-type ChatResponse struct {
-	Model     string           `json:"model"`
-	Answer    string           `json:"answer"`
-	Blocks    []map[string]any `json:"blocks,omitempty"`
-	ToolCalls []ToolCall       `json:"toolCalls,omitempty"`
+type toolResultRecorder struct {
+	mu      sync.Mutex
+	records []toolResultRecord
 }
 
-type openAIChatRequest struct {
-	Model       string              `json:"model"`
-	Messages    []map[string]any    `json:"messages"`
-	Tools       []openAIRequestTool `json:"tools,omitempty"`
-	ToolChoice  string              `json:"tool_choice,omitempty"`
-	Temperature float64             `json:"temperature,omitempty"`
-}
-
-type openAIRequestTool struct {
-	Type     string                `json:"type"`
-	Function openAIRequestFunction `json:"function"`
-}
-
-type openAIRequestFunction struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description,omitempty"`
-	Parameters  map[string]any `json:"parameters"`
-}
-
-type openAIChatResponse struct {
-	Choices []struct {
-		Message struct {
-			Role      string `json:"role"`
-			Content   string `json:"content"`
-			ToolCalls []struct {
-				ID       string `json:"id"`
-				Type     string `json:"type"`
-				Function struct {
-					Name      string `json:"name"`
-					Arguments string `json:"arguments"`
-				} `json:"function"`
-			} `json:"tool_calls"`
-		} `json:"message"`
-		FinishReason string `json:"finish_reason"`
-	} `json:"choices"`
-	Error *struct {
-		Message string `json:"message"`
-	} `json:"error,omitempty"`
-}
+type toolRecorderContextKey struct{}
 
 func NewChatHandler(llm *conf.LLM, tools *AnalysisToolBridge, logger log.Logger) *ChatHandler {
 	return &ChatHandler{
 		llm:    llm,
 		tools:  tools,
 		logger: log.NewHelper(logger),
-		client: &http.Client{Timeout: defaultChatTimeout},
 	}
 }
 
@@ -116,229 +83,464 @@ func (h *ChatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answer, toolCalls, blocks, err := h.chat(r.Context(), req)
-	if err != nil {
-		h.logger.Errorf("chat failed: %v", err)
+	h.streamChat(w, r, req)
+}
+
+func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, req ChatRequest) {
+	if err := h.ensureRunner(); err != nil {
 		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, ChatResponse{
-		Model:     h.llm.GetModel(),
-		Answer:    answer,
-		Blocks:    blocks,
-		ToolCalls: toolCalls,
-	})
-}
-
-type toolResultRecord struct {
-	Name      string
-	Arguments map[string]any
-	Result    any
-}
-
-func (h *ChatHandler) chat(ctx context.Context, req ChatRequest) (string, []ToolCall, []map[string]any, error) {
-	if h.llm == nil {
-		return "", nil, nil, fmt.Errorf("llm config is missing")
-	}
-	if strings.TrimSpace(h.llm.GetApiKey()) == "" || strings.TrimSpace(h.llm.GetApiBase()) == "" || strings.TrimSpace(h.llm.GetModel()) == "" {
-		return "", nil, nil, fmt.Errorf("llm config requires model, api_key and api_base")
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "streaming is not supported by this response writer"})
+		return
 	}
 
-	messages := make([]map[string]any, 0, len(req.History)+defaultChatMaxRounds+2)
-	messages = append(messages, map[string]any{
-		"role":    "system",
-		"content": "You are a data analysis assistant for school exam reporting. Use tools whenever user requests depend on exam, subject, class, or rating data. If a tool result is insufficient, explain what is missing instead of guessing.",
-	})
-	for _, item := range req.History {
-		msg, err := toOpenAIMessage(item)
-		if err != nil {
-			return "", nil, nil, err
+	writeSSEHeaders(w)
+
+	surfaceID := fmt.Sprintf("chat-%d", time.Now().UnixNano())
+	rootID := surfaceID + "-root"
+	bodyID := surfaceID + "-body"
+	assistantTextID := surfaceID + "-assistant-text"
+	toolSectionID := surfaceID + "-tool-section"
+	resultSectionID := surfaceID + "-result-section"
+
+	send := func(msg A2UIMessage) bool {
+		if err := writeSSEMessage(w, msg); err != nil {
+			h.logger.Errorf("send a2ui message failed: %v", err)
+			return false
 		}
-		messages = append(messages, msg)
+		flusher.Flush()
+		return true
 	}
-	messages = append(messages, map[string]any{
-		"role":    "user",
-		"content": req.Message,
-	})
 
-	usedToolCalls := make([]ToolCall, 0)
-	toolResults := make([]toolResultRecord, 0)
-	for round := 0; round < defaultChatMaxRounds; round++ {
-		resp, err := h.callModel(ctx, messages)
-		if err != nil {
-			return "", usedToolCalls, nil, err
-		}
-		if len(resp.Choices) == 0 {
-			return "", usedToolCalls, nil, fmt.Errorf("llm returned no choices")
+	if !send(A2UIMessage{
+		BeginRendering: &BeginRenderingMsg{
+			SurfaceID:       surfaceID,
+			RootComponentID: rootID,
+			Title:           "分析助手",
+		},
+	}) {
+		return
+	}
+
+	if !send(A2UIMessage{
+		SurfaceUpdate: &SurfaceUpdateMsg{
+			SurfaceID: surfaceID,
+			Components: []A2UIComponent{
+				surfaceComponentLayout("card", rootID, map[string]any{
+					"variant": "assistant",
+				}, bodyID),
+				surfaceComponentLayout("column", bodyID, map[string]any{
+					"gap": "md",
+				}, assistantTextID, toolSectionID, resultSectionID),
+				surfaceComponentText(assistantTextID, map[string]any{
+					"usageHint": "body",
+					"content":   "",
+					"dataKey":   "assistant.content",
+				}),
+				surfaceComponentLayout("column", toolSectionID, map[string]any{
+					"title": "工具调用",
+				}),
+				surfaceComponentLayout("column", resultSectionID, map[string]any{
+					"title": "分析结果",
+				}),
+			},
+		},
+	}) {
+		return
+	}
+
+	messages, err := buildMessages(req)
+	if err != nil {
+		_ = send(A2UIMessage{Error: &A2UIErrorMsg{Message: err.Error()}})
+		return
+	}
+
+	recorder := &toolResultRecorder{}
+	ctx := context.WithValue(r.Context(), toolRecorderContextKey{}, recorder)
+	iter := h.runner.Run(ctx, messages)
+
+	var assistantContent strings.Builder
+	toolCallIDs := make([]string, 0)
+	toolCallComponents := make([]A2UIComponent, 0)
+	resultComponents := make([]A2UIComponent, 0)
+
+	for {
+		if err := ctx.Err(); err != nil {
+			_ = send(A2UIMessage{Error: &A2UIErrorMsg{Message: err.Error()}})
+			return
 		}
 
-		message := resp.Choices[0].Message
-		if len(message.ToolCalls) == 0 {
-			answer := strings.TrimSpace(message.Content)
-			if answer == "" {
-				return "", usedToolCalls, nil, fmt.Errorf("llm returned empty response")
+		event, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if event == nil {
+			continue
+		}
+		if event.Err != nil {
+			_ = send(A2UIMessage{Error: &A2UIErrorMsg{Message: event.Err.Error()}})
+			return
+		}
+		if event.Action != nil && event.Action.Interrupted != nil {
+			_ = send(A2UIMessage{
+				InterruptRequest: interruptRequestFromEvent(surfaceID, event.Action.Interrupted),
+			})
+			return
+		}
+		if event.Output == nil || event.Output.MessageOutput == nil {
+			continue
+		}
+
+		mv := event.Output.MessageOutput
+		if mv.IsStreaming {
+			if err := streamAssistantMessage(mv.MessageStream, &assistantContent, func(content string) bool {
+				return send(A2UIMessage{
+					DataModelUpdate: &DataModelUpdateMsg{
+						SurfaceID: surfaceID,
+						Data: map[string]any{
+							"assistant.content": content,
+						},
+					},
+				})
+			}); err != nil {
+				_ = send(A2UIMessage{Error: &A2UIErrorMsg{Message: err.Error()}})
+				return
 			}
-			return answer, usedToolCalls, buildBlocks(toolResults), nil
+			continue
 		}
 
-		assistantMessage := map[string]any{
-			"role": "assistant",
+		msg, err := mv.GetMessage()
+		if err != nil {
+			_ = send(A2UIMessage{Error: &A2UIErrorMsg{Message: err.Error()}})
+			return
 		}
-		toolCalls := make([]map[string]any, 0, len(message.ToolCalls))
-		for _, toolCall := range message.ToolCalls {
-			args := map[string]any{}
-			if strings.TrimSpace(toolCall.Function.Arguments) != "" {
-				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
-					return "", usedToolCalls, nil, fmt.Errorf("invalid tool arguments for %s: %w", toolCall.Function.Name, err)
+		if msg == nil {
+			continue
+		}
+
+		switch msg.Role {
+		case schema.Assistant:
+			if content := strings.TrimSpace(msg.Content); content != "" && assistantContent.Len() == 0 {
+				assistantContent.WriteString(content)
+				if !send(A2UIMessage{
+					DataModelUpdate: &DataModelUpdateMsg{
+						SurfaceID: surfaceID,
+						Data: map[string]any{
+							"assistant.content": assistantContent.String(),
+						},
+					},
+				}) {
+					return
 				}
 			}
-			toolCalls = append(toolCalls, map[string]any{
-				"id":   toolCall.ID,
-				"type": toolCall.Type,
-				"function": map[string]any{
-					"name":      toolCall.Function.Name,
-					"arguments": toolCall.Function.Arguments,
+
+			if len(msg.ToolCalls) > 0 {
+				for _, tc := range msg.ToolCalls {
+					componentID := fmt.Sprintf("%s-tool-%d", surfaceID, len(toolCallIDs))
+					toolCallIDs = append(toolCallIDs, componentID)
+					toolCallComponents = append(toolCallComponents, surfaceComponentLayout("card", componentID, map[string]any{
+						"title":       tc.Function.Name,
+						"description": formatArguments(tc.Function.Arguments),
+					}))
+				}
+
+				updater := []A2UIComponent{
+					surfaceComponentLayout("column", toolSectionID, map[string]any{
+						"title": "工具调用",
+					}, toolCallIDs...),
+				}
+				updater = append(updater, toolCallComponents...)
+				if !send(A2UIMessage{
+					SurfaceUpdate: &SurfaceUpdateMsg{
+						SurfaceID:  surfaceID,
+						Components: updater,
+					},
+				}) {
+					return
+				}
+			}
+		case schema.Tool:
+			// Tool results are collected through the recorder and rendered after the run completes.
+		}
+	}
+
+	if text := strings.TrimSpace(assistantContent.String()); text != "" {
+		if !send(A2UIMessage{
+			DataModelUpdate: &DataModelUpdateMsg{
+				SurfaceID: surfaceID,
+				Data: map[string]any{
+					"assistant.content": text,
 				},
-			})
-			usedToolCalls = append(usedToolCalls, ToolCall{
-				Name:      toolCall.Function.Name,
-				Arguments: args,
-			})
-		}
-		assistantMessage["tool_calls"] = toolCalls
-		messages = append(messages, assistantMessage)
-
-		for _, toolCall := range message.ToolCalls {
-			args := map[string]any{}
-			if strings.TrimSpace(toolCall.Function.Arguments) != "" {
-				if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
-					return "", usedToolCalls, nil, fmt.Errorf("invalid tool arguments for %s: %w", toolCall.Function.Name, err)
-				}
-			}
-			result, err := h.tools.Call(ctx, toolCall.Function.Name, args)
-			if err != nil {
-				result = map[string]any{"error": err.Error()}
-			}
-			toolResults = append(toolResults, toolResultRecord{
-				Name:      toolCall.Function.Name,
-				Arguments: args,
-				Result:    result,
-			})
-			payload, err := json.Marshal(result)
-			if err != nil {
-				return "", usedToolCalls, nil, fmt.Errorf("marshal tool result for %s: %w", toolCall.Function.Name, err)
-			}
-			messages = append(messages, map[string]any{
-				"role":         "tool",
-				"tool_call_id": toolCall.ID,
-				"content":      string(payload),
-			})
+			},
+		}) {
+			return
 		}
 	}
 
-	return "", usedToolCalls, buildBlocks(toolResults), fmt.Errorf("tool call rounds exceeded limit")
-}
-
-func (h *ChatHandler) callModel(ctx context.Context, messages []map[string]any) (*openAIChatResponse, error) {
-	body, err := json.Marshal(openAIChatRequest{
-		Model:       h.llm.GetModel(),
-		Messages:    messages,
-		Tools:       h.openAITools(),
-		ToolChoice:  "auto",
-		Temperature: 0.2,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("marshal llm request: %w", err)
-	}
-
-	endpoint := strings.TrimRight(h.llm.GetApiBase(), "/") + "/chat/completions"
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("create llm request: %w", err)
-	}
-	httpReq.Header.Set("Authorization", "Bearer "+h.llm.GetApiKey())
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := h.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("call llm api: %w, req:%s", err, endpoint)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read llm response: %w", err)
-	}
-
-	var parsed openAIChatResponse
-	if err := json.Unmarshal(respBody, &parsed); err != nil {
-		return nil, fmt.Errorf("decode llm response: %w", err)
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		if parsed.Error != nil && parsed.Error.Message != "" {
-			return nil, fmt.Errorf("llm api error: %s", parsed.Error.Message)
+	resultComponents = append(resultComponents, blocksToA2UIComponents(buildBlocks(recorder.records), surfaceID+"-block")...)
+	if len(resultComponents) > 0 {
+		resultIDs := make([]string, 0, len(resultComponents))
+		for _, component := range resultComponents {
+			resultIDs = append(resultIDs, component.ID)
 		}
-		return nil, fmt.Errorf("llm api returned status %d", resp.StatusCode)
-	}
-
-	return &parsed, nil
-}
-
-func (h *ChatHandler) openAITools() []openAIRequestTool {
-	defs := h.tools.Definitions()
-	tools := make([]openAIRequestTool, 0, len(defs))
-	for _, def := range defs {
-		tools = append(tools, openAIRequestTool{
-			Type: "function",
-			Function: openAIRequestFunction{
-				Name:        def.Name,
-				Description: def.Description,
-				Parameters:  def.InputSchema,
+		updates := []A2UIComponent{
+			surfaceComponentLayout("column", resultSectionID, map[string]any{
+				"title": "分析结果",
+			}, resultIDs...),
+		}
+		updates = append(updates, resultComponents...)
+		_ = send(A2UIMessage{
+			SurfaceUpdate: &SurfaceUpdateMsg{
+				SurfaceID:  surfaceID,
+				Components: updates,
 			},
 		})
 	}
-	return tools
 }
 
-func toOpenAIMessage(msg ChatMessage) (map[string]any, error) {
+func (h *ChatHandler) ensureRunner() error {
+	h.runnerOnce.Do(func() {
+		h.runnerErr = h.buildRunner()
+	})
+	return h.runnerErr
+}
+
+func (h *ChatHandler) buildRunner() error {
+	if h.llm == nil {
+		return fmt.Errorf("llm config is missing")
+	}
+	if strings.TrimSpace(h.llm.GetModel()) == "" || strings.TrimSpace(h.llm.GetApiKey()) == "" {
+		return fmt.Errorf("llm config requires model and api_key")
+	}
+	if strings.TrimSpace(h.llm.GetProvider()) != "" && strings.TrimSpace(strings.ToLower(h.llm.GetProvider())) != "ark" {
+		return fmt.Errorf("unsupported llm provider: %s", h.llm.GetProvider())
+	}
+	if h.tools == nil {
+		return fmt.Errorf("analysis tools are missing")
+	}
+
+	baseTools, err := h.tools.EinoTools()
+	if err != nil {
+		return err
+	}
+
+	chatModel, err := ark.NewChatModel(context.Background(), &ark.ChatModelConfig{
+		Timeout:     durationPtr(defaultChatTimeout),
+		BaseURL:     strings.TrimSpace(h.llm.GetApiBase()),
+		Region:      strings.TrimSpace(h.llm.GetRegion()),
+		APIKey:      strings.TrimSpace(h.llm.GetApiKey()),
+		AccessKey:   strings.TrimSpace(h.llm.GetAccessKey()),
+		SecretKey:   strings.TrimSpace(h.llm.GetSecretKey()),
+		Model:       strings.TrimSpace(h.llm.GetModel()),
+		Temperature: float32Ptr(float32(defaultTemperature(h.llm.GetTemperature()))),
+	})
+	if err != nil {
+		return fmt.Errorf("create ark chat model: %w", err)
+	}
+
+	maxIterations := int(h.llm.GetMaxIterations())
+	if maxIterations <= 0 {
+		maxIterations = defaultChatMaxIterations
+	}
+
+	instruction := strings.TrimSpace(h.llm.GetSystemPrompt())
+	if instruction == "" {
+		instruction = defaultSystemPrompt
+	}
+
+	agent, err := adk.NewChatModelAgent(context.Background(), &adk.ChatModelAgentConfig{
+		Name:        "seas-analysis-agent",
+		Description: "A school exam analysis assistant that uses structured exam, subject, class, and rating tools.",
+		Instruction: instruction,
+		Model:       chatModel,
+		ToolsConfig: adk.ToolsConfig{
+			ToolsNodeConfig: compose.ToolsNodeConfig{
+				Tools: baseTools,
+			},
+		},
+		MaxIterations: maxIterations,
+	})
+	if err != nil {
+		return fmt.Errorf("create chat model agent: %w", err)
+	}
+
+	h.runner = adk.NewRunner(context.Background(), adk.RunnerConfig{
+		Agent:           agent,
+		EnableStreaming: true,
+	})
+	return nil
+}
+
+func buildMessages(req ChatRequest) ([]*schema.Message, error) {
+	messages := make([]*schema.Message, 0, len(req.History)+1)
+
+	for _, item := range req.History {
+		msg, err := toSchemaMessage(item)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+
+	messages = append(messages, schema.UserMessage(req.Message))
+	return messages, nil
+}
+
+func toSchemaMessage(msg ChatMessage) (*schema.Message, error) {
 	role := strings.TrimSpace(msg.Role)
 	if role == "" {
 		return nil, fmt.Errorf("history role is required")
 	}
 
-	out := map[string]any{"role": role}
-	if msg.Content != "" {
-		out["content"] = msg.Content
-	}
-	if msg.ToolCallID != "" {
-		out["tool_call_id"] = msg.ToolCallID
-	}
-	if len(msg.ToolCalls) > 0 {
-		toolCalls := make([]map[string]any, 0, len(msg.ToolCalls))
-		for index, toolCall := range msg.ToolCalls {
-			argBytes, err := json.Marshal(toolCall.Arguments)
+	switch role {
+	case string(schema.System):
+		return schema.SystemMessage(msg.Content), nil
+	case string(schema.User):
+		return schema.UserMessage(msg.Content), nil
+	case string(schema.Tool):
+		return schema.ToolMessage(msg.Content, msg.ToolCallID), nil
+	case string(schema.Assistant):
+		toolCalls := make([]schema.ToolCall, 0, len(msg.ToolCalls))
+		for _, tc := range msg.ToolCalls {
+			argBytes, err := json.Marshal(tc.Arguments)
 			if err != nil {
 				return nil, fmt.Errorf("marshal history tool arguments: %w", err)
 			}
-			toolCalls = append(toolCalls, map[string]any{
-				"id":   fmt.Sprintf("history_tool_%d", index),
-				"type": "function",
-				"function": map[string]any{
-					"name":      toolCall.Name,
-					"arguments": string(argBytes),
-				},
+			toolCalls = append(toolCalls, schema.ToolCall{
+				ID:       fmt.Sprintf("history_tool_%s", tc.Name),
+				Type:     "function",
+				Function: schema.FunctionCall{Name: tc.Name, Arguments: string(argBytes)},
 			})
 		}
-		out["tool_calls"] = toolCalls
+		return schema.AssistantMessage(msg.Content, toolCalls), nil
+	default:
+		return nil, fmt.Errorf("unsupported history role: %s", msg.Role)
 	}
-	return out, nil
+}
+
+func appendToolResultRecord(ctx context.Context, record toolResultRecord) {
+	recorder, _ := ctx.Value(toolRecorderContextKey{}).(*toolResultRecorder)
+	if recorder == nil {
+		return
+	}
+	recorder.mu.Lock()
+	recorder.records = append(recorder.records, record)
+	recorder.mu.Unlock()
+}
+
+func durationPtr(v time.Duration) *time.Duration {
+	return &v
+}
+
+func float32Ptr(v float32) *float32 {
+	return &v
+}
+
+func defaultTemperature(v float64) float64 {
+	if v == 0 {
+		return 0.2
+	}
+	return v
+}
+
+func streamAssistantMessage(stream *schema.StreamReader[*schema.Message], content *strings.Builder, emit func(string) bool) error {
+	if stream == nil {
+		return nil
+	}
+	defer stream.Close()
+
+	for {
+		chunk, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+		if chunk == nil {
+			continue
+		}
+		if piece := chunk.Content; piece != "" {
+			content.WriteString(piece)
+			if !emit(content.String()) {
+				return fmt.Errorf("failed to emit assistant stream update")
+			}
+		}
+	}
+
+	return nil
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func interruptRequestFromEvent(surfaceID string, info *adk.InterruptInfo) *InterruptRequestMsg {
+	if info == nil {
+		return &InterruptRequestMsg{SurfaceID: surfaceID}
+	}
+
+	contexts := make([]A2UIInterruptContext, 0, len(info.InterruptContexts))
+	for _, ctx := range info.InterruptContexts {
+		if ctx == nil {
+			continue
+		}
+
+		contexts = append(contexts, A2UIInterruptContext{
+			ID:      ctx.ID,
+			Name:    interruptContextName(ctx),
+			Address: fmt.Sprint(ctx.Address),
+			Type:    interruptContextType(ctx),
+		})
+	}
+
+	prompt := ""
+	if len(info.InterruptContexts) > 0 && info.InterruptContexts[0] != nil && info.InterruptContexts[0].Info != nil {
+		prompt = fmt.Sprint(info.InterruptContexts[0].Info)
+	}
+
+	return &InterruptRequestMsg{
+		SurfaceID: surfaceID,
+		Prompt:    prompt,
+		Contexts:  contexts,
+	}
+}
+
+func interruptContextName(ctx *adk.InterruptCtx) string {
+	if ctx == nil || ctx.Info == nil {
+		return ""
+	}
+	return fmt.Sprint(ctx.Info)
+}
+
+func interruptContextType(ctx *adk.InterruptCtx) string {
+	if ctx == nil || len(ctx.Address) == 0 {
+		return ""
+	}
+	return fmt.Sprint(ctx.Address[len(ctx.Address)-1].Type)
+}
+
+func formatArguments(arguments string) string {
+	if strings.TrimSpace(arguments) == "" {
+		return ""
+	}
+
+	var parsed any
+	if err := json.Unmarshal([]byte(arguments), &parsed); err != nil {
+		return arguments
+	}
+
+	payload, err := json.Marshal(parsed)
+	if err != nil {
+		return arguments
+	}
+	return string(payload)
 }
 
 func buildBlocks(results []toolResultRecord) []map[string]any {
@@ -351,15 +553,15 @@ func buildBlocks(results []toolResultRecord) []map[string]any {
 
 func buildBlocksForTool(result toolResultRecord) []map[string]any {
 	switch data := result.Result.(type) {
-	case *pb.ListExamsReply:
+	case *v1.ListExamsReply:
 		return buildListExamsBlocks(data)
-	case *pb.ListSubjectsByExamReply:
+	case *v1.ListSubjectsByExamReply:
 		return buildListSubjectsBlocks(data)
-	case *pb.GetSubjectSummaryReply:
+	case *v1.GetSubjectSummaryReply:
 		return buildSubjectSummaryBlocks(data)
-	case *pb.GetClassSummaryReply:
+	case *v1.GetClassSummaryReply:
 		return buildClassSummaryBlocks(data)
-	case *pb.GetRatingDistributionReply:
+	case *v1.GetRatingDistributionReply:
 		return buildRatingDistributionBlocks(data)
 	case map[string]any:
 		if msg, ok := data["error"].(string); ok && strings.TrimSpace(msg) != "" {
@@ -375,7 +577,7 @@ func buildBlocksForTool(result toolResultRecord) []map[string]any {
 	return nil
 }
 
-func buildListExamsBlocks(reply *pb.ListExamsReply) []map[string]any {
+func buildListExamsBlocks(reply *v1.ListExamsReply) []map[string]any {
 	rows := make([]map[string]any, 0, len(reply.GetExams()))
 	for _, exam := range reply.GetExams() {
 		rows = append(rows, map[string]any{
@@ -402,7 +604,7 @@ func buildListExamsBlocks(reply *pb.ListExamsReply) []map[string]any {
 	}
 }
 
-func buildListSubjectsBlocks(reply *pb.ListSubjectsByExamReply) []map[string]any {
+func buildListSubjectsBlocks(reply *v1.ListSubjectsByExamReply) []map[string]any {
 	rows := make([]map[string]any, 0, len(reply.GetSubjects()))
 	for _, subject := range reply.GetSubjects() {
 		rows = append(rows, map[string]any{
@@ -427,12 +629,19 @@ func buildListSubjectsBlocks(reply *pb.ListSubjectsByExamReply) []map[string]any
 	}
 }
 
-func buildSubjectSummaryBlocks(reply *pb.GetSubjectSummaryReply) []map[string]any {
-	blocks := make([]map[string]any, 0)
+func buildSubjectSummaryBlocks(reply *v1.GetSubjectSummaryReply) []map[string]any {
+	columns := []map[string]any{
+		{"key": "id", "label": "ID", "align": "right"},
+		{"key": "name", "label": "学科名称"},
+		{"key": "fullScore", "label": "满分", "align": "right"},
+		{"key": "avgScore", "label": "平均分", "align": "right"},
+		{"key": "highestScore", "label": "最高分", "align": "right"},
+		{"key": "lowestScore", "label": "最低分", "align": "right"},
+		{"key": "difficulty", "label": "难度", "align": "right"},
+		{"key": "studentCount", "label": "人数", "align": "right"},
+	}
 
 	rows := make([]map[string]any, 0, len(reply.GetSubjects()))
-	labels := make([]string, 0, len(reply.GetSubjects()))
-	avgScores := make([]float64, 0, len(reply.GetSubjects()))
 	for _, subject := range reply.GetSubjects() {
 		rows = append(rows, map[string]any{
 			"id":           subject.GetId(),
@@ -444,67 +653,53 @@ func buildSubjectSummaryBlocks(reply *pb.GetSubjectSummaryReply) []map[string]an
 			"difficulty":   subject.GetDifficulty(),
 			"studentCount": subject.GetStudentCount(),
 		})
-		labels = append(labels, subject.GetName())
-		avgScores = append(avgScores, subject.GetAvgScore())
 	}
 
-	blocks = append(blocks, map[string]any{
-		"type":        "table",
-		"title":       "学科情况汇总",
-		"description": fmt.Sprintf("考试 %s，共 %d 名参考学生", reply.GetExamName(), reply.GetTotalParticipants()),
-		"columns": []map[string]any{
-			{"key": "name", "label": "学科"},
-			{"key": "fullScore", "label": "满分", "align": "right"},
-			{"key": "avgScore", "label": "平均分", "align": "right"},
-			{"key": "highestScore", "label": "最高分", "align": "right"},
-			{"key": "lowestScore", "label": "最低分", "align": "right"},
-			{"key": "difficulty", "label": "难度", "align": "right"},
-			{"key": "studentCount", "label": "参考人数", "align": "right"},
+	return []map[string]any{
+		{
+			"type":        "text",
+			"title":       "学科情况汇总",
+			"description": fmt.Sprintf("考试 %s, 范围 %s, 参与人数 %d", reply.GetExamName(), reply.GetScope(), reply.GetTotalParticipants()),
 		},
-		"rows": rows,
-	})
-
-	if len(labels) > 0 {
-		blocks = append(blocks, map[string]any{
-			"type":        "chart",
-			"title":       "学科平均分",
-			"description": "按学科展示平均分对比",
-			"chartType":   "bar",
-			"labels":      labels,
-			"datasets": []map[string]any{
-				{"label": "平均分", "data": avgScores},
-			},
-		})
+		{
+			"type":    "table",
+			"title":   "学科详情",
+			"columns": columns,
+			"rows":    rows,
+		},
 	}
-
-	return blocks
 }
 
-func buildClassSummaryBlocks(reply *pb.GetClassSummaryReply) []map[string]any {
-	blocks := make([]map[string]any, 0)
-
-	rows := make([]map[string]any, 0, len(reply.GetClassDetails())+1)
-	labels := make([]string, 0, len(reply.GetClassDetails())+1)
-	avgScores := make([]float64, 0, len(reply.GetClassDetails())+1)
-
-	if reply.GetOverallGrade() != nil {
-		overall := reply.GetOverallGrade()
-		rows = append(rows, map[string]any{
-			"className":      overall.GetClassName(),
-			"totalStudents":  overall.GetTotalStudents(),
-			"avgScore":       overall.GetAvgScore(),
-			"highestScore":   overall.GetHighestScore(),
-			"lowestScore":    overall.GetLowestScore(),
-			"scoreDeviation": overall.GetScoreDeviation(),
-			"difficulty":     overall.GetDifficulty(),
-			"stdDev":         overall.GetStdDev(),
-		})
-		labels = append(labels, overall.GetClassName())
-		avgScores = append(avgScores, overall.GetAvgScore())
+func buildClassSummaryBlocks(reply *v1.GetClassSummaryReply) []map[string]any {
+	blocks := []map[string]any{
+		{
+			"type":        "text",
+			"title":       "班级情况汇总",
+			"description": fmt.Sprintf("考试 %s, 范围 %s, 参与人数 %d", reply.GetExamName(), reply.GetScope(), reply.GetTotalParticipants()),
+		},
 	}
 
+	if overall := reply.GetOverallGrade(); overall != nil {
+		blocks = append(blocks, map[string]any{
+			"type":  "text",
+			"title": "年级概览",
+			"content": fmt.Sprintf(
+				"%s | 平均分 %.2f | 最高分 %.2f | 最低分 %.2f | 离均差 %.2f | 难度 %.2f | 标准差 %.2f",
+				overall.GetClassName(),
+				overall.GetAvgScore(),
+				overall.GetHighestScore(),
+				overall.GetLowestScore(),
+				overall.GetScoreDeviation(),
+				overall.GetDifficulty(),
+				overall.GetStdDev(),
+			),
+		})
+	}
+
+	rows := make([]map[string]any, 0, len(reply.GetClassDetails()))
 	for _, class := range reply.GetClassDetails() {
 		rows = append(rows, map[string]any{
+			"classId":        class.GetClassId(),
 			"className":      class.GetClassName(),
 			"totalStudents":  class.GetTotalStudents(),
 			"avgScore":       class.GetAvgScore(),
@@ -514,128 +709,83 @@ func buildClassSummaryBlocks(reply *pb.GetClassSummaryReply) []map[string]any {
 			"difficulty":     class.GetDifficulty(),
 			"stdDev":         class.GetStdDev(),
 		})
-		labels = append(labels, class.GetClassName())
-		avgScores = append(avgScores, class.GetAvgScore())
 	}
 
-	blocks = append(blocks, map[string]any{
-		"type":        "table",
-		"title":       "班级情况汇总",
-		"description": fmt.Sprintf("考试 %s，共 %d 名参考学生", reply.GetExamName(), reply.GetTotalParticipants()),
-		"columns": []map[string]any{
-			{"key": "className", "label": "班级"},
-			{"key": "totalStudents", "label": "人数", "align": "right"},
-			{"key": "avgScore", "label": "平均分", "align": "right"},
-			{"key": "highestScore", "label": "最高分", "align": "right"},
-			{"key": "lowestScore", "label": "最低分", "align": "right"},
-			{"key": "scoreDeviation", "label": "离均差", "align": "right"},
-			{"key": "difficulty", "label": "难度", "align": "right"},
-			{"key": "stdDev", "label": "标准差", "align": "right"},
-		},
-		"rows": rows,
-	})
-
-	if len(labels) > 0 {
+	if len(rows) > 0 {
 		blocks = append(blocks, map[string]any{
-			"type":        "chart",
-			"title":       "班级平均分对比",
-			"description": "按班级展示平均分",
-			"chartType":   "bar",
-			"labels":      labels,
-			"datasets": []map[string]any{
-				{"label": "平均分", "data": avgScores},
+			"type":  "table",
+			"title": "班级详情",
+			"columns": []map[string]any{
+				{"key": "classId", "label": "班级ID", "align": "right"},
+				{"key": "className", "label": "班级名称"},
+				{"key": "totalStudents", "label": "人数", "align": "right"},
+				{"key": "avgScore", "label": "平均分", "align": "right"},
+				{"key": "highestScore", "label": "最高分", "align": "right"},
+				{"key": "lowestScore", "label": "最低分", "align": "right"},
+				{"key": "scoreDeviation", "label": "离均差", "align": "right"},
+				{"key": "difficulty", "label": "难度", "align": "right"},
+				{"key": "stdDev", "label": "标准差", "align": "right"},
 			},
+			"rows": rows,
 		})
 	}
 
 	return blocks
 }
 
-func buildRatingDistributionBlocks(reply *pb.GetRatingDistributionReply) []map[string]any {
-	blocks := make([]map[string]any, 0)
-
-	rows := make([]map[string]any, 0, len(reply.GetClassDetails())+1)
-	labels := make([]string, 0, len(reply.GetClassDetails())+1)
-	excellent := make([]float64, 0, len(reply.GetClassDetails())+1)
-	good := make([]float64, 0, len(reply.GetClassDetails())+1)
-	pass := make([]float64, 0, len(reply.GetClassDetails())+1)
-	fail := make([]float64, 0, len(reply.GetClassDetails())+1)
-
-	if reply.GetOverallGrade() != nil {
-		overall := reply.GetOverallGrade()
-		rows = append(rows, ratingRow(overall))
-		labels = append(labels, overall.GetClassName())
-		excellent = append(excellent, overall.GetExcellent().GetPercentage())
-		good = append(good, overall.GetGood().GetPercentage())
-		pass = append(pass, overall.GetPass().GetPercentage())
-		fail = append(fail, overall.GetFail().GetPercentage())
+func buildRatingDistributionBlocks(reply *v1.GetRatingDistributionReply) []map[string]any {
+	blocks := []map[string]any{
+		{
+			"type":        "text",
+			"title":       "四率分析",
+			"description": fmt.Sprintf("考试 %s, 范围 %s, 参与人数 %d", reply.GetExamName(), reply.GetScope(), reply.GetTotalParticipants()),
+		},
 	}
 
+	if config := reply.GetConfig(); config != nil {
+		blocks = append(blocks, map[string]any{
+			"type":  "text",
+			"title": "阈值配置",
+			"content": fmt.Sprintf(
+				"优秀 %.2f | 良好 %.2f | 合格 %.2f",
+				config.GetExcellentThreshold(),
+				config.GetGoodThreshold(),
+				config.GetPassThreshold(),
+			),
+		})
+	}
+
+	rows := make([]map[string]any, 0, len(reply.GetClassDetails()))
 	for _, class := range reply.GetClassDetails() {
-		rows = append(rows, ratingRow(class))
-		labels = append(labels, class.GetClassName())
-		excellent = append(excellent, class.GetExcellent().GetPercentage())
-		good = append(good, class.GetGood().GetPercentage())
-		pass = append(pass, class.GetPass().GetPercentage())
-		fail = append(fail, class.GetFail().GetPercentage())
+		rows = append(rows, map[string]any{
+			"classId":       class.GetClassId(),
+			"className":     class.GetClassName(),
+			"totalStudents": class.GetTotalStudents(),
+			"avgScore":      class.GetAvgScore(),
+			"excellent":     class.GetExcellent().GetPercentage(),
+			"good":          class.GetGood().GetPercentage(),
+			"pass":          class.GetPass().GetPercentage(),
+			"fail":          class.GetFail().GetPercentage(),
+		})
 	}
 
-	blocks = append(blocks, map[string]any{
-		"type":        "table",
-		"title":       "四率分析",
-		"description": fmt.Sprintf("考试 %s，优秀 %.0f / 良好 %.0f / 合格 %.0f 分", reply.GetExamName(), reply.GetConfig().GetExcellentThreshold(), reply.GetConfig().GetGoodThreshold(), reply.GetConfig().GetPassThreshold()),
-		"columns": []map[string]any{
-			{"key": "className", "label": "班级"},
-			{"key": "avgScore", "label": "平均分", "align": "right"},
-			{"key": "excellentCount", "label": "优秀人数", "align": "right"},
-			{"key": "excellentPercentage", "label": "优秀率", "align": "right"},
-			{"key": "goodCount", "label": "良好人数", "align": "right"},
-			{"key": "goodPercentage", "label": "良好率", "align": "right"},
-			{"key": "passCount", "label": "合格人数", "align": "right"},
-			{"key": "passPercentage", "label": "合格率", "align": "right"},
-			{"key": "failCount", "label": "低分人数", "align": "right"},
-			{"key": "failPercentage", "label": "低分率", "align": "right"},
-		},
-		"rows": rows,
-	})
-
-	if len(labels) > 0 {
+	if len(rows) > 0 {
 		blocks = append(blocks, map[string]any{
-			"type":        "chart",
-			"title":       "四率分布",
-			"description": "按班级展示优秀、良好、合格、低分百分比",
-			"chartType":   "bar",
-			"labels":      labels,
-			"datasets": []map[string]any{
-				{"label": "优秀", "data": excellent},
-				{"label": "良好", "data": good},
-				{"label": "合格", "data": pass},
-				{"label": "低分", "data": fail},
+			"type":  "table",
+			"title": "四率详情",
+			"columns": []map[string]any{
+				{"key": "classId", "label": "班级ID", "align": "right"},
+				{"key": "className", "label": "班级名称"},
+				{"key": "totalStudents", "label": "人数", "align": "right"},
+				{"key": "avgScore", "label": "平均分", "align": "right"},
+				{"key": "excellent", "label": "优秀%", "align": "right"},
+				{"key": "good", "label": "良好%", "align": "right"},
+				{"key": "pass", "label": "合格%", "align": "right"},
+				{"key": "fail", "label": "低分%", "align": "right"},
 			},
+			"rows": rows,
 		})
 	}
 
 	return blocks
-}
-
-func ratingRow(item interface {
-	GetClassName() string
-	GetAvgScore() float64
-	GetExcellent() *pb.RatingItem
-	GetGood() *pb.RatingItem
-	GetPass() *pb.RatingItem
-	GetFail() *pb.RatingItem
-}) map[string]any {
-	return map[string]any{
-		"className":           item.GetClassName(),
-		"avgScore":            item.GetAvgScore(),
-		"excellentCount":      item.GetExcellent().GetCount(),
-		"excellentPercentage": item.GetExcellent().GetPercentage(),
-		"goodCount":           item.GetGood().GetCount(),
-		"goodPercentage":      item.GetGood().GetPercentage(),
-		"passCount":           item.GetPass().GetCount(),
-		"passPercentage":      item.GetPass().GetPercentage(),
-		"failCount":           item.GetFail().GetCount(),
-		"failPercentage":      item.GetFail().GetPercentage(),
-	}
 }

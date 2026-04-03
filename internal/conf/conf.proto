@@ -43,7 +43,14 @@ message Data {
 }
 
 message LLM {
-  string model = 1;
-  string api_key = 2;
-  string api_base = 3;
+  string provider = 1;
+  string model = 2;
+  string api_key = 3;
+  string api_base = 4;
+  string region = 5;
+  string access_key = 6;
+  string secret_key = 7;
+  double temperature = 8;
+  int32 max_iterations = 9;
+  string system_prompt = 10;
 }
