@@ -186,13 +186,13 @@ func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, req Cha
 	resultComponents := make([]A2UIComponent, 0)
 
 	for {
-		if err := ctx.Err(); err != nil {
+		if err = ctx.Err(); err != nil {
 			_ = send(A2UIMessage{Error: &A2UIErrorMsg{Message: err.Error()}})
 			return
 		}
 
-		event, ok := iter.Next()
-		if !ok {
+		event, ok1 := iter.Next()
+		if !ok1 {
 			break
 		}
 		if event == nil {
@@ -214,7 +214,7 @@ func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, req Cha
 
 		mv := event.Output.MessageOutput
 		if mv.IsStreaming {
-			if err := streamAssistantMessage(mv.MessageStream, &assistantContent, func(content string) bool {
+			if err = streamAssistantMessage(mv.MessageStream, &assistantContent, func(content string) bool {
 				return send(A2UIMessage{
 					DataModelUpdate: &DataModelUpdateMsg{
 						SurfaceID: surfaceID,
@@ -230,9 +230,9 @@ func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, req Cha
 			continue
 		}
 
-		msg, err := mv.GetMessage()
-		if err != nil {
-			_ = send(A2UIMessage{Error: &A2UIErrorMsg{Message: err.Error()}})
+		msg, err1 := mv.GetMessage()
+		if err1 != nil {
+			_ = send(A2UIMessage{Error: &A2UIErrorMsg{Message: err1.Error()}})
 			return
 		}
 		if msg == nil {
