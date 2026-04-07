@@ -380,6 +380,9 @@ func (h *ChatHandler) buildRunner() error {
 			},
 		},
 		MaxIterations: maxIterations,
+		Handlers: []adk.ChatModelAgentMiddleware{
+			newChatTimingMiddleware(h.logger, strings.TrimSpace(h.llm.GetModel())),
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("create chat model agent: %w", err)

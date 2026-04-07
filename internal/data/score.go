@@ -182,6 +182,14 @@ func (r *scoreRepo) GetClassSummary(ctx context.Context, examID, subjectID int64
 	}
 	stats.TotalParticipants = totalParticipants
 
+	var fullScore float64
+	if subjectID > 0 {
+		fullScore, _ = r.subjectRepo.GetFullScoreByExamSubject(ctx, examID, subjectID)
+	} else {
+		// 全科模式：计算加权平均满分
+		fullScore = r.calculateOverallFullScore(ctx, examID)
+	}
+
 	// 查询各班级统计
 	var classStats []struct {
 		ClassID       int64   `gorm:"column:class_id"`
@@ -229,15 +237,6 @@ func (r *scoreRepo) GetClassSummary(ctx context.Context, examID, subjectID int64
 	var overallStdDev float64
 
 	for i, stat := range classStats {
-		// 计算难度（需要获取满分）
-		var fullScore float64
-		if subjectID > 0 {
-			fullScore, _ = r.subjectRepo.GetFullScoreByExamSubject(ctx, examID, subjectID)
-		} else {
-			// 全科模式：计算加权平均满分
-			fullScore = r.calculateOverallFullScore(ctx, examID)
-		}
-
 		stats.ClassDetails[i] = &biz.ClassStats{
 			ClassID:       stat.ClassID,
 			ClassName:     stat.ClassName,
