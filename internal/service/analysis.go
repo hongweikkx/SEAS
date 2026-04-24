@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"strconv"
+
 	"seas/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -22,6 +24,11 @@ func NewAnalysisService(analysisUC *biz.AnalysisUseCase, examAnalysisUC *biz.Exa
 	}
 }
 
+func parseInt64(s string) int64 {
+	v, _ := strconv.ParseInt(s, 10, 64)
+	return v
+}
+
 // ListExams 获取考试列表
 func (s *AnalysisService) ListExams(ctx context.Context, req *pb.ListExamsRequest) (*pb.ListExamsReply, error) {
 	log.Context(ctx).Infof("Received ListExamsRequest: %v", req)
@@ -40,7 +47,7 @@ func (s *AnalysisService) ListExams(ctx context.Context, req *pb.ListExamsReques
 	reply.Exams = make([]*pb.ExamInfo, len(exams))
 	for i, exam := range exams {
 		reply.Exams[i] = &pb.ExamInfo{
-			Id:        exam.ID,
+			Id:        strconv.FormatInt(exam.ID, 10),
 			Name:      exam.Name,
 			ExamDate:  exam.ExamDate.Format("2006-01-02T15:04:05Z"),
 			CreatedAt: exam.CreatedAt.Format("2006-01-02T15:04:05Z"),
@@ -54,7 +61,7 @@ func (s *AnalysisService) ListExams(ctx context.Context, req *pb.ListExamsReques
 func (s *AnalysisService) ListSubjectsByExam(ctx context.Context, req *pb.ListSubjectsByExamRequest) (*pb.ListSubjectsByExamReply, error) {
 	log.Context(ctx).Infof("Received ListSubjectsByExamRequest: %v", req)
 
-	subjects, total, err := s.examAnalysisUC.ListSubjectsByExam(ctx, req.GetExamId(), req.GetPageIndex(), req.GetPageSize())
+	subjects, total, err := s.examAnalysisUC.ListSubjectsByExam(ctx, parseInt64(req.GetExamId()), req.GetPageIndex(), req.GetPageSize())
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +77,7 @@ func (s *AnalysisService) ListSubjectsByExam(ctx context.Context, req *pb.ListSu
 	for i, subject := range subjects {
 		// 暂时使用默认满分，后续需要从 exam_subjects 表获取
 		reply.Subjects[i] = &pb.SubjectBasicInfo{
-			Id:        subject.ID,
+			Id:        strconv.FormatInt(subject.ID, 10),
 			Name:      subject.Name,
 			FullScore: 100, // 默认值
 		}
@@ -83,13 +90,13 @@ func (s *AnalysisService) ListSubjectsByExam(ctx context.Context, req *pb.ListSu
 func (s *AnalysisService) GetSubjectSummary(ctx context.Context, req *pb.GetSubjectSummaryRequest) (*pb.GetSubjectSummaryReply, error) {
 	log.Context(ctx).Infof("Received GetSubjectSummaryRequest: %v", req)
 
-	stats, err := s.examAnalysisUC.GetSubjectSummary(ctx, req.GetExamId(), req.GetSubjectId())
+	stats, err := s.examAnalysisUC.GetSubjectSummary(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()))
 	if err != nil {
 		return nil, err
 	}
 
 	// 获取考试名称
-	examName, err := s.examAnalysisUC.GetExamName(ctx, req.GetExamId())
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
 	if err != nil {
 		log.Context(ctx).Errorf("GetExamName failed: %v", err)
 		examName = "未知考试" // 默认值
@@ -107,7 +114,7 @@ func (s *AnalysisService) GetSubjectSummary(ctx context.Context, req *pb.GetSubj
 	reply.Subjects = make([]*pb.SubjectSummaryItem, len(stats.Subjects))
 	for i, subject := range stats.Subjects {
 		reply.Subjects[i] = &pb.SubjectSummaryItem{
-			Id:           subject.ID,
+			Id:           strconv.FormatInt(subject.ID, 10),
 			Name:         subject.Name,
 			FullScore:    subject.FullScore,
 			AvgScore:     subject.AvgScore,
@@ -125,13 +132,13 @@ func (s *AnalysisService) GetSubjectSummary(ctx context.Context, req *pb.GetSubj
 func (s *AnalysisService) GetClassSummary(ctx context.Context, req *pb.GetClassSummaryRequest) (*pb.GetClassSummaryReply, error) {
 	log.Context(ctx).Infof("Received GetClassSummaryRequest: %v", req)
 
-	stats, err := s.examAnalysisUC.GetClassSummary(ctx, req.GetExamId(), req.GetSubjectId())
+	stats, err := s.examAnalysisUC.GetClassSummary(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()))
 	if err != nil {
 		return nil, err
 	}
 
 	// 获取考试名称
-	examName, err := s.examAnalysisUC.GetExamName(ctx, req.GetExamId())
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
 	if err != nil {
 		log.Context(ctx).Errorf("GetExamName failed: %v", err)
 		examName = "未知考试" // 默认值
@@ -146,7 +153,7 @@ func (s *AnalysisService) GetClassSummary(ctx context.Context, req *pb.GetClassS
 
 	if stats.OverallGrade != nil {
 		reply.OverallGrade = &pb.ClassSummaryItem{
-			ClassId:        stats.OverallGrade.ClassID,
+			ClassId:        strconv.FormatInt(stats.OverallGrade.ClassID, 10),
 			ClassName:      stats.OverallGrade.ClassName,
 			TotalStudents:  stats.OverallGrade.TotalStudents,
 			AvgScore:       stats.OverallGrade.AvgScore,
@@ -161,7 +168,7 @@ func (s *AnalysisService) GetClassSummary(ctx context.Context, req *pb.GetClassS
 	reply.ClassDetails = make([]*pb.ClassSummaryItem, len(stats.ClassDetails))
 	for i, class := range stats.ClassDetails {
 		reply.ClassDetails[i] = &pb.ClassSummaryItem{
-			ClassId:        class.ClassID,
+			ClassId:        strconv.FormatInt(class.ClassID, 10),
 			ClassName:      class.ClassName,
 			TotalStudents:  class.TotalStudents,
 			AvgScore:       class.AvgScore,
@@ -195,13 +202,13 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 		passThreshold = 60
 	}
 
-	stats, err := s.examAnalysisUC.GetRatingDistribution(ctx, req.GetExamId(), req.GetSubjectId(), excellentThreshold, goodThreshold, passThreshold)
+	stats, err := s.examAnalysisUC.GetRatingDistribution(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()), excellentThreshold, goodThreshold, passThreshold)
 	if err != nil {
 		return nil, err
 	}
 
 	// 获取考试名称
-	examName, err := s.examAnalysisUC.GetExamName(ctx, req.GetExamId())
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
 	if err != nil {
 		log.Context(ctx).Errorf("GetExamName failed: %v", err)
 		examName = "未知考试" // 默认值
@@ -221,7 +228,7 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 
 	if stats.OverallGrade != nil {
 		reply.OverallGrade = &pb.ClassRatingDistribution{
-			ClassId:       stats.OverallGrade.ClassID,
+			ClassId:       strconv.FormatInt(stats.OverallGrade.ClassID, 10),
 			ClassName:     stats.OverallGrade.ClassName,
 			TotalStudents: stats.OverallGrade.TotalStudents,
 			AvgScore:      stats.OverallGrade.AvgScore,
@@ -247,7 +254,7 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 	reply.ClassDetails = make([]*pb.ClassRatingDistribution, len(stats.ClassDetails))
 	for i, class := range stats.ClassDetails {
 		reply.ClassDetails[i] = &pb.ClassRatingDistribution{
-			ClassId:       class.ClassID,
+			ClassId:       strconv.FormatInt(class.ClassID, 10),
 			ClassName:     class.ClassName,
 			TotalStudents: class.TotalStudents,
 			AvgScore:      class.AvgScore,
@@ -267,6 +274,252 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 				Count:      class.Fail.Count,
 				Percentage: class.Fail.Percentage,
 			},
+		}
+	}
+
+	return reply, nil
+}
+
+// GetClassSubjectSummary 获取班级学科下钻汇总
+func (s *AnalysisService) GetClassSubjectSummary(ctx context.Context, req *pb.GetClassSubjectSummaryRequest) (*pb.GetClassSubjectSummaryReply, error) {
+	log.Context(ctx).Infof("Received GetClassSubjectSummaryRequest: %v", req)
+
+	stats, err := s.examAnalysisUC.GetClassSubjectSummary(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetClassId()))
+	if err != nil {
+		return nil, err
+	}
+
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
+	if err != nil {
+		log.Context(ctx).Errorf("GetExamName failed: %v", err)
+		examName = "未知考试"
+	}
+
+	reply := &pb.GetClassSubjectSummaryReply{
+		ExamId:    req.GetExamId(),
+		ExamName:  examName,
+		ClassId:   req.GetClassId(),
+		ClassName: stats.ClassName,
+	}
+
+	if stats.Overall != nil {
+		reply.Overall = &pb.ClassSubjectItem{
+			SubjectId:     strconv.FormatInt(stats.Overall.SubjectID, 10),
+			SubjectName:   stats.Overall.SubjectName,
+			FullScore:     stats.Overall.FullScore,
+			ClassAvgScore: stats.Overall.ClassAvgScore,
+			GradeAvgScore: stats.Overall.GradeAvgScore,
+			ScoreDiff:     stats.Overall.ScoreDiff,
+			ClassHighest:  stats.Overall.ClassHighest,
+			ClassLowest:   stats.Overall.ClassLowest,
+			ClassRank:     stats.Overall.ClassRank,
+			TotalClasses:  stats.Overall.TotalClasses,
+		}
+	}
+
+	reply.Subjects = make([]*pb.ClassSubjectItem, len(stats.Subjects))
+	for i, subject := range stats.Subjects {
+		reply.Subjects[i] = &pb.ClassSubjectItem{
+			SubjectId:     strconv.FormatInt(subject.SubjectID, 10),
+			SubjectName:   subject.SubjectName,
+			FullScore:     subject.FullScore,
+			ClassAvgScore: subject.ClassAvgScore,
+			GradeAvgScore: subject.GradeAvgScore,
+			ScoreDiff:     subject.ScoreDiff,
+			ClassHighest:  subject.ClassHighest,
+			ClassLowest:   subject.ClassLowest,
+			ClassRank:     subject.ClassRank,
+			TotalClasses:  subject.TotalClasses,
+		}
+	}
+
+	return reply, nil
+}
+
+// GetSingleClassSummary 获取单科班级汇总
+func (s *AnalysisService) GetSingleClassSummary(ctx context.Context, req *pb.GetSingleClassSummaryRequest) (*pb.GetSingleClassSummaryReply, error) {
+	log.Context(ctx).Infof("Received GetSingleClassSummaryRequest: %v", req)
+
+	stats, err := s.examAnalysisUC.GetSingleClassSummary(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()))
+	if err != nil {
+		return nil, err
+	}
+
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
+	if err != nil {
+		log.Context(ctx).Errorf("GetExamName failed: %v", err)
+		examName = "未知考试"
+	}
+
+	reply := &pb.GetSingleClassSummaryReply{
+		ExamId:    req.GetExamId(),
+		ExamName:  examName,
+		SubjectId: req.GetSubjectId(),
+	}
+
+	if stats.Overall != nil {
+		reply.Overall = &pb.SingleClassSummaryItem{
+			ClassId:         strconv.FormatInt(stats.Overall.ClassID, 10),
+			ClassName:       stats.Overall.ClassName,
+			TotalStudents:   stats.Overall.TotalStudents,
+			SubjectAvgScore: stats.Overall.SubjectAvgScore,
+			GradeAvgScore:   stats.Overall.GradeAvgScore,
+			ScoreDiff:       stats.Overall.ScoreDiff,
+			ClassRank:       stats.Overall.ClassRank,
+			TotalClasses:    stats.Overall.TotalClasses,
+			PassRate:        stats.Overall.PassRate,
+			ExcellentRate:   stats.Overall.ExcellentRate,
+		}
+		reply.SubjectName = stats.SubjectName
+	}
+
+	reply.Classes = make([]*pb.SingleClassSummaryItem, len(stats.Classes))
+	for i, class := range stats.Classes {
+		reply.Classes[i] = &pb.SingleClassSummaryItem{
+			ClassId:         strconv.FormatInt(class.ClassID, 10),
+			ClassName:       class.ClassName,
+			TotalStudents:   class.TotalStudents,
+			SubjectAvgScore: class.SubjectAvgScore,
+			GradeAvgScore:   class.GradeAvgScore,
+			ScoreDiff:       class.ScoreDiff,
+			ClassRank:       class.ClassRank,
+			TotalClasses:    class.TotalClasses,
+			PassRate:        class.PassRate,
+			ExcellentRate:   class.ExcellentRate,
+		}
+	}
+
+	return reply, nil
+}
+
+// GetSingleClassQuestions 获取单科班级题目汇总
+func (s *AnalysisService) GetSingleClassQuestions(ctx context.Context, req *pb.GetSingleClassQuestionsRequest) (*pb.GetSingleClassQuestionsReply, error) {
+	log.Context(ctx).Infof("Received GetSingleClassQuestionsRequest: %v", req)
+
+	stats, err := s.examAnalysisUC.GetSingleClassQuestions(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()), parseInt64(req.GetClassId()))
+	if err != nil {
+		return nil, err
+	}
+
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
+	if err != nil {
+		log.Context(ctx).Errorf("GetExamName failed: %v", err)
+		examName = "未知考试"
+	}
+
+	reply := &pb.GetSingleClassQuestionsReply{
+		ExamId:      req.GetExamId(),
+		ExamName:    examName,
+		SubjectId:   req.GetSubjectId(),
+		SubjectName: stats.SubjectName,
+		ClassId:     req.GetClassId(),
+		ClassName:   stats.ClassName,
+	}
+
+	reply.Questions = make([]*pb.ClassQuestionItem, len(stats.Questions))
+	for i, q := range stats.Questions {
+		reply.Questions[i] = &pb.ClassQuestionItem{
+			QuestionId:     q.QuestionID,
+			QuestionNumber: q.QuestionNumber,
+			QuestionType:   q.QuestionType,
+			FullScore:      q.FullScore,
+			ClassAvgScore:  q.ClassAvgScore,
+			ScoreRate:      q.ScoreRate,
+			GradeAvgScore:  q.GradeAvgScore,
+			Difficulty:     q.Difficulty,
+		}
+	}
+
+	return reply, nil
+}
+
+// GetSingleQuestionSummary 获取单科题目汇总
+func (s *AnalysisService) GetSingleQuestionSummary(ctx context.Context, req *pb.GetSingleQuestionSummaryRequest) (*pb.GetSingleQuestionSummaryReply, error) {
+	log.Context(ctx).Infof("Received GetSingleQuestionSummaryRequest: %v", req)
+
+	stats, err := s.examAnalysisUC.GetSingleQuestionSummary(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()))
+	if err != nil {
+		return nil, err
+	}
+
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
+	if err != nil {
+		log.Context(ctx).Errorf("GetExamName failed: %v", err)
+		examName = "未知考试"
+	}
+
+	reply := &pb.GetSingleQuestionSummaryReply{
+		ExamId:      req.GetExamId(),
+		ExamName:    examName,
+		SubjectId:   req.GetSubjectId(),
+		SubjectName: stats.SubjectName,
+	}
+
+	reply.Questions = make([]*pb.SingleQuestionSummaryItem, len(stats.Questions))
+	for i, q := range stats.Questions {
+		item := &pb.SingleQuestionSummaryItem{
+			QuestionId:     q.QuestionID,
+			QuestionNumber: q.QuestionNumber,
+			QuestionType:   q.QuestionType,
+			FullScore:      q.FullScore,
+			GradeAvgScore:  q.GradeAvgScore,
+			ScoreRate:      q.ScoreRate,
+			Difficulty:     q.Difficulty,
+		}
+		item.ClassBreakdown = make([]*pb.QuestionClassBreakdown, len(q.ClassBreakdown))
+		for j, cb := range q.ClassBreakdown {
+			item.ClassBreakdown[j] = &pb.QuestionClassBreakdown{
+				ClassId:   strconv.FormatInt(cb.ClassID, 10),
+				ClassName: cb.ClassName,
+				AvgScore:  cb.AvgScore,
+			}
+		}
+		reply.Questions[i] = item
+	}
+
+	return reply, nil
+}
+
+// GetSingleQuestionDetail 获取单科班级题目详情
+func (s *AnalysisService) GetSingleQuestionDetail(ctx context.Context, req *pb.GetSingleQuestionDetailRequest) (*pb.GetSingleQuestionDetailReply, error) {
+	log.Context(ctx).Infof("Received GetSingleQuestionDetailRequest: %v", req)
+
+	stats, err := s.examAnalysisUC.GetSingleQuestionDetail(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()), parseInt64(req.GetClassId()), req.GetQuestionId())
+	if err != nil {
+		return nil, err
+	}
+
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
+	if err != nil {
+		log.Context(ctx).Errorf("GetExamName failed: %v", err)
+		examName = "未知考试"
+	}
+
+	reply := &pb.GetSingleQuestionDetailReply{
+		ExamId:          req.GetExamId(),
+		ExamName:        examName,
+		SubjectId:       req.GetSubjectId(),
+		SubjectName:     stats.SubjectName,
+		ClassId:         req.GetClassId(),
+		ClassName:       stats.ClassName,
+		QuestionId:      stats.QuestionID,
+		QuestionNumber:  stats.QuestionNumber,
+		QuestionType:    stats.QuestionType,
+		FullScore:       stats.FullScore,
+		QuestionContent: stats.QuestionContent,
+	}
+
+	reply.Students = make([]*pb.StudentQuestionDetail, len(stats.Students))
+	for i, st := range stats.Students {
+		reply.Students[i] = &pb.StudentQuestionDetail{
+			StudentId:     strconv.FormatInt(st.StudentID, 10),
+			StudentName:   st.StudentName,
+			Score:         st.Score,
+			FullScore:     st.FullScore,
+			ScoreRate:     st.ScoreRate,
+			ClassRank:     st.ClassRank,
+			GradeRank:     st.GradeRank,
+			AnswerContent: st.AnswerContent,
 		}
 	}
 

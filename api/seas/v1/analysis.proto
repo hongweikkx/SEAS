@@ -38,6 +38,41 @@ service Analysis {
     };
   }
 
+  // 新增接口：班级学科下钻
+  rpc GetClassSubjectSummary (GetClassSubjectSummaryRequest) returns (GetClassSubjectSummaryReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/classes/{class_id}/subjects"
+    };
+  }
+
+  // 新增接口：单科班级汇总
+  rpc GetSingleClassSummary (GetSingleClassSummaryRequest) returns (GetSingleClassSummaryReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes"
+    };
+  }
+
+  // 新增接口：单科班级题目汇总
+  rpc GetSingleClassQuestions (GetSingleClassQuestionsRequest) returns (GetSingleClassQuestionsReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions"
+    };
+  }
+
+  // 新增接口：单科题目汇总
+  rpc GetSingleQuestionSummary (GetSingleQuestionSummaryRequest) returns (GetSingleQuestionSummaryReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions"
+    };
+  }
+
+  // 新增接口：单科班级题目详情
+  rpc GetSingleQuestionDetail (GetSingleQuestionDetailRequest) returns (GetSingleQuestionDetailReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}"
+    };
+  }
+
   // 新增接口：四率分析
   rpc GetRatingDistribution (GetRatingDistributionRequest) returns (GetRatingDistributionReply) {
     option (google.api.http) = {
@@ -55,7 +90,7 @@ message ListExamsRequest {
 }
 
 message ExamInfo {
-  int64 id = 1;
+  string id = 1;
   string name = 2;
   string exam_date = 3;  // RFC3339格式
   string created_at = 4; // RFC3339格式
@@ -70,19 +105,19 @@ message ListExamsReply {
 
 // 2. 学科列表
 message ListSubjectsByExamRequest {
-  int64 exam_id = 1;
+  string exam_id = 1;
   int32 page_index = 2;  // 默认1
   int32 page_size = 3;   // 默认20
 }
 
 message SubjectBasicInfo {
-  int64 id = 1;
+  string id = 1;
   string name = 2;
   double full_score = 3;
 }
 
 message ListSubjectsByExamReply {
-  int64 exam_id = 1;
+  string exam_id = 1;
   repeated SubjectBasicInfo subjects = 2;
   int64 total_count = 3;
   int32 page_index = 4;
@@ -91,13 +126,13 @@ message ListSubjectsByExamReply {
 
 // 3. 学科情况汇总
 message GetSubjectSummaryRequest {
-  int64 exam_id = 1;
+  string exam_id = 1;
   string scope = 2;           // "all_subjects" 或 "single_subject"
-  int64 subject_id = 3;       // scope=single_subject时必传
+  string subject_id = 3;       // scope=single_subject时必传
 }
 
 message SubjectSummaryItem {
-  int64 id = 1;
+  string id = 1;
   string name = 2;
   double full_score = 3;
   double avg_score = 4;
@@ -108,7 +143,7 @@ message SubjectSummaryItem {
 }
 
 message GetSubjectSummaryReply {
-  int64 exam_id = 1;
+  string exam_id = 1;
   string exam_name = 2;
   string scope = 3;
   int64 total_participants = 4;
@@ -119,13 +154,13 @@ message GetSubjectSummaryReply {
 
 // 4. 班级情况汇总
 message GetClassSummaryRequest {
-  int64 exam_id = 1;
+  string exam_id = 1;
   string scope = 2;           // "all_subjects" 或 "single_subject"
-  int64 subject_id = 3;       // scope=single_subject时必传
+  string subject_id = 3;       // scope=single_subject时必传
 }
 
 message ClassSummaryItem {
-  int64 class_id = 1;
+  string class_id = 1;
   string class_name = 2;
   int64 total_students = 3;
   double avg_score = 4;
@@ -137,7 +172,7 @@ message ClassSummaryItem {
 }
 
 message GetClassSummaryReply {
-  int64 exam_id = 1;
+  string exam_id = 1;
   string exam_name = 2;
   string scope = 3;
   int64 total_participants = 4;
@@ -145,7 +180,156 @@ message GetClassSummaryReply {
   repeated ClassSummaryItem class_details = 6;
 }
 
-// 5. 四率分析
+// 5. 班级学科下钻
+message GetClassSubjectSummaryRequest {
+  string exam_id = 1;
+  string class_id = 2;
+}
+
+message ClassSubjectItem {
+  string subject_id = 1;
+  string subject_name = 2;
+  double full_score = 3;
+  double class_avg_score = 4;
+  double grade_avg_score = 5;
+  double score_diff = 6;
+  double class_highest = 7;
+  double class_lowest = 8;
+  int32 class_rank = 9;
+  int32 total_classes = 10;
+}
+
+message GetClassSubjectSummaryReply {
+  string exam_id = 1;
+  string exam_name = 2;
+  string class_id = 3;
+  string class_name = 4;
+  ClassSubjectItem overall = 5;
+  repeated ClassSubjectItem subjects = 6;
+}
+
+// 6. 单科班级汇总
+message GetSingleClassSummaryRequest {
+  string exam_id = 1;
+  string subject_id = 2;
+}
+
+message SingleClassSummaryItem {
+  string class_id = 1;
+  string class_name = 2;
+  int64 total_students = 3;
+  double subject_avg_score = 4;
+  double grade_avg_score = 5;
+  double score_diff = 6;
+  int32 class_rank = 7;
+  int32 total_classes = 8;
+  double pass_rate = 9;
+  double excellent_rate = 10;
+}
+
+message GetSingleClassSummaryReply {
+  string exam_id = 1;
+  string exam_name = 2;
+  string subject_id = 3;
+  string subject_name = 4;
+  SingleClassSummaryItem overall = 5;
+  repeated SingleClassSummaryItem classes = 6;
+}
+
+// 7. 单科班级题目汇总
+message GetSingleClassQuestionsRequest {
+  string exam_id = 1;
+  string subject_id = 2;
+  string class_id = 3;
+}
+
+message ClassQuestionItem {
+  string question_id = 1;
+  string question_number = 2;
+  string question_type = 3;
+  double full_score = 4;
+  double class_avg_score = 5;
+  double score_rate = 6;
+  double grade_avg_score = 7;
+  string difficulty = 8;
+}
+
+message GetSingleClassQuestionsReply {
+  string exam_id = 1;
+  string exam_name = 2;
+  string subject_id = 3;
+  string subject_name = 4;
+  string class_id = 5;
+  string class_name = 6;
+  repeated ClassQuestionItem questions = 7;
+}
+
+// 8. 单科题目汇总
+message GetSingleQuestionSummaryRequest {
+  string exam_id = 1;
+  string subject_id = 2;
+}
+
+message QuestionClassBreakdown {
+  string class_id = 1;
+  string class_name = 2;
+  double avg_score = 3;
+}
+
+message SingleQuestionSummaryItem {
+  string question_id = 1;
+  string question_number = 2;
+  string question_type = 3;
+  double full_score = 4;
+  double grade_avg_score = 5;
+  repeated QuestionClassBreakdown class_breakdown = 6;
+  double score_rate = 7;
+  string difficulty = 8;
+}
+
+message GetSingleQuestionSummaryReply {
+  string exam_id = 1;
+  string exam_name = 2;
+  string subject_id = 3;
+  string subject_name = 4;
+  repeated SingleQuestionSummaryItem questions = 5;
+}
+
+// 9. 单科班级题目详情
+message GetSingleQuestionDetailRequest {
+  string exam_id = 1;
+  string subject_id = 2;
+  string class_id = 3;
+  string question_id = 4;
+}
+
+message StudentQuestionDetail {
+  string student_id = 1;
+  string student_name = 2;
+  double score = 3;
+  double full_score = 4;
+  double score_rate = 5;
+  int32 class_rank = 6;
+  int32 grade_rank = 7;
+  string answer_content = 8;
+}
+
+message GetSingleQuestionDetailReply {
+  string exam_id = 1;
+  string exam_name = 2;
+  string subject_id = 3;
+  string subject_name = 4;
+  string class_id = 5;
+  string class_name = 6;
+  string question_id = 7;
+  string question_number = 8;
+  string question_type = 9;
+  double full_score = 10;
+  string question_content = 11;
+  repeated StudentQuestionDetail students = 12;
+}
+
+// 10. 四率分析
 message RatingConfig {
   double excellent_threshold = 1;  // 优秀分数线，默认90
   double good_threshold = 2;       // 良好分数线，默认70
@@ -153,9 +337,9 @@ message RatingConfig {
 }
 
 message GetRatingDistributionRequest {
-  int64 exam_id = 1;
+  string exam_id = 1;
   string scope = 2;                     // "all_subjects" 或 "single_subject"
-  int64 subject_id = 3;                 // scope=single_subject时必传
+  string subject_id = 3;                 // scope=single_subject时必传
   double excellent_threshold = 4;       // 优秀分数线，默认90（可选）
   double good_threshold = 5;            // 良好分数线，默认70（可选）
   double pass_threshold = 6;            // 合格分数线，默认60（可选）
@@ -167,7 +351,7 @@ message RatingItem {
 }
 
 message ClassRatingDistribution {
-  int64 class_id = 1;
+  string class_id = 1;
   string class_name = 2;
   int64 total_students = 3;
   double avg_score = 4;
@@ -178,7 +362,7 @@ message ClassRatingDistribution {
 }
 
 message GetRatingDistributionReply {
-  int64 exam_id = 1;
+  string exam_id = 1;
   string exam_name = 2;
   string scope = 3;
   int64 total_participants = 4;

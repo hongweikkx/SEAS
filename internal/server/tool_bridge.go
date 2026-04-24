@@ -76,27 +76,27 @@ type listExamsArgs struct {
 }
 
 type listSubjectsByExamArgs struct {
-	ExamID    int64 `json:"exam_id" jsonschema:"required" jsonschema_description:"Exam ID"`
+	ExamID    string `json:"exam_id" jsonschema:"required" jsonschema_description:"Exam ID"`
 	PageIndex int32 `json:"page_index,omitempty" jsonschema_description:"Page number, starts from 1"`
 	PageSize  int32 `json:"page_size,omitempty" jsonschema_description:"Page size"`
 }
 
 type subjectSummaryArgs struct {
-	ExamID    int64  `json:"exam_id" jsonschema:"required" jsonschema_description:"Exam ID"`
+	ExamID    string  `json:"exam_id" jsonschema:"required" jsonschema_description:"Exam ID"`
 	Scope     string `json:"scope" jsonschema:"required,enum=all_subjects,enum=single_subject" jsonschema_description:"Scope of the summary"`
-	SubjectID int64  `json:"subject_id,omitempty" jsonschema_description:"Subject ID when scope is single_subject"`
+	SubjectID string  `json:"subject_id,omitempty" jsonschema_description:"Subject ID when scope is single_subject"`
 }
 
 type classSummaryArgs struct {
-	ExamID    int64  `json:"exam_id" jsonschema:"required" jsonschema_description:"Exam ID"`
+	ExamID    string  `json:"exam_id" jsonschema:"required" jsonschema_description:"Exam ID"`
 	Scope     string `json:"scope" jsonschema:"required,enum=all_subjects,enum=single_subject" jsonschema_description:"Scope of the summary"`
-	SubjectID int64  `json:"subject_id,omitempty" jsonschema_description:"Subject ID when scope is single_subject"`
+	SubjectID string  `json:"subject_id,omitempty" jsonschema_description:"Subject ID when scope is single_subject"`
 }
 
 type ratingDistributionArgs struct {
-	ExamID             int64   `json:"exam_id" jsonschema:"required" jsonschema_description:"Exam ID"`
+	ExamID             string   `json:"exam_id" jsonschema:"required" jsonschema_description:"Exam ID"`
 	Scope              string  `json:"scope" jsonschema:"required,enum=all_subjects,enum=single_subject" jsonschema_description:"Scope of the distribution"`
-	SubjectID          int64   `json:"subject_id,omitempty" jsonschema_description:"Subject ID when scope is single_subject"`
+	SubjectID          string   `json:"subject_id,omitempty" jsonschema_description:"Subject ID when scope is single_subject"`
 	ExcellentThreshold float64 `json:"excellent_threshold,omitempty" jsonschema_description:"Score threshold for excellent, default: 90"`
 	GoodThreshold      float64 `json:"good_threshold,omitempty" jsonschema_description:"Score threshold for good, default: 70"`
 	PassThreshold      float64 `json:"pass_threshold,omitempty" jsonschema_description:"Score threshold for pass, default: 60"`

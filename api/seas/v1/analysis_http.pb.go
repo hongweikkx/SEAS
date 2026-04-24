@@ -19,17 +19,32 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationAnalysisGetClassSubjectSummary = "/seas.v1.Analysis/GetClassSubjectSummary"
 const OperationAnalysisGetClassSummary = "/seas.v1.Analysis/GetClassSummary"
 const OperationAnalysisGetRatingDistribution = "/seas.v1.Analysis/GetRatingDistribution"
+const OperationAnalysisGetSingleClassQuestions = "/seas.v1.Analysis/GetSingleClassQuestions"
+const OperationAnalysisGetSingleClassSummary = "/seas.v1.Analysis/GetSingleClassSummary"
+const OperationAnalysisGetSingleQuestionDetail = "/seas.v1.Analysis/GetSingleQuestionDetail"
+const OperationAnalysisGetSingleQuestionSummary = "/seas.v1.Analysis/GetSingleQuestionSummary"
 const OperationAnalysisGetSubjectSummary = "/seas.v1.Analysis/GetSubjectSummary"
 const OperationAnalysisListExams = "/seas.v1.Analysis/ListExams"
 const OperationAnalysisListSubjectsByExam = "/seas.v1.Analysis/ListSubjectsByExam"
 
 type AnalysisHTTPServer interface {
+	// GetClassSubjectSummary 新增接口：班级学科下钻
+	GetClassSubjectSummary(context.Context, *GetClassSubjectSummaryRequest) (*GetClassSubjectSummaryReply, error)
 	// GetClassSummary 新增接口：班级情况汇总
 	GetClassSummary(context.Context, *GetClassSummaryRequest) (*GetClassSummaryReply, error)
 	// GetRatingDistribution 新增接口：四率分析
 	GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error)
+	// GetSingleClassQuestions 新增接口：单科班级题目汇总
+	GetSingleClassQuestions(context.Context, *GetSingleClassQuestionsRequest) (*GetSingleClassQuestionsReply, error)
+	// GetSingleClassSummary 新增接口：单科班级汇总
+	GetSingleClassSummary(context.Context, *GetSingleClassSummaryRequest) (*GetSingleClassSummaryReply, error)
+	// GetSingleQuestionDetail 新增接口：单科班级题目详情
+	GetSingleQuestionDetail(context.Context, *GetSingleQuestionDetailRequest) (*GetSingleQuestionDetailReply, error)
+	// GetSingleQuestionSummary 新增接口：单科题目汇总
+	GetSingleQuestionSummary(context.Context, *GetSingleQuestionSummaryRequest) (*GetSingleQuestionSummaryReply, error)
 	// GetSubjectSummary 新增接口：学科情况汇总
 	GetSubjectSummary(context.Context, *GetSubjectSummaryRequest) (*GetSubjectSummaryReply, error)
 	// ListExams 新增接口：考试列表
@@ -44,6 +59,11 @@ func RegisterAnalysisHTTPServer(s *http.Server, srv AnalysisHTTPServer) {
 	r.GET("/seas/api/v1/exams/{exam_id}/subjects", _Analysis_ListSubjectsByExam0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/analysis/subject-summary", _Analysis_GetSubjectSummary0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/analysis/class-summary", _Analysis_GetClassSummary0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/classes/{class_id}/subjects", _Analysis_GetClassSubjectSummary0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes", _Analysis_GetSingleClassSummary0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions", _Analysis_GetSingleClassQuestions0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions", _Analysis_GetSingleQuestionSummary0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}", _Analysis_GetSingleQuestionDetail0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/analysis/rating-distribution", _Analysis_GetRatingDistribution0_HTTP_Handler(srv))
 }
 
@@ -132,6 +152,116 @@ func _Analysis_GetClassSummary0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx ht
 	}
 }
 
+func _Analysis_GetClassSubjectSummary0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetClassSubjectSummaryRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetClassSubjectSummary)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetClassSubjectSummary(ctx, req.(*GetClassSubjectSummaryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetClassSubjectSummaryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Analysis_GetSingleClassSummary0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSingleClassSummaryRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetSingleClassSummary)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSingleClassSummary(ctx, req.(*GetSingleClassSummaryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetSingleClassSummaryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Analysis_GetSingleClassQuestions0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSingleClassQuestionsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetSingleClassQuestions)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSingleClassQuestions(ctx, req.(*GetSingleClassQuestionsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetSingleClassQuestionsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Analysis_GetSingleQuestionSummary0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSingleQuestionSummaryRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetSingleQuestionSummary)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSingleQuestionSummary(ctx, req.(*GetSingleQuestionSummaryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetSingleQuestionSummaryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Analysis_GetSingleQuestionDetail0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSingleQuestionDetailRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetSingleQuestionDetail)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSingleQuestionDetail(ctx, req.(*GetSingleQuestionDetailRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetSingleQuestionDetailReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _Analysis_GetRatingDistribution0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in GetRatingDistributionRequest
@@ -155,8 +285,13 @@ func _Analysis_GetRatingDistribution0_HTTP_Handler(srv AnalysisHTTPServer) func(
 }
 
 type AnalysisHTTPClient interface {
+	GetClassSubjectSummary(ctx context.Context, req *GetClassSubjectSummaryRequest, opts ...http.CallOption) (rsp *GetClassSubjectSummaryReply, err error)
 	GetClassSummary(ctx context.Context, req *GetClassSummaryRequest, opts ...http.CallOption) (rsp *GetClassSummaryReply, err error)
 	GetRatingDistribution(ctx context.Context, req *GetRatingDistributionRequest, opts ...http.CallOption) (rsp *GetRatingDistributionReply, err error)
+	GetSingleClassQuestions(ctx context.Context, req *GetSingleClassQuestionsRequest, opts ...http.CallOption) (rsp *GetSingleClassQuestionsReply, err error)
+	GetSingleClassSummary(ctx context.Context, req *GetSingleClassSummaryRequest, opts ...http.CallOption) (rsp *GetSingleClassSummaryReply, err error)
+	GetSingleQuestionDetail(ctx context.Context, req *GetSingleQuestionDetailRequest, opts ...http.CallOption) (rsp *GetSingleQuestionDetailReply, err error)
+	GetSingleQuestionSummary(ctx context.Context, req *GetSingleQuestionSummaryRequest, opts ...http.CallOption) (rsp *GetSingleQuestionSummaryReply, err error)
 	GetSubjectSummary(ctx context.Context, req *GetSubjectSummaryRequest, opts ...http.CallOption) (rsp *GetSubjectSummaryReply, err error)
 	ListExams(ctx context.Context, req *ListExamsRequest, opts ...http.CallOption) (rsp *ListExamsReply, err error)
 	ListSubjectsByExam(ctx context.Context, req *ListSubjectsByExamRequest, opts ...http.CallOption) (rsp *ListSubjectsByExamReply, err error)
@@ -168,6 +303,19 @@ type AnalysisHTTPClientImpl struct {
 
 func NewAnalysisHTTPClient(client *http.Client) AnalysisHTTPClient {
 	return &AnalysisHTTPClientImpl{client}
+}
+
+func (c *AnalysisHTTPClientImpl) GetClassSubjectSummary(ctx context.Context, in *GetClassSubjectSummaryRequest, opts ...http.CallOption) (*GetClassSubjectSummaryReply, error) {
+	var out GetClassSubjectSummaryReply
+	pattern := "/seas/api/v1/exams/{exam_id}/classes/{class_id}/subjects"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetClassSubjectSummary))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *AnalysisHTTPClientImpl) GetClassSummary(ctx context.Context, in *GetClassSummaryRequest, opts ...http.CallOption) (*GetClassSummaryReply, error) {
@@ -188,6 +336,58 @@ func (c *AnalysisHTTPClientImpl) GetRatingDistribution(ctx context.Context, in *
 	pattern := "/seas/api/v1/exams/{exam_id}/analysis/rating-distribution"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAnalysisGetRatingDistribution))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AnalysisHTTPClientImpl) GetSingleClassQuestions(ctx context.Context, in *GetSingleClassQuestionsRequest, opts ...http.CallOption) (*GetSingleClassQuestionsReply, error) {
+	var out GetSingleClassQuestionsReply
+	pattern := "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetSingleClassQuestions))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AnalysisHTTPClientImpl) GetSingleClassSummary(ctx context.Context, in *GetSingleClassSummaryRequest, opts ...http.CallOption) (*GetSingleClassSummaryReply, error) {
+	var out GetSingleClassSummaryReply
+	pattern := "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetSingleClassSummary))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AnalysisHTTPClientImpl) GetSingleQuestionDetail(ctx context.Context, in *GetSingleQuestionDetailRequest, opts ...http.CallOption) (*GetSingleQuestionDetailReply, error) {
+	var out GetSingleQuestionDetailReply
+	pattern := "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetSingleQuestionDetail))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AnalysisHTTPClientImpl) GetSingleQuestionSummary(ctx context.Context, in *GetSingleQuestionSummaryRequest, opts ...http.CallOption) (*GetSingleQuestionSummaryReply, error) {
+	var out GetSingleQuestionSummaryReply
+	pattern := "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetSingleQuestionSummary))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

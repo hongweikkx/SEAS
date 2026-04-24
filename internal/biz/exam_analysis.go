@@ -2,14 +2,18 @@ package biz
 
 import (
 	"context"
+	"errors"
 	"math"
+	"sort"
+	"strconv"
 )
 
 // ExamAnalysisUseCase 考试分析业务逻辑
 type ExamAnalysisUseCase struct {
-	examRepo    ExamRepo
-	subjectRepo SubjectRepo
-	scoreRepo   ScoreRepo
+	examRepo      ExamRepo
+	subjectRepo   SubjectRepo
+	scoreRepo     ScoreRepo
+	scoreItemRepo ScoreItemRepo
 }
 
 // NewExamAnalysisUseCase 创建考试分析用例
@@ -92,6 +96,103 @@ func (uc *ExamAnalysisUseCase) GetRatingDistribution(ctx context.Context, examID
 	return stats, nil
 }
 
+// WithScoreItemRepo 为后续题目维度接口注入 score item repo。
+func (uc *ExamAnalysisUseCase) WithScoreItemRepo(scoreItemRepo ScoreItemRepo) *ExamAnalysisUseCase {
+	uc.scoreItemRepo = scoreItemRepo
+	return uc
+}
+
+// GetClassSubjectSummary 获取班级学科下钻汇总
+func (uc *ExamAnalysisUseCase) GetClassSubjectSummary(ctx context.Context, examID, classID int64) (*ClassSubjectSummaryStats, error) {
+	return uc.scoreRepo.GetClassSubjectSummary(ctx, examID, classID)
+}
+
+// GetSingleClassSummary 获取单科班级汇总
+func (uc *ExamAnalysisUseCase) GetSingleClassSummary(ctx context.Context, examID, subjectID int64) (*SingleClassSummaryStats, error) {
+	return uc.scoreRepo.GetSingleClassSummary(ctx, examID, subjectID)
+}
+
+// GetSingleClassQuestions 获取单科班级题目汇总
+func (uc *ExamAnalysisUseCase) GetSingleClassQuestions(ctx context.Context, examID, subjectID, classID int64) (*SingleClassQuestionStats, error) {
+	if err := uc.requireScoreItemRepo(); err != nil {
+		return nil, err
+	}
+
+	stats, err := uc.scoreItemRepo.GetSingleClassQuestions(ctx, examID, subjectID, classID)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(stats.Questions, func(i, j int) bool {
+		return questionNumberLess(stats.Questions[i].QuestionNumber, stats.Questions[j].QuestionNumber)
+	})
+	for _, question := range stats.Questions {
+		question.QuestionID = normalizeQuestionID(question.QuestionID, question.QuestionNumber)
+		question.Difficulty = difficultyFromScoreRate(question.ScoreRate)
+	}
+
+	return stats, nil
+}
+
+// GetSingleQuestionSummary 获取单科题目汇总
+func (uc *ExamAnalysisUseCase) GetSingleQuestionSummary(ctx context.Context, examID, subjectID int64) (*SingleQuestionSummaryStats, error) {
+	if err := uc.requireScoreItemRepo(); err != nil {
+		return nil, err
+	}
+
+	stats, err := uc.scoreItemRepo.GetSingleQuestionSummary(ctx, examID, subjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(stats.Questions, func(i, j int) bool {
+		return questionNumberLess(stats.Questions[i].QuestionNumber, stats.Questions[j].QuestionNumber)
+	})
+	for _, question := range stats.Questions {
+		question.QuestionID = normalizeQuestionID(question.QuestionID, question.QuestionNumber)
+		question.Difficulty = difficultyFromScoreRate(question.ScoreRate)
+	}
+
+	return stats, nil
+}
+
+// GetSingleQuestionDetail 获取单科班级题目详情
+func (uc *ExamAnalysisUseCase) GetSingleQuestionDetail(ctx context.Context, examID, subjectID, classID int64, questionID string) (*SingleQuestionDetailStats, error) {
+	if err := uc.requireScoreItemRepo(); err != nil {
+		return nil, err
+	}
+
+	stats, err := uc.scoreItemRepo.GetSingleQuestionDetail(ctx, examID, subjectID, classID, questionID)
+	if err != nil {
+		return nil, err
+	}
+
+	stats.QuestionID = normalizeQuestionID(stats.QuestionID, stats.QuestionNumber)
+	sort.SliceStable(stats.Students, func(i, j int) bool {
+		if stats.Students[i].Score == stats.Students[j].Score {
+			return stats.Students[i].StudentID < stats.Students[j].StudentID
+		}
+		return stats.Students[i].Score > stats.Students[j].Score
+	})
+	assignSequentialRanks(stats.Students, func(item *StudentQuestionDetailStats, rank int32) {
+		item.ClassRank = rank
+	})
+
+	gradeOrdered := make([]*StudentQuestionDetailStats, len(stats.Students))
+	copy(gradeOrdered, stats.Students)
+	sort.SliceStable(gradeOrdered, func(i, j int) bool {
+		if gradeOrdered[i].Score == gradeOrdered[j].Score {
+			return gradeOrdered[i].StudentID < gradeOrdered[j].StudentID
+		}
+		return gradeOrdered[i].Score > gradeOrdered[j].Score
+	})
+	assignSequentialRanks(gradeOrdered, func(item *StudentQuestionDetailStats, rank int32) {
+		item.GradeRank = rank
+	})
+
+	return stats, nil
+}
+
 // calculateRatingPercentages 计算四率百分比
 func (uc *ExamAnalysisUseCase) calculateRatingPercentages(classRating *ClassRatingStats) {
 	if classRating.TotalStudents == 0 {
@@ -108,6 +209,42 @@ func (uc *ExamAnalysisUseCase) calculateRatingPercentages(classRating *ClassRati
 // roundTo2Decimal 四舍五入到2位小数
 func roundTo2Decimal(value float64) float64 {
 	return math.Round(value*100) / 100
+}
+
+func (uc *ExamAnalysisUseCase) requireScoreItemRepo() error {
+	if uc.scoreItemRepo == nil {
+		return errors.New("score item repo is not configured")
+	}
+	return nil
+}
+
+func normalizeQuestionID(questionID, questionNumber string) string {
+	return questionNumber
+}
+
+func questionNumberLess(left, right string) bool {
+	leftNumber, leftErr := strconv.Atoi(left)
+	rightNumber, rightErr := strconv.Atoi(right)
+	if leftErr == nil && rightErr == nil {
+		return leftNumber < rightNumber
+	}
+	return left < right
+}
+
+func difficultyFromScoreRate(scoreRate float64) string {
+	if scoreRate >= 80 {
+		return "easy"
+	}
+	if scoreRate >= 60 {
+		return "medium"
+	}
+	return "hard"
+}
+
+func assignSequentialRanks(items []*StudentQuestionDetailStats, setRank func(item *StudentQuestionDetailStats, rank int32)) {
+	for index, item := range items {
+		setRank(item, int32(index+1))
+	}
 }
 
 // GetExamName 获取考试名称

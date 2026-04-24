@@ -28,14 +28,18 @@ type ScoreRepo interface {
 	GetClassSummary(ctx context.Context, examID, subjectID int64) (*ClassSummaryStats, error)
 	// GetRatingDistribution 获取四率分布统计
 	GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, passThreshold float64) (*RatingDistributionStats, error)
+	// GetClassSubjectSummary 获取班级学科下钻汇总
+	GetClassSubjectSummary(ctx context.Context, examID, classID int64) (*ClassSubjectSummaryStats, error)
+	// GetSingleClassSummary 获取单科学科下班级汇总
+	GetSingleClassSummary(ctx context.Context, examID, subjectID int64) (*SingleClassSummaryStats, error)
 }
 
 // SubjectSummaryStats 学科统计数据
 type SubjectSummaryStats struct {
-	TotalParticipants int64                    // 总参考人数
-	SubjectsInvolved  int32                    // 涉及学科数（仅 subjectID=0 时有意义）
-	ClassesInvolved   int32                    // 涉及班级数（仅 subjectID=0 时有意义）
-	Subjects          []*SubjectStats          // 学科统计详情
+	TotalParticipants int64           // 总参考人数
+	SubjectsInvolved  int32           // 涉及学科数（仅 subjectID=0 时有意义）
+	ClassesInvolved   int32           // 涉及班级数（仅 subjectID=0 时有意义）
+	Subjects          []*SubjectStats // 学科统计详情
 }
 
 // SubjectStats 单个学科的统计信息
@@ -46,7 +50,7 @@ type SubjectStats struct {
 	AvgScore     float64
 	HighestScore float64
 	LowestScore  float64
-	Difficulty   float64  // 平均分/满分*100
+	Difficulty   float64 // 平均分/满分*100
 	StudentCount int64
 }
 
@@ -59,15 +63,15 @@ type ClassSummaryStats struct {
 
 // ClassStats 班级统计信息
 type ClassStats struct {
-	ClassID       int64
-	ClassName     string
-	TotalStudents int64
-	AvgScore      float64
-	HighestScore  float64
-	LowestScore   float64
-	ScoreDeviation float64  // 离均差：班级平均分-全年级平均分，全年级固定为0
-	Difficulty    float64   // 平均分/满分*100
-	StdDev        float64   // 标准差
+	ClassID        int64
+	ClassName      string
+	TotalStudents  int64
+	AvgScore       float64
+	HighestScore   float64
+	LowestScore    float64
+	ScoreDeviation float64 // 离均差：班级平均分-全年级平均分，全年级固定为0
+	Difficulty     float64 // 平均分/满分*100
+	StdDev         float64 // 标准差
 }
 
 // RatingDistributionStats 四率分布统计数据
@@ -101,4 +105,80 @@ type ClassRatingStats struct {
 	Good          *RatingItemStats // 良好
 	Pass          *RatingItemStats // 合格
 	Fail          *RatingItemStats // 低分
+}
+
+// ClassSubjectSummaryStats 班级学科下钻汇总
+type ClassSubjectSummaryStats struct {
+	ExamID    int64
+	ExamName  string
+	ClassID   int64
+	ClassName string
+	Overall   *ClassSubjectItemStats
+	Subjects  []*ClassSubjectItemStats
+}
+
+// ClassSubjectItemStats 班级学科下钻项
+type ClassSubjectItemStats struct {
+	SubjectID     int64
+	SubjectName   string
+	FullScore     float64
+	ClassAvgScore float64
+	GradeAvgScore float64
+	ScoreDiff     float64
+	ClassHighest  float64
+	ClassLowest   float64
+	ClassRank     int32
+	TotalClasses  int32
+}
+
+// SingleClassSummaryStats 单科班级汇总
+type SingleClassSummaryStats struct {
+	ExamID      int64
+	ExamName    string
+	SubjectID   int64
+	SubjectName string
+	Overall     *SingleClassSummaryItemStats
+	Classes     []*SingleClassSummaryItemStats
+}
+
+// SingleClassSummaryItemStats 单科班级汇总项
+type SingleClassSummaryItemStats struct {
+	ClassID         int64
+	ClassName       string
+	TotalStudents   int64
+	SubjectAvgScore float64
+	GradeAvgScore   float64
+	ScoreDiff       float64
+	ClassRank       int32
+	TotalClasses    int32
+	PassRate        float64
+	ExcellentRate   float64
+}
+
+// SingleQuestionSummaryStats 单科题目汇总
+type SingleQuestionSummaryStats struct {
+	ExamID      int64
+	ExamName    string
+	SubjectID   int64
+	SubjectName string
+	Questions   []*SingleQuestionSummaryItemStats
+}
+
+// SingleQuestionSummaryItemStats 单科题目汇总项
+type SingleQuestionSummaryItemStats struct {
+	QuestionID     string
+	QuestionNumber string
+	QuestionType   string
+	FullScore      float64
+	GradeAvgScore  float64
+	ClassBreakdown []*QuestionClassBreakdownStats
+	ScoreRate      float64
+	Difficulty     string
+}
+
+// QuestionClassBreakdownStats 题目按班级拆分
+type QuestionClassBreakdownStats struct {
+	ClassID   int64
+	ClassName string
+	AvgScore  float64
 }

@@ -33,6 +33,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, llm *conf.LLM, logger
 	analysisUseCase := biz.NewAnalysisUseCase(scoreRepo, llm)
 	examRepo := data.NewExamRepo(dataData)
 	examAnalysisUseCase := biz.NewExamAnalysisUseCase(examRepo, subjectRepo, scoreRepo)
+	scoreItemRepo := data.NewScoreItemRepo(dataData)
+	examAnalysisUseCase = examAnalysisUseCase.WithScoreItemRepo(scoreItemRepo)
 	analysisService := service.NewAnalysisService(analysisUseCase, examAnalysisUseCase)
 	tracerProvider := NewTraceProvider()
 	grpcServer := server.NewGRPCServer(confServer, analysisService, tracerProvider, logger)

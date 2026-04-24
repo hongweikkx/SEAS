@@ -10,6 +10,11 @@ import (
 	"gorm.io/gorm"
 )
 
+type classRankRow struct {
+	ClassID  int64
+	AvgScore float64
+}
+
 type scoreRepo struct {
 	data        *Data
 	subjectRepo biz.SubjectRepo
@@ -396,12 +401,415 @@ func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID
 	return &stats, nil
 }
 
+// GetClassSubjectSummary 获取班级学科下钻汇总
+func (r *scoreRepo) GetClassSubjectSummary(ctx context.Context, examID, classID int64) (*biz.ClassSubjectSummaryStats, error) {
+	var summary biz.ClassSubjectSummaryStats
+	summary.ExamID = examID
+	summary.ClassID = classID
+
+	var meta struct {
+		ExamName  string `gorm:"column:exam_name"`
+		ClassName string `gorm:"column:class_name"`
+	}
+	if err := r.data.db.WithContext(ctx).Raw(`
+		SELECT
+			e.name AS exam_name,
+			c.name AS class_name
+		FROM exams e
+		JOIN classes c ON c.id = ?
+		WHERE e.id = ?
+	`, classID, examID).Scan(&meta).Error; err != nil {
+		log.Context(ctx).Errorf("GetClassSubjectSummary meta err: %+v", err)
+		return nil, err
+	}
+	summary.ExamName = meta.ExamName
+	summary.ClassName = meta.ClassName
+
+	var subjectRows []struct {
+		SubjectID      int64   `gorm:"column:subject_id"`
+		SubjectName    string  `gorm:"column:subject_name"`
+		FullScore      float64 `gorm:"column:full_score"`
+		ClassAvgScore  float64 `gorm:"column:class_avg_score"`
+		GradeAvgScore  float64 `gorm:"column:grade_avg_score"`
+		ClassHighest   float64 `gorm:"column:class_highest"`
+		ClassLowest    float64 `gorm:"column:class_lowest"`
+		Participations int64   `gorm:"column:participations"`
+	}
+	if err := r.data.db.WithContext(ctx).Raw(`
+		SELECT
+			s.id AS subject_id,
+			s.name AS subject_name,
+			es.full_score AS full_score,
+			COALESCE(cs.class_avg_score, 0) AS class_avg_score,
+			COALESCE(gs.grade_avg_score, 0) AS grade_avg_score,
+			COALESCE(cs.class_highest, 0) AS class_highest,
+			COALESCE(cs.class_lowest, 0) AS class_lowest,
+			COALESCE(cs.participations, 0) AS participations
+		FROM exam_subjects es
+		JOIN subjects s ON s.id = es.subject_id
+		LEFT JOIN (
+			SELECT
+				sc.subject_id,
+				AVG(sc.total_score) AS class_avg_score,
+				MAX(sc.total_score) AS class_highest,
+				MIN(sc.total_score) AS class_lowest,
+				COUNT(sc.student_id) AS participations
+			FROM scores sc
+			JOIN students st ON st.id = sc.student_id
+			WHERE sc.exam_id = ? AND st.class_id = ?
+			GROUP BY sc.subject_id
+		) cs ON cs.subject_id = es.subject_id
+		LEFT JOIN (
+			SELECT
+				sc.subject_id,
+				AVG(sc.total_score) AS grade_avg_score
+			FROM scores sc
+			WHERE sc.exam_id = ?
+			GROUP BY sc.subject_id
+		) gs ON gs.subject_id = es.subject_id
+		WHERE es.exam_id = ?
+		ORDER BY s.id
+	`, examID, classID, examID, examID).Scan(&subjectRows).Error; err != nil {
+		log.Context(ctx).Errorf("GetClassSubjectSummary subject rows err: %+v", err)
+		return nil, err
+	}
+
+	var subjectRanks []struct {
+		SubjectID int64   `gorm:"column:subject_id"`
+		ClassID   int64   `gorm:"column:class_id"`
+		AvgScore  float64 `gorm:"column:avg_score"`
+	}
+	if err := r.data.db.WithContext(ctx).Raw(`
+		SELECT
+			sc.subject_id AS subject_id,
+			st.class_id AS class_id,
+			AVG(sc.total_score) AS avg_score
+		FROM scores sc
+		JOIN students st ON st.id = sc.student_id
+		WHERE sc.exam_id = ?
+		GROUP BY sc.subject_id, st.class_id
+	`, examID).Scan(&subjectRanks).Error; err != nil {
+		log.Context(ctx).Errorf("GetClassSubjectSummary subject ranks err: %+v", err)
+		return nil, err
+	}
+
+	ranksBySubject := make(map[int64]map[int64]int32)
+	totalClassesBySubject := make(map[int64]int32)
+	for _, rankRow := range subjectRanks {
+		if _, ok := ranksBySubject[rankRow.SubjectID]; !ok {
+			ranksBySubject[rankRow.SubjectID] = make(map[int64]int32)
+		}
+		totalClassesBySubject[rankRow.SubjectID]++
+	}
+	for subjectID := range ranksBySubject {
+		ordered := make([]struct {
+			classID  int64
+			avgScore float64
+		}, 0)
+		for _, rankRow := range subjectRanks {
+			if rankRow.SubjectID == subjectID {
+				ordered = append(ordered, struct {
+					classID  int64
+					avgScore float64
+				}{
+					classID:  rankRow.ClassID,
+					avgScore: rankRow.AvgScore,
+				})
+			}
+		}
+		for i := 0; i < len(ordered); i++ {
+			best := i
+			for j := i + 1; j < len(ordered); j++ {
+				if ordered[j].avgScore > ordered[best].avgScore || (ordered[j].avgScore == ordered[best].avgScore && ordered[j].classID < ordered[best].classID) {
+					best = j
+				}
+			}
+			ordered[i], ordered[best] = ordered[best], ordered[i]
+		}
+		for idx, item := range ordered {
+			ranksBySubject[subjectID][item.classID] = int32(idx + 1)
+		}
+	}
+
+	summary.Subjects = make([]*biz.ClassSubjectItemStats, 0, len(subjectRows))
+	for _, row := range subjectRows {
+		item := &biz.ClassSubjectItemStats{
+			SubjectID:     row.SubjectID,
+			SubjectName:   row.SubjectName,
+			FullScore:     roundTo2Decimal(row.FullScore),
+			ClassAvgScore: roundTo2Decimal(row.ClassAvgScore),
+			GradeAvgScore: roundTo2Decimal(row.GradeAvgScore),
+			ScoreDiff:     roundTo2Decimal(row.ClassAvgScore - row.GradeAvgScore),
+			ClassHighest:  roundTo2Decimal(row.ClassHighest),
+			ClassLowest:   roundTo2Decimal(row.ClassLowest),
+			ClassRank:     ranksBySubject[row.SubjectID][classID],
+			TotalClasses:  totalClassesBySubject[row.SubjectID],
+		}
+		summary.Subjects = append(summary.Subjects, item)
+	}
+
+	var overall struct {
+		FullScore     float64 `gorm:"column:full_score"`
+		ClassAvgScore float64 `gorm:"column:class_avg_score"`
+		GradeAvgScore float64 `gorm:"column:grade_avg_score"`
+		ClassHighest  float64 `gorm:"column:class_highest"`
+		ClassLowest   float64 `gorm:"column:class_lowest"`
+	}
+	if err := r.data.db.WithContext(ctx).Raw(`
+		SELECT
+			COALESCE(fs.full_score, 0) AS full_score,
+			COALESCE(ca.class_avg_score, 0) AS class_avg_score,
+			COALESCE(ga.grade_avg_score, 0) AS grade_avg_score,
+			COALESCE(ca.class_highest, 0) AS class_highest,
+			COALESCE(ca.class_lowest, 0) AS class_lowest
+		FROM (
+			SELECT SUM(es.full_score) AS full_score
+			FROM exam_subjects es
+			WHERE es.exam_id = ?
+		) fs
+		LEFT JOIN (
+			SELECT
+				AVG(student_total) AS class_avg_score,
+				MAX(student_total) AS class_highest,
+				MIN(student_total) AS class_lowest
+			FROM (
+				SELECT
+					sc.student_id,
+					SUM(sc.total_score) AS student_total
+				FROM scores sc
+				JOIN students st ON st.id = sc.student_id
+				WHERE sc.exam_id = ? AND st.class_id = ?
+				GROUP BY sc.student_id
+			) class_totals
+		) ca ON 1 = 1
+		LEFT JOIN (
+			SELECT AVG(student_total) AS grade_avg_score
+			FROM (
+				SELECT
+					sc.student_id,
+					SUM(sc.total_score) AS student_total
+				FROM scores sc
+				WHERE sc.exam_id = ?
+				GROUP BY sc.student_id
+			) grade_totals
+		) ga ON 1 = 1
+	`, examID, examID, classID, examID).Scan(&overall).Error; err != nil {
+		log.Context(ctx).Errorf("GetClassSubjectSummary overall err: %+v", err)
+		return nil, err
+	}
+
+	var overallRanks []struct {
+		ClassID  int64   `gorm:"column:class_id"`
+		AvgScore float64 `gorm:"column:avg_score"`
+	}
+	if err := r.data.db.WithContext(ctx).Raw(`
+		SELECT
+			class_totals.class_id AS class_id,
+			AVG(class_totals.student_total) AS avg_score
+		FROM (
+			SELECT
+				st.class_id AS class_id,
+				sc.student_id AS student_id,
+				SUM(sc.total_score) AS student_total
+			FROM scores sc
+			JOIN students st ON st.id = sc.student_id
+			WHERE sc.exam_id = ?
+			GROUP BY st.class_id, sc.student_id
+		) class_totals
+		GROUP BY class_totals.class_id
+	`, examID).Scan(&overallRanks).Error; err != nil {
+		log.Context(ctx).Errorf("GetClassSubjectSummary overall ranks err: %+v", err)
+		return nil, err
+	}
+
+	overallRank := rankByClassID(overallRanks, classID)
+	summary.Overall = &biz.ClassSubjectItemStats{
+		SubjectID:     0,
+		SubjectName:   "总分",
+		FullScore:     roundTo2Decimal(overall.FullScore),
+		ClassAvgScore: roundTo2Decimal(overall.ClassAvgScore),
+		GradeAvgScore: roundTo2Decimal(overall.GradeAvgScore),
+		ScoreDiff:     roundTo2Decimal(overall.ClassAvgScore - overall.GradeAvgScore),
+		ClassHighest:  roundTo2Decimal(overall.ClassHighest),
+		ClassLowest:   roundTo2Decimal(overall.ClassLowest),
+		ClassRank:     overallRank,
+		TotalClasses:  int32(len(overallRanks)),
+	}
+
+	return &summary, nil
+}
+
+// GetSingleClassSummary 获取单科学科下班级汇总
+func (r *scoreRepo) GetSingleClassSummary(ctx context.Context, examID, subjectID int64) (*biz.SingleClassSummaryStats, error) {
+	var summary biz.SingleClassSummaryStats
+	summary.ExamID = examID
+	summary.SubjectID = subjectID
+
+	var meta struct {
+		ExamName    string `gorm:"column:exam_name"`
+		SubjectName string `gorm:"column:subject_name"`
+	}
+	if err := r.data.db.WithContext(ctx).Raw(`
+		SELECT
+			e.name AS exam_name,
+			s.name AS subject_name
+		FROM exams e
+		JOIN subjects s ON s.id = ?
+		WHERE e.id = ?
+	`, subjectID, examID).Scan(&meta).Error; err != nil {
+		log.Context(ctx).Errorf("GetSingleClassSummary meta err: %+v", err)
+		return nil, err
+	}
+	summary.ExamName = meta.ExamName
+	summary.SubjectName = meta.SubjectName
+
+	var classRows []struct {
+		ClassID        int64   `gorm:"column:class_id"`
+		ClassName      string  `gorm:"column:class_name"`
+		TotalStudents  int64   `gorm:"column:total_students"`
+		AvgScore       float64 `gorm:"column:avg_score"`
+		PassCount      int64   `gorm:"column:pass_count"`
+		ExcellentCount int64   `gorm:"column:excellent_count"`
+	}
+	if err := r.data.db.WithContext(ctx).Raw(`
+		SELECT
+			c.id AS class_id,
+			c.name AS class_name,
+			COUNT(sc.student_id) AS total_students,
+			AVG(sc.total_score) AS avg_score,
+			SUM(CASE WHEN sc.total_score >= 60 THEN 1 ELSE 0 END) AS pass_count,
+			SUM(CASE WHEN sc.total_score >= 90 THEN 1 ELSE 0 END) AS excellent_count
+		FROM classes c
+		JOIN students st ON st.class_id = c.id
+		JOIN scores sc ON sc.student_id = st.id
+		WHERE sc.exam_id = ? AND sc.subject_id = ?
+		GROUP BY c.id, c.name
+		ORDER BY c.id
+	`, examID, subjectID).Scan(&classRows).Error; err != nil {
+		log.Context(ctx).Errorf("GetSingleClassSummary class rows err: %+v", err)
+		return nil, err
+	}
+
+	var gradeOverall struct {
+		TotalStudents  int64   `gorm:"column:total_students"`
+		GradeAvgScore  float64 `gorm:"column:grade_avg_score"`
+		PassCount      int64   `gorm:"column:pass_count"`
+		ExcellentCount int64   `gorm:"column:excellent_count"`
+	}
+	if err := r.data.db.WithContext(ctx).Raw(`
+		SELECT
+			COUNT(sc.student_id) AS total_students,
+			AVG(sc.total_score) AS grade_avg_score,
+			SUM(CASE WHEN sc.total_score >= 60 THEN 1 ELSE 0 END) AS pass_count,
+			SUM(CASE WHEN sc.total_score >= 90 THEN 1 ELSE 0 END) AS excellent_count
+		FROM scores sc
+		WHERE sc.exam_id = ? AND sc.subject_id = ?
+	`, examID, subjectID).Scan(&gradeOverall).Error; err != nil {
+		log.Context(ctx).Errorf("GetSingleClassSummary overall err: %+v", err)
+		return nil, err
+	}
+
+	classRanks := make([]classRankRow, 0, len(classRows))
+	for _, row := range classRows {
+		classRanks = append(classRanks, classRankRow{
+			ClassID:  row.ClassID,
+			AvgScore: row.AvgScore,
+		})
+	}
+	orderClassRanks(classRanks)
+
+	rankMap := make(map[int64]int32, len(classRanks))
+	for idx, item := range classRanks {
+		rankMap[item.ClassID] = int32(idx + 1)
+	}
+
+	totalClasses := int32(len(classRows))
+	summary.Classes = make([]*biz.SingleClassSummaryItemStats, 0, len(classRows))
+	for _, row := range classRows {
+		passRate := 0.0
+		excellentRate := 0.0
+		if row.TotalStudents > 0 {
+			passRate = roundTo2Decimal(float64(row.PassCount) / float64(row.TotalStudents) * 100)
+			excellentRate = roundTo2Decimal(float64(row.ExcellentCount) / float64(row.TotalStudents) * 100)
+		}
+		summary.Classes = append(summary.Classes, &biz.SingleClassSummaryItemStats{
+			ClassID:         row.ClassID,
+			ClassName:       row.ClassName,
+			TotalStudents:   row.TotalStudents,
+			SubjectAvgScore: roundTo2Decimal(row.AvgScore),
+			GradeAvgScore:   roundTo2Decimal(gradeOverall.GradeAvgScore),
+			ScoreDiff:       roundTo2Decimal(row.AvgScore - gradeOverall.GradeAvgScore),
+			ClassRank:       rankMap[row.ClassID],
+			TotalClasses:    totalClasses,
+			PassRate:        passRate,
+			ExcellentRate:   excellentRate,
+		})
+	}
+
+	overallPassRate := 0.0
+	overallExcellentRate := 0.0
+	if gradeOverall.TotalStudents > 0 {
+		overallPassRate = roundTo2Decimal(float64(gradeOverall.PassCount) / float64(gradeOverall.TotalStudents) * 100)
+		overallExcellentRate = roundTo2Decimal(float64(gradeOverall.ExcellentCount) / float64(gradeOverall.TotalStudents) * 100)
+	}
+	summary.Overall = &biz.SingleClassSummaryItemStats{
+		ClassID:         0,
+		ClassName:       "全年级",
+		TotalStudents:   gradeOverall.TotalStudents,
+		SubjectAvgScore: roundTo2Decimal(gradeOverall.GradeAvgScore),
+		GradeAvgScore:   roundTo2Decimal(gradeOverall.GradeAvgScore),
+		ScoreDiff:       0,
+		ClassRank:       0,
+		TotalClasses:    totalClasses,
+		PassRate:        overallPassRate,
+		ExcellentRate:   overallExcellentRate,
+	}
+
+	return &summary, nil
+}
+
 // calculateDifficulty 计算难度 = 平均分/满分 * 100
 func (r *scoreRepo) calculateDifficulty(avgScore, fullScore float64) float64 {
 	if fullScore == 0 {
 		return 0
 	}
 	return math.Round(avgScore/fullScore*100*100) / 100
+}
+
+func roundTo2Decimal(value float64) float64 {
+	return math.Round(value*100) / 100
+}
+
+func rankByClassID(rows []struct {
+	ClassID  int64   `gorm:"column:class_id"`
+	AvgScore float64 `gorm:"column:avg_score"`
+}, classID int64) int32 {
+	ordered := make([]classRankRow, 0, len(rows))
+	for _, row := range rows {
+		ordered = append(ordered, classRankRow{
+			ClassID:  row.ClassID,
+			AvgScore: row.AvgScore,
+		})
+	}
+	orderClassRanks(ordered)
+	for idx, row := range ordered {
+		if row.ClassID == classID {
+			return int32(idx + 1)
+		}
+	}
+	return 0
+}
+
+func orderClassRanks(rows []classRankRow) {
+	for i := 0; i < len(rows); i++ {
+		best := i
+		for j := i + 1; j < len(rows); j++ {
+			if rows[j].AvgScore > rows[best].AvgScore || (rows[j].AvgScore == rows[best].AvgScore && rows[j].ClassID < rows[best].ClassID) {
+				best = j
+			}
+		}
+		rows[i], rows[best] = rows[best], rows[i]
+	}
 }
 
 // calculateOverallFullScore 计算全科平均满分
