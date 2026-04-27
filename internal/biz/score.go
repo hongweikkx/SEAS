@@ -39,19 +39,23 @@ type SubjectSummaryStats struct {
 	TotalParticipants int64           // 总参考人数
 	SubjectsInvolved  int32           // 涉及学科数（仅 subjectID=0 时有意义）
 	ClassesInvolved   int32           // 涉及班级数（仅 subjectID=0 时有意义）
+	Overall           *SubjectStats   // 新增：全年级总体
 	Subjects          []*SubjectStats // 学科统计详情
 }
 
 // SubjectStats 单个学科的统计信息
 type SubjectStats struct {
-	ID           int64
-	Name         string
-	FullScore    float64
-	AvgScore     float64
-	HighestScore float64
-	LowestScore  float64
-	Difficulty   float64 // 平均分/满分*100
-	StudentCount int64
+	ID             int64
+	Name           string
+	FullScore      float64
+	AvgScore       float64
+	HighestScore   float64
+	LowestScore    float64
+	Difficulty     float64 // 平均分/满分*100
+	StudentCount   int64
+	ScoreDeviation float64 // 新增：离均差
+	StdDev         float64 // 新增：标准差
+	Discrimination float64 // 新增：区分度
 }
 
 // ClassSummaryStats 班级统计数据
@@ -66,12 +70,14 @@ type ClassStats struct {
 	ClassID        int64
 	ClassName      string
 	TotalStudents  int64
+	FullScore      float64  // 新增：满分
 	AvgScore       float64
 	HighestScore   float64
 	LowestScore    float64
 	ScoreDeviation float64 // 离均差：班级平均分-全年级平均分，全年级固定为0
 	Difficulty     float64 // 平均分/满分*100
 	StdDev         float64 // 标准差
+	Discrimination float64  // 新增：区分度
 }
 
 // RatingDistributionStats 四率分布统计数据
@@ -137,22 +143,8 @@ type SingleClassSummaryStats struct {
 	ExamName    string
 	SubjectID   int64
 	SubjectName string
-	Overall     *SingleClassSummaryItemStats
-	Classes     []*SingleClassSummaryItemStats
-}
-
-// SingleClassSummaryItemStats 单科班级汇总项
-type SingleClassSummaryItemStats struct {
-	ClassID         int64
-	ClassName       string
-	TotalStudents   int64
-	SubjectAvgScore float64
-	GradeAvgScore   float64
-	ScoreDiff       float64
-	ClassRank       int32
-	TotalClasses    int32
-	PassRate        float64
-	ExcellentRate   float64
+	Overall     *ClassStats   // 改为 *ClassStats
+	Classes     []*ClassStats // 改为 []*ClassStats
 }
 
 // SingleQuestionSummaryStats 单科题目汇总
@@ -173,7 +165,7 @@ type SingleQuestionSummaryItemStats struct {
 	GradeAvgScore  float64
 	ClassBreakdown []*QuestionClassBreakdownStats
 	ScoreRate      float64
-	Difficulty     string
+	Difficulty     float64 // 改为 float64
 }
 
 // QuestionClassBreakdownStats 题目按班级拆分
