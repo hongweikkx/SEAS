@@ -231,14 +231,8 @@ func questionNumberLess(left, right string) bool {
 	return left < right
 }
 
-func difficultyFromScoreRate(scoreRate float64) string {
-	if scoreRate >= 80 {
-		return "easy"
-	}
-	if scoreRate >= 60 {
-		return "medium"
-	}
-	return "hard"
+func difficultyFromScoreRate(scoreRate float64) float64 {
+	return scoreRate
 }
 
 func assignSequentialRanks(items []*StudentQuestionDetailStats, setRank func(item *StudentQuestionDetailStats, rank int32)) {

@@ -106,22 +106,41 @@ func (s *AnalysisService) GetSubjectSummary(ctx context.Context, req *pb.GetSubj
 		ExamId:            req.GetExamId(),
 		ExamName:          examName,
 		Scope:             req.GetScope(),
-		TotalParticipants: stats.TotalParticipants,
+		TotalParticipants: int32(stats.TotalParticipants),
 		SubjectsInvolved:  stats.SubjectsInvolved,
 		ClassesInvolved:   stats.ClassesInvolved,
+	}
+
+	if stats.Overall != nil {
+		reply.Overall = &pb.SubjectSummaryItem{
+			Id:             strconv.FormatInt(stats.Overall.ID, 10),
+			Name:           stats.Overall.Name,
+			FullScore:      stats.Overall.FullScore,
+			AvgScore:       stats.Overall.AvgScore,
+			HighestScore:   stats.Overall.HighestScore,
+			LowestScore:    stats.Overall.LowestScore,
+			Difficulty:     stats.Overall.Difficulty,
+			StudentCount:   int32(stats.Overall.StudentCount),
+			ScoreDeviation: stats.Overall.ScoreDeviation,
+			StdDev:         stats.Overall.StdDev,
+			Discrimination: stats.Overall.Discrimination,
+		}
 	}
 
 	reply.Subjects = make([]*pb.SubjectSummaryItem, len(stats.Subjects))
 	for i, subject := range stats.Subjects {
 		reply.Subjects[i] = &pb.SubjectSummaryItem{
-			Id:           strconv.FormatInt(subject.ID, 10),
-			Name:         subject.Name,
-			FullScore:    subject.FullScore,
-			AvgScore:     subject.AvgScore,
-			HighestScore: subject.HighestScore,
-			LowestScore:  subject.LowestScore,
-			Difficulty:   subject.Difficulty,
-			StudentCount: subject.StudentCount,
+			Id:             strconv.FormatInt(subject.ID, 10),
+			Name:           subject.Name,
+			FullScore:      subject.FullScore,
+			AvgScore:       subject.AvgScore,
+			HighestScore:   subject.HighestScore,
+			LowestScore:    subject.LowestScore,
+			Difficulty:     subject.Difficulty,
+			StudentCount:   int32(subject.StudentCount),
+			ScoreDeviation: subject.ScoreDeviation,
+			StdDev:         subject.StdDev,
+			Discrimination: subject.Discrimination,
 		}
 	}
 
@@ -148,35 +167,39 @@ func (s *AnalysisService) GetClassSummary(ctx context.Context, req *pb.GetClassS
 		ExamId:            req.GetExamId(),
 		ExamName:          examName,
 		Scope:             req.GetScope(),
-		TotalParticipants: stats.TotalParticipants,
+		TotalParticipants: int32(stats.TotalParticipants),
 	}
 
 	if stats.OverallGrade != nil {
 		reply.OverallGrade = &pb.ClassSummaryItem{
-			ClassId:        strconv.FormatInt(stats.OverallGrade.ClassID, 10),
+			ClassId:        int32(stats.OverallGrade.ClassID),
 			ClassName:      stats.OverallGrade.ClassName,
-			TotalStudents:  stats.OverallGrade.TotalStudents,
+			TotalStudents:  int32(stats.OverallGrade.TotalStudents),
 			AvgScore:       stats.OverallGrade.AvgScore,
 			HighestScore:   stats.OverallGrade.HighestScore,
 			LowestScore:    stats.OverallGrade.LowestScore,
 			ScoreDeviation: stats.OverallGrade.ScoreDeviation,
 			Difficulty:     stats.OverallGrade.Difficulty,
 			StdDev:         stats.OverallGrade.StdDev,
+			FullScore:      stats.OverallGrade.FullScore,
+			Discrimination: stats.OverallGrade.Discrimination,
 		}
 	}
 
 	reply.ClassDetails = make([]*pb.ClassSummaryItem, len(stats.ClassDetails))
 	for i, class := range stats.ClassDetails {
 		reply.ClassDetails[i] = &pb.ClassSummaryItem{
-			ClassId:        strconv.FormatInt(class.ClassID, 10),
+			ClassId:        int32(class.ClassID),
 			ClassName:      class.ClassName,
-			TotalStudents:  class.TotalStudents,
+			TotalStudents:  int32(class.TotalStudents),
 			AvgScore:       class.AvgScore,
 			HighestScore:   class.HighestScore,
 			LowestScore:    class.LowestScore,
 			ScoreDeviation: class.ScoreDeviation,
 			Difficulty:     class.Difficulty,
 			StdDev:         class.StdDev,
+			FullScore:      class.FullScore,
+			Discrimination: class.Discrimination,
 		}
 	}
 
@@ -352,40 +375,42 @@ func (s *AnalysisService) GetSingleClassSummary(ctx context.Context, req *pb.Get
 	}
 
 	reply := &pb.GetSingleClassSummaryReply{
-		ExamId:    req.GetExamId(),
-		ExamName:  examName,
-		SubjectId: req.GetSubjectId(),
+		ExamId:      req.GetExamId(),
+		ExamName:    examName,
+		SubjectId:   req.GetSubjectId(),
+		SubjectName: stats.SubjectName,
 	}
 
 	if stats.Overall != nil {
-		reply.Overall = &pb.SingleClassSummaryItem{
-			ClassId:         strconv.FormatInt(stats.Overall.ClassID, 10),
-			ClassName:       stats.Overall.ClassName,
-			TotalStudents:   stats.Overall.TotalStudents,
-			SubjectAvgScore: stats.Overall.SubjectAvgScore,
-			GradeAvgScore:   stats.Overall.GradeAvgScore,
-			ScoreDiff:       stats.Overall.ScoreDiff,
-			ClassRank:       stats.Overall.ClassRank,
-			TotalClasses:    stats.Overall.TotalClasses,
-			PassRate:        stats.Overall.PassRate,
-			ExcellentRate:   stats.Overall.ExcellentRate,
+		reply.Overall = &pb.ClassSummaryItem{
+			ClassId:        int32(stats.Overall.ClassID),
+			ClassName:      stats.Overall.ClassName,
+			TotalStudents:  int32(stats.Overall.TotalStudents),
+			FullScore:      stats.Overall.FullScore,
+			AvgScore:       stats.Overall.AvgScore,
+			HighestScore:   stats.Overall.HighestScore,
+			LowestScore:    stats.Overall.LowestScore,
+			ScoreDeviation: stats.Overall.ScoreDeviation,
+			Difficulty:     stats.Overall.Difficulty,
+			StdDev:         stats.Overall.StdDev,
+			Discrimination: stats.Overall.Discrimination,
 		}
-		reply.SubjectName = stats.SubjectName
 	}
 
-	reply.Classes = make([]*pb.SingleClassSummaryItem, len(stats.Classes))
+	reply.Classes = make([]*pb.ClassSummaryItem, len(stats.Classes))
 	for i, class := range stats.Classes {
-		reply.Classes[i] = &pb.SingleClassSummaryItem{
-			ClassId:         strconv.FormatInt(class.ClassID, 10),
-			ClassName:       class.ClassName,
-			TotalStudents:   class.TotalStudents,
-			SubjectAvgScore: class.SubjectAvgScore,
-			GradeAvgScore:   class.GradeAvgScore,
-			ScoreDiff:       class.ScoreDiff,
-			ClassRank:       class.ClassRank,
-			TotalClasses:    class.TotalClasses,
-			PassRate:        class.PassRate,
-			ExcellentRate:   class.ExcellentRate,
+		reply.Classes[i] = &pb.ClassSummaryItem{
+			ClassId:        int32(class.ClassID),
+			ClassName:      class.ClassName,
+			TotalStudents:  int32(class.TotalStudents),
+			FullScore:      class.FullScore,
+			AvgScore:       class.AvgScore,
+			HighestScore:   class.HighestScore,
+			LowestScore:    class.LowestScore,
+			ScoreDeviation: class.ScoreDeviation,
+			Difficulty:     class.Difficulty,
+			StdDev:         class.StdDev,
+			Discrimination: class.Discrimination,
 		}
 	}
 
