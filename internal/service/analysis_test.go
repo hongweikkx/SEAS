@@ -220,7 +220,7 @@ func TestMapClassQuestionItem(t *testing.T) {
 				ClassAvgScore:  8,
 				ScoreRate:      80,
 				GradeAvgScore:  7.5,
-				Difficulty:     "easy",
+				Difficulty:     80,
 			},
 		},
 	}
@@ -246,7 +246,7 @@ func TestMapClassQuestionItem(t *testing.T) {
 		}
 	}
 
-	if len(reply.Questions) != 1 || reply.Questions[0].Difficulty != "easy" {
+	if len(reply.Questions) != 1 || reply.Questions[0].Difficulty != 80 {
 		t.Fatalf("unexpected questions mapping: %+v", reply.Questions)
 	}
 }
@@ -264,7 +264,7 @@ func TestMapSingleQuestionSummaryItem(t *testing.T) {
 				FullScore:      20,
 				GradeAvgScore:  12,
 				ScoreRate:      60,
-				Difficulty:     "medium",
+				Difficulty:     70,
 				ClassBreakdown: []*biz.QuestionClassBreakdownStats{
 					{ClassID: 1, ClassName: "一班", AvgScore: 14},
 					{ClassID: 2, ClassName: "二班", AvgScore: 10},
@@ -304,7 +304,7 @@ func TestMapSingleQuestionSummaryItem(t *testing.T) {
 		t.Fatalf("expected 1 question, got %d", len(reply.Questions))
 	}
 	q := reply.Questions[0]
-	if q.Difficulty != "medium" {
+	if q.Difficulty != 70 {
 		t.Fatalf("expected difficulty medium, got %s", q.Difficulty)
 	}
 	if len(q.ClassBreakdown) != 2 {

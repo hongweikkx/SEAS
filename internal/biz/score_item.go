@@ -43,7 +43,7 @@ type ClassQuestionItemStats struct {
 	ClassAvgScore  float64
 	ScoreRate      float64
 	GradeAvgScore  float64
-	Difficulty     string
+	Difficulty     float64
 }
 
 // SingleQuestionDetailStats 单科班级题目详情
