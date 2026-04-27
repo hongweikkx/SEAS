@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strconv"
 	"testing"
 
 	pb "seas/api/seas/v1"
@@ -129,72 +130,76 @@ func TestMapSingleClassSummaryItem(t *testing.T) {
 		ExamID:      1,
 		SubjectID:   2,
 		SubjectName: "数学",
-		Overall: &biz.SingleClassSummaryItemStats{
-			ClassID:         0,
-			ClassName:       "全年级",
-			TotalStudents:   100,
-			SubjectAvgScore: 78.5,
-			GradeAvgScore:   78.5,
-			ScoreDiff:       0,
-			ClassRank:       0,
-			TotalClasses:    4,
-			PassRate:        85,
-			ExcellentRate:   20,
+		Overall: &biz.ClassStats{
+			ClassID:        0,
+			ClassName:      "全年级",
+			TotalStudents:  100,
+			FullScore:      100,
+			AvgScore:       78.5,
+			HighestScore:   95,
+			LowestScore:    45,
+			ScoreDeviation: 0,
+			Difficulty:     78.5,
+			StdDev:         12.3,
+			Discrimination: 0.35,
 		},
-		Classes: []*biz.SingleClassSummaryItemStats{
+		Classes: []*biz.ClassStats{
 			{
-				ClassID:         1,
-				ClassName:       "一班",
-				TotalStudents:   25,
-				SubjectAvgScore: 82,
-				GradeAvgScore:   78.5,
-				ScoreDiff:       3.5,
-				ClassRank:       1,
-				TotalClasses:    4,
-				PassRate:        90,
-				ExcellentRate:   25,
+				ClassID:        1,
+				ClassName:      "一班",
+				TotalStudents:  25,
+				FullScore:      100,
+				AvgScore:       82,
+				HighestScore:   98,
+				LowestScore:    55,
+				ScoreDeviation: 3.5,
+				Difficulty:     82,
+				StdDev:         10.5,
+				Discrimination: 0.42,
 			},
 		},
 	}
 
 	reply := &pb.GetSingleClassSummaryReply{
-		ExamId:    stats.ExamID,
-		SubjectId: stats.SubjectID,
+		ExamId:      strconv.FormatInt(stats.ExamID, 10),
+		SubjectId:   strconv.FormatInt(stats.SubjectID, 10),
+		SubjectName: stats.SubjectName,
 	}
 	if stats.Overall != nil {
-		reply.Overall = &pb.SingleClassSummaryItem{
-			ClassId:         stats.Overall.ClassID,
-			ClassName:       stats.Overall.ClassName,
-			TotalStudents:   stats.Overall.TotalStudents,
-			SubjectAvgScore: stats.Overall.SubjectAvgScore,
-			GradeAvgScore:   stats.Overall.GradeAvgScore,
-			ScoreDiff:       stats.Overall.ScoreDiff,
-			ClassRank:       stats.Overall.ClassRank,
-			TotalClasses:    stats.Overall.TotalClasses,
-			PassRate:        stats.Overall.PassRate,
-			ExcellentRate:   stats.Overall.ExcellentRate,
+		reply.Overall = &pb.ClassSummaryItem{
+			ClassId:        int32(stats.Overall.ClassID),
+			ClassName:      stats.Overall.ClassName,
+			TotalStudents:  int32(stats.Overall.TotalStudents),
+			FullScore:      stats.Overall.FullScore,
+			AvgScore:       stats.Overall.AvgScore,
+			HighestScore:   stats.Overall.HighestScore,
+			LowestScore:    stats.Overall.LowestScore,
+			ScoreDeviation: stats.Overall.ScoreDeviation,
+			Difficulty:     stats.Overall.Difficulty,
+			StdDev:         stats.Overall.StdDev,
+			Discrimination: stats.Overall.Discrimination,
 		}
-		reply.SubjectName = stats.Overall.ClassName
 	}
 	for _, class := range stats.Classes {
-		reply.Classes = append(reply.Classes, &pb.SingleClassSummaryItem{
-			ClassId:         class.ClassID,
-			ClassName:       class.ClassName,
-			TotalStudents:   class.TotalStudents,
-			SubjectAvgScore: class.SubjectAvgScore,
-			GradeAvgScore:   class.GradeAvgScore,
-			ScoreDiff:       class.ScoreDiff,
-			ClassRank:       class.ClassRank,
-			TotalClasses:    class.TotalClasses,
-			PassRate:        class.PassRate,
-			ExcellentRate:   class.ExcellentRate,
+		reply.Classes = append(reply.Classes, &pb.ClassSummaryItem{
+			ClassId:        int32(class.ClassID),
+			ClassName:      class.ClassName,
+			TotalStudents:  int32(class.TotalStudents),
+			FullScore:      class.FullScore,
+			AvgScore:       class.AvgScore,
+			HighestScore:   class.HighestScore,
+			LowestScore:    class.LowestScore,
+			ScoreDeviation: class.ScoreDeviation,
+			Difficulty:     class.Difficulty,
+			StdDev:         class.StdDev,
+			Discrimination: class.Discrimination,
 		})
 	}
 
-	if reply.Overall == nil || reply.Overall.PassRate != 85 {
-		t.Fatalf("expected overall pass_rate = 85, got %+v", reply.Overall)
+	if reply.Overall == nil || reply.Overall.AvgScore != 78.5 {
+		t.Fatalf("expected overall avg_score = 78.5, got %+v", reply.Overall)
 	}
-	if len(reply.Classes) != 1 || reply.Classes[0].ClassRank != 1 {
+	if len(reply.Classes) != 1 || reply.Classes[0].AvgScore != 82 {
 		t.Fatalf("unexpected classes mapping: %+v", reply.Classes)
 	}
 }
