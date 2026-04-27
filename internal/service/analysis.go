@@ -241,7 +241,7 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 		ExamId:            req.GetExamId(),
 		ExamName:          examName,
 		Scope:             req.GetScope(),
-		TotalParticipants: stats.TotalParticipants,
+		TotalParticipants: int32(stats.TotalParticipants),
 		Config: &pb.RatingConfig{
 			ExcellentThreshold: excellentThreshold,
 			GoodThreshold:      goodThreshold,
@@ -251,9 +251,9 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 
 	if stats.OverallGrade != nil {
 		reply.OverallGrade = &pb.ClassRatingDistribution{
-			ClassId:       strconv.FormatInt(stats.OverallGrade.ClassID, 10),
+			ClassId:       int32(stats.OverallGrade.ClassID),
 			ClassName:     stats.OverallGrade.ClassName,
-			TotalStudents: stats.OverallGrade.TotalStudents,
+			TotalStudents: int32(stats.OverallGrade.TotalStudents),
 			AvgScore:      stats.OverallGrade.AvgScore,
 			Excellent: &pb.RatingItem{
 				Count:      stats.OverallGrade.Excellent.Count,
@@ -277,9 +277,9 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 	reply.ClassDetails = make([]*pb.ClassRatingDistribution, len(stats.ClassDetails))
 	for i, class := range stats.ClassDetails {
 		reply.ClassDetails[i] = &pb.ClassRatingDistribution{
-			ClassId:       strconv.FormatInt(class.ClassID, 10),
+			ClassId:       int32(class.ClassID),
 			ClassName:     class.ClassName,
-			TotalStudents: class.TotalStudents,
+			TotalStudents: int32(class.TotalStudents),
 			AvgScore:      class.AvgScore,
 			Excellent: &pb.RatingItem{
 				Count:      class.Excellent.Count,
@@ -494,7 +494,7 @@ func (s *AnalysisService) GetSingleQuestionSummary(ctx context.Context, req *pb.
 		item.ClassBreakdown = make([]*pb.QuestionClassBreakdown, len(q.ClassBreakdown))
 		for j, cb := range q.ClassBreakdown {
 			item.ClassBreakdown[j] = &pb.QuestionClassBreakdown{
-				ClassId:   strconv.FormatInt(cb.ClassID, 10),
+				ClassId:   int32(cb.ClassID),
 				ClassName: cb.ClassName,
 				AvgScore:  cb.AvgScore,
 			}
