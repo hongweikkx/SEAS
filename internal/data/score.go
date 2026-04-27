@@ -121,6 +121,51 @@ func (r *scoreRepo) GetSubjectSummary(ctx context.Context, examID, subjectID int
 		`, examID).Scan(&classesInvolved)
 		stats.ClassesInvolved = classesInvolved
 
+		// 计算全年级总体数据（overall）
+		var overallAvg, overallHighest, overallLowest float64
+		overallLowest = 99999
+		var totalStudentCount int64
+		for _, s := range stats.Subjects {
+			totalStudentCount += s.StudentCount
+			overallAvg += s.AvgScore * float64(s.StudentCount)
+			if s.HighestScore > overallHighest {
+				overallHighest = s.HighestScore
+			}
+			if s.LowestScore < overallLowest {
+				overallLowest = s.LowestScore
+			}
+		}
+		if totalStudentCount > 0 {
+			overallAvg = overallAvg / float64(totalStudentCount)
+		}
+
+		// 查询所有学生全科总分用于计算标准差和区分度
+		allScores, _ := r.getAllStudentScores(ctx, examID, 0)
+		overallFullScore := r.calculateOverallFullScore(ctx, examID)
+		overallStdDev := calculateStdDev(allScores)
+
+		stats.Overall = &biz.SubjectStats{
+			ID:             0,
+			Name:           "全年级",
+			FullScore:      overallFullScore,
+			AvgScore:       roundTo2Decimal(overallAvg),
+			HighestScore:   overallHighest,
+			LowestScore:    overallLowest,
+			Difficulty:     r.calculateDifficulty(overallAvg, overallFullScore),
+			StudentCount:   totalStudentCount,
+			ScoreDeviation: 0,
+			StdDev:         roundTo2Decimal(overallStdDev),
+			Discrimination: calculateDiscrimination(allScores, overallFullScore),
+		}
+
+		// 为每个学科计算标准差、离均差和区分度
+		for _, subject := range stats.Subjects {
+			subjectScores, _ := r.getAllStudentScores(ctx, examID, subject.ID)
+			subject.StdDev = roundTo2Decimal(calculateStdDev(subjectScores))
+			subject.ScoreDeviation = roundTo2Decimal(subject.AvgScore - overallAvg)
+			subject.Discrimination = calculateDiscrimination(subjectScores, subject.FullScore)
+		}
+
 	} else {
 		// 单科模式
 		var subjectStat struct {
@@ -166,6 +211,12 @@ func (r *scoreRepo) GetSubjectSummary(ctx context.Context, examID, subjectID int
 				StudentCount: subjectStat.StudentCount,
 			},
 		}
+
+		// 单科模式也计算标准差和区分度
+		allScores, _ := r.getAllStudentScores(ctx, examID, subjectID)
+		stats.Subjects[0].StdDev = roundTo2Decimal(calculateStdDev(allScores))
+		stats.Subjects[0].Discrimination = calculateDiscrimination(allScores, stats.Subjects[0].FullScore)
+		stats.Subjects[0].ScoreDeviation = 0 // 单科模式下无离均差
 	}
 
 	return &stats, nil
@@ -270,16 +321,37 @@ func (r *scoreRepo) GetClassSummary(ctx context.Context, examID, subjectID int64
 		overallStdDev = math.Sqrt(overallStdDev / float64(totalParticipants))
 	}
 
+	overallFullScore := r.calculateOverallFullScore(ctx, examID)
 	stats.OverallGrade = &biz.ClassStats{
 		ClassID:       0,
 		ClassName:     "全年级",
 		TotalStudents: totalParticipants,
+		FullScore:      overallFullScore,
 		AvgScore:      math.Round(overallAvg*100) / 100,
 		HighestScore:  overallHighest,
 		LowestScore:   overallLowest,
-		Difficulty:    r.calculateDifficulty(overallAvg, r.calculateOverallFullScore(ctx, examID)),
+		Difficulty:    r.calculateDifficulty(overallAvg, overallFullScore),
 		StdDev:        math.Round(overallStdDev*100) / 100,
 	}
+
+	// 查询所有学生分数用于计算区分度
+	studentScores, err := r.getStudentScores(ctx, examID, subjectID)
+	if err != nil {
+		log.Context(ctx).Errorf("GetClassSummary getStudentScores err: %+v", err)
+	}
+
+	// 计算各班级区分度
+	for _, class := range stats.ClassDetails {
+		scores := studentScores[class.ClassID]
+		class.Discrimination = calculateDiscrimination(scores, fullScore)
+		class.FullScore = fullScore
+	}
+	// 全年级区分度
+	allScores := make([]float64, 0)
+	for _, scores := range studentScores {
+		allScores = append(allScores, scores...)
+	}
+	stats.OverallGrade.Discrimination = calculateDiscrimination(allScores, overallFullScore)
 
 	return &stats, nil
 }
@@ -650,119 +722,107 @@ func (r *scoreRepo) GetSingleClassSummary(ctx context.Context, examID, subjectID
 		SubjectName string `gorm:"column:subject_name"`
 	}
 	if err := r.data.db.WithContext(ctx).Raw(`
-		SELECT
-			e.name AS exam_name,
-			s.name AS subject_name
-		FROM exams e
-		JOIN subjects s ON s.id = ?
+		SELECT e.name AS exam_name, s.name AS subject_name
+		FROM exams e JOIN subjects s ON s.id = ?
 		WHERE e.id = ?
 	`, subjectID, examID).Scan(&meta).Error; err != nil {
-		log.Context(ctx).Errorf("GetSingleClassSummary meta err: %+v", err)
 		return nil, err
 	}
 	summary.ExamName = meta.ExamName
 	summary.SubjectName = meta.SubjectName
 
-	var classRows []struct {
-		ClassID        int64   `gorm:"column:class_id"`
-		ClassName      string  `gorm:"column:class_name"`
-		TotalStudents  int64   `gorm:"column:total_students"`
-		AvgScore       float64 `gorm:"column:avg_score"`
-		PassCount      int64   `gorm:"column:pass_count"`
-		ExcellentCount int64   `gorm:"column:excellent_count"`
+	var fullScore float64
+	r.data.db.WithContext(ctx).Raw(`
+		SELECT full_score FROM exam_subjects WHERE exam_id = ? AND subject_id = ?
+	`, examID, subjectID).Scan(&fullScore)
+
+	// 查询各班级统计
+	var classStats []struct {
+		ClassID       int64   `gorm:"column:class_id"`
+		ClassName     string  `gorm:"column:class_name"`
+		TotalStudents int64   `gorm:"column:total_students"`
+		AvgScore      float64 `gorm:"column:avg_score"`
+		HighestScore  float64 `gorm:"column:highest_score"`
+		LowestScore   float64 `gorm:"column:lowest_score"`
+		StdDev        float64 `gorm:"column:std_dev"`
 	}
 	if err := r.data.db.WithContext(ctx).Raw(`
 		SELECT
 			c.id AS class_id,
 			c.name AS class_name,
 			COUNT(sc.student_id) AS total_students,
-			AVG(sc.total_score) AS avg_score,
-			SUM(CASE WHEN sc.total_score >= 60 THEN 1 ELSE 0 END) AS pass_count,
-			SUM(CASE WHEN sc.total_score >= 90 THEN 1 ELSE 0 END) AS excellent_count
+			ROUND(AVG(sc.total_score), 2) AS avg_score,
+			MAX(sc.total_score) AS highest_score,
+			MIN(sc.total_score) AS lowest_score,
+			ROUND(STDDEV_POP(sc.total_score), 2) AS std_dev
 		FROM classes c
 		JOIN students st ON st.class_id = c.id
-		JOIN scores sc ON sc.student_id = st.id
-		WHERE sc.exam_id = ? AND sc.subject_id = ?
+		JOIN scores sc ON sc.student_id = st.id AND sc.exam_id = ? AND sc.subject_id = ?
 		GROUP BY c.id, c.name
 		ORDER BY c.id
-	`, examID, subjectID).Scan(&classRows).Error; err != nil {
-		log.Context(ctx).Errorf("GetSingleClassSummary class rows err: %+v", err)
+	`, examID, subjectID).Scan(&classStats).Error; err != nil {
 		return nil, err
 	}
 
+	// 查询年级总体统计
 	var gradeOverall struct {
-		TotalStudents  int64   `gorm:"column:total_students"`
-		GradeAvgScore  float64 `gorm:"column:grade_avg_score"`
-		PassCount      int64   `gorm:"column:pass_count"`
-		ExcellentCount int64   `gorm:"column:excellent_count"`
+		TotalStudents int64   `gorm:"column:total_students"`
+		AvgScore      float64 `gorm:"column:avg_score"`
+		HighestScore  float64 `gorm:"column:highest_score"`
+		LowestScore   float64 `gorm:"column:lowest_score"`
+		StdDev        float64 `gorm:"column:std_dev"`
 	}
 	if err := r.data.db.WithContext(ctx).Raw(`
 		SELECT
 			COUNT(sc.student_id) AS total_students,
-			AVG(sc.total_score) AS grade_avg_score,
-			SUM(CASE WHEN sc.total_score >= 60 THEN 1 ELSE 0 END) AS pass_count,
-			SUM(CASE WHEN sc.total_score >= 90 THEN 1 ELSE 0 END) AS excellent_count
+			ROUND(AVG(sc.total_score), 2) AS avg_score,
+			MAX(sc.total_score) AS highest_score,
+			MIN(sc.total_score) AS lowest_score,
+			ROUND(STDDEV_POP(sc.total_score), 2) AS std_dev
 		FROM scores sc
 		WHERE sc.exam_id = ? AND sc.subject_id = ?
 	`, examID, subjectID).Scan(&gradeOverall).Error; err != nil {
-		log.Context(ctx).Errorf("GetSingleClassSummary overall err: %+v", err)
 		return nil, err
 	}
 
-	classRanks := make([]classRankRow, 0, len(classRows))
-	for _, row := range classRows {
-		classRanks = append(classRanks, classRankRow{
-			ClassID:  row.ClassID,
-			AvgScore: row.AvgScore,
-		})
-	}
-	orderClassRanks(classRanks)
-
-	rankMap := make(map[int64]int32, len(classRanks))
-	for idx, item := range classRanks {
-		rankMap[item.ClassID] = int32(idx + 1)
+	// 查询学生分数用于计算区分度
+	studentScores, _ := r.getStudentScores(ctx, examID, subjectID)
+	allScores := make([]float64, 0)
+	for _, scores := range studentScores {
+		allScores = append(allScores, scores...)
 	}
 
-	totalClasses := int32(len(classRows))
-	summary.Classes = make([]*biz.SingleClassSummaryItemStats, 0, len(classRows))
-	for _, row := range classRows {
-		passRate := 0.0
-		excellentRate := 0.0
-		if row.TotalStudents > 0 {
-			passRate = roundTo2Decimal(float64(row.PassCount) / float64(row.TotalStudents) * 100)
-			excellentRate = roundTo2Decimal(float64(row.ExcellentCount) / float64(row.TotalStudents) * 100)
-		}
-		summary.Classes = append(summary.Classes, &biz.SingleClassSummaryItemStats{
-			ClassID:         row.ClassID,
-			ClassName:       row.ClassName,
-			TotalStudents:   row.TotalStudents,
-			SubjectAvgScore: roundTo2Decimal(row.AvgScore),
-			GradeAvgScore:   roundTo2Decimal(gradeOverall.GradeAvgScore),
-			ScoreDiff:       roundTo2Decimal(row.AvgScore - gradeOverall.GradeAvgScore),
-			ClassRank:       rankMap[row.ClassID],
-			TotalClasses:    totalClasses,
-			PassRate:        passRate,
-			ExcellentRate:   excellentRate,
+	// 构建各班明细
+	summary.Classes = make([]*biz.ClassStats, 0, len(classStats))
+	for _, row := range classStats {
+		summary.Classes = append(summary.Classes, &biz.ClassStats{
+			ClassID:        row.ClassID,
+			ClassName:      row.ClassName,
+			TotalStudents:  row.TotalStudents,
+			FullScore:      fullScore,
+			AvgScore:       row.AvgScore,
+			HighestScore:   row.HighestScore,
+			LowestScore:    row.LowestScore,
+			ScoreDeviation: roundTo2Decimal(row.AvgScore - gradeOverall.AvgScore),
+			Difficulty:     r.calculateDifficulty(row.AvgScore, fullScore),
+			StdDev:         row.StdDev,
+			Discrimination: calculateDiscrimination(studentScores[row.ClassID], fullScore),
 		})
 	}
 
-	overallPassRate := 0.0
-	overallExcellentRate := 0.0
-	if gradeOverall.TotalStudents > 0 {
-		overallPassRate = roundTo2Decimal(float64(gradeOverall.PassCount) / float64(gradeOverall.TotalStudents) * 100)
-		overallExcellentRate = roundTo2Decimal(float64(gradeOverall.ExcellentCount) / float64(gradeOverall.TotalStudents) * 100)
-	}
-	summary.Overall = &biz.SingleClassSummaryItemStats{
-		ClassID:         0,
-		ClassName:       "全年级",
-		TotalStudents:   gradeOverall.TotalStudents,
-		SubjectAvgScore: roundTo2Decimal(gradeOverall.GradeAvgScore),
-		GradeAvgScore:   roundTo2Decimal(gradeOverall.GradeAvgScore),
-		ScoreDiff:       0,
-		ClassRank:       0,
-		TotalClasses:    totalClasses,
-		PassRate:        overallPassRate,
-		ExcellentRate:   overallExcellentRate,
+	// 全年级总体行
+	summary.Overall = &biz.ClassStats{
+		ClassID:        0,
+		ClassName:      "全年级",
+		TotalStudents:  gradeOverall.TotalStudents,
+		FullScore:      fullScore,
+		AvgScore:       gradeOverall.AvgScore,
+		HighestScore:   gradeOverall.HighestScore,
+		LowestScore:    gradeOverall.LowestScore,
+		ScoreDeviation: 0,
+		Difficulty:     r.calculateDifficulty(gradeOverall.AvgScore, fullScore),
+		StdDev:         gradeOverall.StdDev,
+		Discrimination: calculateDiscrimination(allScores, fullScore),
 	}
 
 	return &summary, nil
@@ -821,4 +881,106 @@ func (r *scoreRepo) calculateOverallFullScore(ctx context.Context, examID int64)
 		WHERE es.exam_id = ?
 	`, examID).Scan(&avgFullScore)
 	return avgFullScore
+}
+
+// calculateDiscrimination 计算区分度：高低分组得分率之差
+func calculateDiscrimination(scores []float64, fullScore float64) float64 {
+	if len(scores) == 0 || fullScore == 0 {
+		return 0
+	}
+	sort.Float64s(scores)
+	n := len(scores)
+	groupSize := int(math.Max(1, math.Round(float64(n)*0.27)))
+
+	var lowSum, highSum float64
+	for i := 0; i < groupSize; i++ {
+		lowSum += scores[i]
+	}
+	for i := n - groupSize; i < n; i++ {
+		highSum += scores[i]
+	}
+
+	lowRate := (lowSum / float64(groupSize)) / fullScore
+	highRate := (highSum / float64(groupSize)) / fullScore
+	return roundTo2Decimal((highRate - lowRate) * 100)
+}
+
+// calculateStdDev 计算标准差
+func calculateStdDev(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range values {
+		sum += v
+	}
+	mean := sum / float64(len(values))
+	var variance float64
+	for _, v := range values {
+		variance += (v - mean) * (v - mean)
+	}
+	return math.Sqrt(variance / float64(len(values)))
+}
+
+// getStudentScores 获取指定考试和学科下所有学生的分数（用于计算区分度）
+// 全科模式下返回每个学生的总分（按班级分组）；单科模式下返回该科分数
+func (r *scoreRepo) getStudentScores(ctx context.Context, examID, subjectID int64) (map[int64][]float64, error) {
+	var rows []struct {
+		ClassID int64   `gorm:"column:class_id"`
+		Score   float64 `gorm:"column:total_score"`
+	}
+
+	var err error
+	if subjectID > 0 {
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT st.class_id, sc.total_score
+			FROM scores sc
+			JOIN students st ON st.id = sc.student_id
+			WHERE sc.exam_id = ? AND sc.subject_id = ?
+			ORDER BY st.class_id, sc.total_score
+		`, examID, subjectID).Scan(&rows).Error
+	} else {
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT st.class_id, SUM(sc.total_score) as total_score
+			FROM scores sc
+			JOIN students st ON st.id = sc.student_id
+			WHERE sc.exam_id = ?
+			GROUP BY st.class_id, sc.student_id
+			ORDER BY st.class_id, total_score
+		`, examID).Scan(&rows).Error
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[int64][]float64)
+	for _, row := range rows {
+		result[row.ClassID] = append(result[row.ClassID], row.Score)
+	}
+	return result, nil
+}
+
+// getAllStudentScores 获取所有学生分数（不按班级分组，用于学科/全年级区分度）
+// 全科模式下返回每个学生的总分；单科模式下返回该科分数
+func (r *scoreRepo) getAllStudentScores(ctx context.Context, examID, subjectID int64) ([]float64, error) {
+	var scores []float64
+	var err error
+
+	if subjectID > 0 {
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT total_score FROM scores WHERE exam_id = ? AND subject_id = ? ORDER BY total_score
+		`, examID, subjectID).Pluck("total_score", &scores).Error
+	} else {
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT SUM(total_score) as total_score
+			FROM scores
+			WHERE exam_id = ?
+			GROUP BY student_id
+			ORDER BY total_score
+		`, examID).Pluck("total_score", &scores).Error
+	}
+	if err != nil {
+		return nil, err
+	}
+	return scores, nil
 }
