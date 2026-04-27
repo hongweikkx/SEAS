@@ -314,16 +314,19 @@ components:
                     type: number
                     format: double
                 difficulty:
-                    type: string
+                    type: number
+                    format: double
         seas.v1.ClassRatingDistribution:
             type: object
             properties:
                 classId:
-                    type: string
+                    type: integer
+                    format: int32
                 className:
                     type: string
                 totalStudents:
-                    type: string
+                    type: integer
+                    format: int32
                 avgScore:
                     type: number
                     format: double
@@ -370,11 +373,13 @@ components:
             type: object
             properties:
                 classId:
-                    type: string
+                    type: integer
+                    format: int32
                 className:
                     type: string
                 totalStudents:
-                    type: string
+                    type: integer
+                    format: int32
                 avgScore:
                     type: number
                     format: double
@@ -391,6 +396,12 @@ components:
                     type: number
                     format: double
                 stdDev:
+                    type: number
+                    format: double
+                fullScore:
+                    type: number
+                    format: double
+                discrimination:
                     type: number
                     format: double
         seas.v1.ExamInfo:
@@ -431,7 +442,8 @@ components:
                 scope:
                     type: string
                 totalParticipants:
-                    type: string
+                    type: integer
+                    format: int32
                 overallGrade:
                     $ref: '#/components/schemas/seas.v1.ClassSummaryItem'
                 classDetails:
@@ -448,7 +460,8 @@ components:
                 scope:
                     type: string
                 totalParticipants:
-                    type: string
+                    type: integer
+                    format: int32
                 config:
                     $ref: '#/components/schemas/seas.v1.RatingConfig'
                 overallGrade:
@@ -488,11 +501,11 @@ components:
                 subjectName:
                     type: string
                 overall:
-                    $ref: '#/components/schemas/seas.v1.SingleClassSummaryItem'
+                    $ref: '#/components/schemas/seas.v1.ClassSummaryItem'
                 classes:
                     type: array
                     items:
-                        $ref: '#/components/schemas/seas.v1.SingleClassSummaryItem'
+                        $ref: '#/components/schemas/seas.v1.ClassSummaryItem'
         seas.v1.GetSingleQuestionDetailReply:
             type: object
             properties:
@@ -548,7 +561,8 @@ components:
                 scope:
                     type: string
                 totalParticipants:
-                    type: string
+                    type: integer
+                    format: int32
                 subjectsInvolved:
                     type: integer
                     format: int32
@@ -559,6 +573,8 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/seas.v1.SubjectSummaryItem'
+                overall:
+                    $ref: '#/components/schemas/seas.v1.SubjectSummaryItem'
         seas.v1.ListExamsReply:
             type: object
             properties:
@@ -595,7 +611,8 @@ components:
             type: object
             properties:
                 classId:
-                    type: string
+                    type: integer
+                    format: int32
                 className:
                     type: string
                 avgScore:
@@ -622,36 +639,6 @@ components:
                 percentage:
                     type: number
                     format: double
-        seas.v1.SingleClassSummaryItem:
-            type: object
-            properties:
-                classId:
-                    type: string
-                className:
-                    type: string
-                totalStudents:
-                    type: string
-                subjectAvgScore:
-                    type: number
-                    format: double
-                gradeAvgScore:
-                    type: number
-                    format: double
-                scoreDiff:
-                    type: number
-                    format: double
-                classRank:
-                    type: integer
-                    format: int32
-                totalClasses:
-                    type: integer
-                    format: int32
-                passRate:
-                    type: number
-                    format: double
-                excellentRate:
-                    type: number
-                    format: double
         seas.v1.SingleQuestionSummaryItem:
             type: object
             properties:
@@ -675,7 +662,8 @@ components:
                     type: number
                     format: double
                 difficulty:
-                    type: string
+                    type: number
+                    format: double
         seas.v1.StudentQuestionDetail:
             type: object
             properties:
@@ -733,6 +721,16 @@ components:
                     type: number
                     format: double
                 studentCount:
-                    type: string
+                    type: integer
+                    format: int32
+                scoreDeviation:
+                    type: number
+                    format: double
+                stdDev:
+                    type: number
+                    format: double
+                discrimination:
+                    type: number
+                    format: double
 tags:
     - name: Analysis

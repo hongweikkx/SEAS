@@ -470,17 +470,20 @@ func (x *GetSubjectSummaryRequest) GetSubjectId() string {
 }
 
 type SubjectSummaryItem struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	FullScore     float64                `protobuf:"fixed64,3,opt,name=full_score,json=fullScore,proto3" json:"full_score,omitempty"`
-	AvgScore      float64                `protobuf:"fixed64,4,opt,name=avg_score,json=avgScore,proto3" json:"avg_score,omitempty"`
-	HighestScore  float64                `protobuf:"fixed64,5,opt,name=highest_score,json=highestScore,proto3" json:"highest_score,omitempty"`
-	LowestScore   float64                `protobuf:"fixed64,6,opt,name=lowest_score,json=lowestScore,proto3" json:"lowest_score,omitempty"`
-	Difficulty    float64                `protobuf:"fixed64,7,opt,name=difficulty,proto3" json:"difficulty,omitempty"` // 平均分/满分*100
-	StudentCount  int64                  `protobuf:"varint,8,opt,name=student_count,json=studentCount,proto3" json:"student_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	FullScore      float64                `protobuf:"fixed64,3,opt,name=full_score,json=fullScore,proto3" json:"full_score,omitempty"`
+	AvgScore       float64                `protobuf:"fixed64,4,opt,name=avg_score,json=avgScore,proto3" json:"avg_score,omitempty"`
+	HighestScore   float64                `protobuf:"fixed64,5,opt,name=highest_score,json=highestScore,proto3" json:"highest_score,omitempty"`
+	LowestScore    float64                `protobuf:"fixed64,6,opt,name=lowest_score,json=lowestScore,proto3" json:"lowest_score,omitempty"`
+	Difficulty     float64                `protobuf:"fixed64,7,opt,name=difficulty,proto3" json:"difficulty,omitempty"` // 平均分/满分*100
+	StudentCount   int32                  `protobuf:"varint,8,opt,name=student_count,json=studentCount,proto3" json:"student_count,omitempty"`
+	ScoreDeviation float64                `protobuf:"fixed64,9,opt,name=score_deviation,json=scoreDeviation,proto3" json:"score_deviation,omitempty"` // 新增：离均差
+	StdDev         float64                `protobuf:"fixed64,10,opt,name=std_dev,json=stdDev,proto3" json:"std_dev,omitempty"`                        // 新增：标准差
+	Discrimination float64                `protobuf:"fixed64,11,opt,name=discrimination,proto3" json:"discrimination,omitempty"`                      // 新增：区分度
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SubjectSummaryItem) Reset() {
@@ -562,9 +565,30 @@ func (x *SubjectSummaryItem) GetDifficulty() float64 {
 	return 0
 }
 
-func (x *SubjectSummaryItem) GetStudentCount() int64 {
+func (x *SubjectSummaryItem) GetStudentCount() int32 {
 	if x != nil {
 		return x.StudentCount
+	}
+	return 0
+}
+
+func (x *SubjectSummaryItem) GetScoreDeviation() float64 {
+	if x != nil {
+		return x.ScoreDeviation
+	}
+	return 0
+}
+
+func (x *SubjectSummaryItem) GetStdDev() float64 {
+	if x != nil {
+		return x.StdDev
+	}
+	return 0
+}
+
+func (x *SubjectSummaryItem) GetDiscrimination() float64 {
+	if x != nil {
+		return x.Discrimination
 	}
 	return 0
 }
@@ -574,10 +598,11 @@ type GetSubjectSummaryReply struct {
 	ExamId            string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
 	ExamName          string                 `protobuf:"bytes,2,opt,name=exam_name,json=examName,proto3" json:"exam_name,omitempty"`
 	Scope             string                 `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
-	TotalParticipants int64                  `protobuf:"varint,4,opt,name=total_participants,json=totalParticipants,proto3" json:"total_participants,omitempty"`
+	TotalParticipants int32                  `protobuf:"varint,4,opt,name=total_participants,json=totalParticipants,proto3" json:"total_participants,omitempty"`
 	SubjectsInvolved  int32                  `protobuf:"varint,5,opt,name=subjects_involved,json=subjectsInvolved,proto3" json:"subjects_involved,omitempty"` // 仅在 scope=all_subjects 时有意义
 	ClassesInvolved   int32                  `protobuf:"varint,6,opt,name=classes_involved,json=classesInvolved,proto3" json:"classes_involved,omitempty"`    // 仅在 scope=all_subjects 时有意义
 	Subjects          []*SubjectSummaryItem  `protobuf:"bytes,7,rep,name=subjects,proto3" json:"subjects,omitempty"`
+	Overall           *SubjectSummaryItem    `protobuf:"bytes,10,opt,name=overall,proto3" json:"overall,omitempty"` // 新增：全年级总体
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -633,7 +658,7 @@ func (x *GetSubjectSummaryReply) GetScope() string {
 	return ""
 }
 
-func (x *GetSubjectSummaryReply) GetTotalParticipants() int64 {
+func (x *GetSubjectSummaryReply) GetTotalParticipants() int32 {
 	if x != nil {
 		return x.TotalParticipants
 	}
@@ -657,6 +682,13 @@ func (x *GetSubjectSummaryReply) GetClassesInvolved() int32 {
 func (x *GetSubjectSummaryReply) GetSubjects() []*SubjectSummaryItem {
 	if x != nil {
 		return x.Subjects
+	}
+	return nil
+}
+
+func (x *GetSubjectSummaryReply) GetOverall() *SubjectSummaryItem {
+	if x != nil {
+		return x.Overall
 	}
 	return nil
 }
@@ -724,15 +756,17 @@ func (x *GetClassSummaryRequest) GetSubjectId() string {
 
 type ClassSummaryItem struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	ClassId        string                 `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	ClassId        int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
 	ClassName      string                 `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"`
-	TotalStudents  int64                  `protobuf:"varint,3,opt,name=total_students,json=totalStudents,proto3" json:"total_students,omitempty"`
+	TotalStudents  int32                  `protobuf:"varint,3,opt,name=total_students,json=totalStudents,proto3" json:"total_students,omitempty"`
 	AvgScore       float64                `protobuf:"fixed64,4,opt,name=avg_score,json=avgScore,proto3" json:"avg_score,omitempty"`
 	HighestScore   float64                `protobuf:"fixed64,5,opt,name=highest_score,json=highestScore,proto3" json:"highest_score,omitempty"`
 	LowestScore    float64                `protobuf:"fixed64,6,opt,name=lowest_score,json=lowestScore,proto3" json:"lowest_score,omitempty"`
 	ScoreDeviation float64                `protobuf:"fixed64,7,opt,name=score_deviation,json=scoreDeviation,proto3" json:"score_deviation,omitempty"` // 离均差：班级平均分-全年级平均分，全年级固定为0
 	Difficulty     float64                `protobuf:"fixed64,8,opt,name=difficulty,proto3" json:"difficulty,omitempty"`                               // 平均分/满分*100
 	StdDev         float64                `protobuf:"fixed64,9,opt,name=std_dev,json=stdDev,proto3" json:"std_dev,omitempty"`                         // 标准差
+	FullScore      float64                `protobuf:"fixed64,10,opt,name=full_score,json=fullScore,proto3" json:"full_score,omitempty"`               // 新增：满分
+	Discrimination float64                `protobuf:"fixed64,11,opt,name=discrimination,proto3" json:"discrimination,omitempty"`                      // 新增：区分度
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -767,11 +801,11 @@ func (*ClassSummaryItem) Descriptor() ([]byte, []int) {
 	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *ClassSummaryItem) GetClassId() string {
+func (x *ClassSummaryItem) GetClassId() int32 {
 	if x != nil {
 		return x.ClassId
 	}
-	return ""
+	return 0
 }
 
 func (x *ClassSummaryItem) GetClassName() string {
@@ -781,7 +815,7 @@ func (x *ClassSummaryItem) GetClassName() string {
 	return ""
 }
 
-func (x *ClassSummaryItem) GetTotalStudents() int64 {
+func (x *ClassSummaryItem) GetTotalStudents() int32 {
 	if x != nil {
 		return x.TotalStudents
 	}
@@ -830,12 +864,26 @@ func (x *ClassSummaryItem) GetStdDev() float64 {
 	return 0
 }
 
+func (x *ClassSummaryItem) GetFullScore() float64 {
+	if x != nil {
+		return x.FullScore
+	}
+	return 0
+}
+
+func (x *ClassSummaryItem) GetDiscrimination() float64 {
+	if x != nil {
+		return x.Discrimination
+	}
+	return 0
+}
+
 type GetClassSummaryReply struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	ExamId            string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
 	ExamName          string                 `protobuf:"bytes,2,opt,name=exam_name,json=examName,proto3" json:"exam_name,omitempty"`
 	Scope             string                 `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
-	TotalParticipants int64                  `protobuf:"varint,4,opt,name=total_participants,json=totalParticipants,proto3" json:"total_participants,omitempty"`
+	TotalParticipants int32                  `protobuf:"varint,4,opt,name=total_participants,json=totalParticipants,proto3" json:"total_participants,omitempty"`
 	OverallGrade      *ClassSummaryItem      `protobuf:"bytes,5,opt,name=overall_grade,json=overallGrade,proto3" json:"overall_grade,omitempty"`
 	ClassDetails      []*ClassSummaryItem    `protobuf:"bytes,6,rep,name=class_details,json=classDetails,proto3" json:"class_details,omitempty"`
 	unknownFields     protoimpl.UnknownFields
@@ -893,7 +941,7 @@ func (x *GetClassSummaryReply) GetScope() string {
 	return ""
 }
 
-func (x *GetClassSummaryReply) GetTotalParticipants() int64 {
+func (x *GetClassSummaryReply) GetTotalParticipants() int32 {
 	if x != nil {
 		return x.TotalParticipants
 	}
@@ -1220,137 +1268,21 @@ func (x *GetSingleClassSummaryRequest) GetSubjectId() string {
 	return ""
 }
 
-type SingleClassSummaryItem struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ClassId         string                 `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
-	ClassName       string                 `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"`
-	TotalStudents   int64                  `protobuf:"varint,3,opt,name=total_students,json=totalStudents,proto3" json:"total_students,omitempty"`
-	SubjectAvgScore float64                `protobuf:"fixed64,4,opt,name=subject_avg_score,json=subjectAvgScore,proto3" json:"subject_avg_score,omitempty"`
-	GradeAvgScore   float64                `protobuf:"fixed64,5,opt,name=grade_avg_score,json=gradeAvgScore,proto3" json:"grade_avg_score,omitempty"`
-	ScoreDiff       float64                `protobuf:"fixed64,6,opt,name=score_diff,json=scoreDiff,proto3" json:"score_diff,omitempty"`
-	ClassRank       int32                  `protobuf:"varint,7,opt,name=class_rank,json=classRank,proto3" json:"class_rank,omitempty"`
-	TotalClasses    int32                  `protobuf:"varint,8,opt,name=total_classes,json=totalClasses,proto3" json:"total_classes,omitempty"`
-	PassRate        float64                `protobuf:"fixed64,9,opt,name=pass_rate,json=passRate,proto3" json:"pass_rate,omitempty"`
-	ExcellentRate   float64                `protobuf:"fixed64,10,opt,name=excellent_rate,json=excellentRate,proto3" json:"excellent_rate,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *SingleClassSummaryItem) Reset() {
-	*x = SingleClassSummaryItem{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SingleClassSummaryItem) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SingleClassSummaryItem) ProtoMessage() {}
-
-func (x *SingleClassSummaryItem) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SingleClassSummaryItem.ProtoReflect.Descriptor instead.
-func (*SingleClassSummaryItem) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *SingleClassSummaryItem) GetClassId() string {
-	if x != nil {
-		return x.ClassId
-	}
-	return ""
-}
-
-func (x *SingleClassSummaryItem) GetClassName() string {
-	if x != nil {
-		return x.ClassName
-	}
-	return ""
-}
-
-func (x *SingleClassSummaryItem) GetTotalStudents() int64 {
-	if x != nil {
-		return x.TotalStudents
-	}
-	return 0
-}
-
-func (x *SingleClassSummaryItem) GetSubjectAvgScore() float64 {
-	if x != nil {
-		return x.SubjectAvgScore
-	}
-	return 0
-}
-
-func (x *SingleClassSummaryItem) GetGradeAvgScore() float64 {
-	if x != nil {
-		return x.GradeAvgScore
-	}
-	return 0
-}
-
-func (x *SingleClassSummaryItem) GetScoreDiff() float64 {
-	if x != nil {
-		return x.ScoreDiff
-	}
-	return 0
-}
-
-func (x *SingleClassSummaryItem) GetClassRank() int32 {
-	if x != nil {
-		return x.ClassRank
-	}
-	return 0
-}
-
-func (x *SingleClassSummaryItem) GetTotalClasses() int32 {
-	if x != nil {
-		return x.TotalClasses
-	}
-	return 0
-}
-
-func (x *SingleClassSummaryItem) GetPassRate() float64 {
-	if x != nil {
-		return x.PassRate
-	}
-	return 0
-}
-
-func (x *SingleClassSummaryItem) GetExcellentRate() float64 {
-	if x != nil {
-		return x.ExcellentRate
-	}
-	return 0
-}
-
 type GetSingleClassSummaryReply struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
-	ExamId        string                    `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
-	ExamName      string                    `protobuf:"bytes,2,opt,name=exam_name,json=examName,proto3" json:"exam_name,omitempty"`
-	SubjectId     string                    `protobuf:"bytes,3,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
-	SubjectName   string                    `protobuf:"bytes,4,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
-	Overall       *SingleClassSummaryItem   `protobuf:"bytes,5,opt,name=overall,proto3" json:"overall,omitempty"`
-	Classes       []*SingleClassSummaryItem `protobuf:"bytes,6,rep,name=classes,proto3" json:"classes,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamId        string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamName      string                 `protobuf:"bytes,2,opt,name=exam_name,json=examName,proto3" json:"exam_name,omitempty"`
+	SubjectId     string                 `protobuf:"bytes,3,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	SubjectName   string                 `protobuf:"bytes,4,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
+	Overall       *ClassSummaryItem      `protobuf:"bytes,5,opt,name=overall,proto3" json:"overall,omitempty"` // 复用 ClassSummaryItem
+	Classes       []*ClassSummaryItem    `protobuf:"bytes,6,rep,name=classes,proto3" json:"classes,omitempty"` // 复用 ClassSummaryItem
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSingleClassSummaryReply) Reset() {
 	*x = GetSingleClassSummaryReply{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[17]
+	mi := &file_seas_v1_analysis_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1362,7 +1294,7 @@ func (x *GetSingleClassSummaryReply) String() string {
 func (*GetSingleClassSummaryReply) ProtoMessage() {}
 
 func (x *GetSingleClassSummaryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[17]
+	mi := &file_seas_v1_analysis_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1375,7 +1307,7 @@ func (x *GetSingleClassSummaryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSingleClassSummaryReply.ProtoReflect.Descriptor instead.
 func (*GetSingleClassSummaryReply) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{17}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetSingleClassSummaryReply) GetExamId() string {
@@ -1406,14 +1338,14 @@ func (x *GetSingleClassSummaryReply) GetSubjectName() string {
 	return ""
 }
 
-func (x *GetSingleClassSummaryReply) GetOverall() *SingleClassSummaryItem {
+func (x *GetSingleClassSummaryReply) GetOverall() *ClassSummaryItem {
 	if x != nil {
 		return x.Overall
 	}
 	return nil
 }
 
-func (x *GetSingleClassSummaryReply) GetClasses() []*SingleClassSummaryItem {
+func (x *GetSingleClassSummaryReply) GetClasses() []*ClassSummaryItem {
 	if x != nil {
 		return x.Classes
 	}
@@ -1432,7 +1364,7 @@ type GetSingleClassQuestionsRequest struct {
 
 func (x *GetSingleClassQuestionsRequest) Reset() {
 	*x = GetSingleClassQuestionsRequest{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[18]
+	mi := &file_seas_v1_analysis_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1444,7 +1376,7 @@ func (x *GetSingleClassQuestionsRequest) String() string {
 func (*GetSingleClassQuestionsRequest) ProtoMessage() {}
 
 func (x *GetSingleClassQuestionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[18]
+	mi := &file_seas_v1_analysis_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1457,7 +1389,7 @@ func (x *GetSingleClassQuestionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSingleClassQuestionsRequest.ProtoReflect.Descriptor instead.
 func (*GetSingleClassQuestionsRequest) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{18}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetSingleClassQuestionsRequest) GetExamId() string {
@@ -1490,14 +1422,14 @@ type ClassQuestionItem struct {
 	ClassAvgScore  float64                `protobuf:"fixed64,5,opt,name=class_avg_score,json=classAvgScore,proto3" json:"class_avg_score,omitempty"`
 	ScoreRate      float64                `protobuf:"fixed64,6,opt,name=score_rate,json=scoreRate,proto3" json:"score_rate,omitempty"`
 	GradeAvgScore  float64                `protobuf:"fixed64,7,opt,name=grade_avg_score,json=gradeAvgScore,proto3" json:"grade_avg_score,omitempty"`
-	Difficulty     string                 `protobuf:"bytes,8,opt,name=difficulty,proto3" json:"difficulty,omitempty"`
+	Difficulty     float64                `protobuf:"fixed64,8,opt,name=difficulty,proto3" json:"difficulty,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ClassQuestionItem) Reset() {
 	*x = ClassQuestionItem{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[19]
+	mi := &file_seas_v1_analysis_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1509,7 +1441,7 @@ func (x *ClassQuestionItem) String() string {
 func (*ClassQuestionItem) ProtoMessage() {}
 
 func (x *ClassQuestionItem) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[19]
+	mi := &file_seas_v1_analysis_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1522,7 +1454,7 @@ func (x *ClassQuestionItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClassQuestionItem.ProtoReflect.Descriptor instead.
 func (*ClassQuestionItem) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{19}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ClassQuestionItem) GetQuestionId() string {
@@ -1574,11 +1506,11 @@ func (x *ClassQuestionItem) GetGradeAvgScore() float64 {
 	return 0
 }
 
-func (x *ClassQuestionItem) GetDifficulty() string {
+func (x *ClassQuestionItem) GetDifficulty() float64 {
 	if x != nil {
 		return x.Difficulty
 	}
-	return ""
+	return 0
 }
 
 type GetSingleClassQuestionsReply struct {
@@ -1596,7 +1528,7 @@ type GetSingleClassQuestionsReply struct {
 
 func (x *GetSingleClassQuestionsReply) Reset() {
 	*x = GetSingleClassQuestionsReply{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[20]
+	mi := &file_seas_v1_analysis_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1608,7 +1540,7 @@ func (x *GetSingleClassQuestionsReply) String() string {
 func (*GetSingleClassQuestionsReply) ProtoMessage() {}
 
 func (x *GetSingleClassQuestionsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[20]
+	mi := &file_seas_v1_analysis_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1621,7 +1553,7 @@ func (x *GetSingleClassQuestionsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSingleClassQuestionsReply.ProtoReflect.Descriptor instead.
 func (*GetSingleClassQuestionsReply) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{20}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetSingleClassQuestionsReply) GetExamId() string {
@@ -1684,7 +1616,7 @@ type GetSingleQuestionSummaryRequest struct {
 
 func (x *GetSingleQuestionSummaryRequest) Reset() {
 	*x = GetSingleQuestionSummaryRequest{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[21]
+	mi := &file_seas_v1_analysis_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1696,7 +1628,7 @@ func (x *GetSingleQuestionSummaryRequest) String() string {
 func (*GetSingleQuestionSummaryRequest) ProtoMessage() {}
 
 func (x *GetSingleQuestionSummaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[21]
+	mi := &file_seas_v1_analysis_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1709,7 +1641,7 @@ func (x *GetSingleQuestionSummaryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSingleQuestionSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetSingleQuestionSummaryRequest) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{21}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetSingleQuestionSummaryRequest) GetExamId() string {
@@ -1728,7 +1660,7 @@ func (x *GetSingleQuestionSummaryRequest) GetSubjectId() string {
 
 type QuestionClassBreakdown struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClassId       string                 `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	ClassId       int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
 	ClassName     string                 `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"`
 	AvgScore      float64                `protobuf:"fixed64,3,opt,name=avg_score,json=avgScore,proto3" json:"avg_score,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1737,7 +1669,7 @@ type QuestionClassBreakdown struct {
 
 func (x *QuestionClassBreakdown) Reset() {
 	*x = QuestionClassBreakdown{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[22]
+	mi := &file_seas_v1_analysis_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1749,7 +1681,7 @@ func (x *QuestionClassBreakdown) String() string {
 func (*QuestionClassBreakdown) ProtoMessage() {}
 
 func (x *QuestionClassBreakdown) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[22]
+	mi := &file_seas_v1_analysis_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1762,14 +1694,14 @@ func (x *QuestionClassBreakdown) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionClassBreakdown.ProtoReflect.Descriptor instead.
 func (*QuestionClassBreakdown) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{22}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{21}
 }
 
-func (x *QuestionClassBreakdown) GetClassId() string {
+func (x *QuestionClassBreakdown) GetClassId() int32 {
 	if x != nil {
 		return x.ClassId
 	}
-	return ""
+	return 0
 }
 
 func (x *QuestionClassBreakdown) GetClassName() string {
@@ -1795,14 +1727,14 @@ type SingleQuestionSummaryItem struct {
 	GradeAvgScore  float64                   `protobuf:"fixed64,5,opt,name=grade_avg_score,json=gradeAvgScore,proto3" json:"grade_avg_score,omitempty"`
 	ClassBreakdown []*QuestionClassBreakdown `protobuf:"bytes,6,rep,name=class_breakdown,json=classBreakdown,proto3" json:"class_breakdown,omitempty"`
 	ScoreRate      float64                   `protobuf:"fixed64,7,opt,name=score_rate,json=scoreRate,proto3" json:"score_rate,omitempty"`
-	Difficulty     string                    `protobuf:"bytes,8,opt,name=difficulty,proto3" json:"difficulty,omitempty"`
+	Difficulty     float64                   `protobuf:"fixed64,8,opt,name=difficulty,proto3" json:"difficulty,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SingleQuestionSummaryItem) Reset() {
 	*x = SingleQuestionSummaryItem{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[23]
+	mi := &file_seas_v1_analysis_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1814,7 +1746,7 @@ func (x *SingleQuestionSummaryItem) String() string {
 func (*SingleQuestionSummaryItem) ProtoMessage() {}
 
 func (x *SingleQuestionSummaryItem) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[23]
+	mi := &file_seas_v1_analysis_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1827,7 +1759,7 @@ func (x *SingleQuestionSummaryItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SingleQuestionSummaryItem.ProtoReflect.Descriptor instead.
 func (*SingleQuestionSummaryItem) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{23}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SingleQuestionSummaryItem) GetQuestionId() string {
@@ -1879,11 +1811,11 @@ func (x *SingleQuestionSummaryItem) GetScoreRate() float64 {
 	return 0
 }
 
-func (x *SingleQuestionSummaryItem) GetDifficulty() string {
+func (x *SingleQuestionSummaryItem) GetDifficulty() float64 {
 	if x != nil {
 		return x.Difficulty
 	}
-	return ""
+	return 0
 }
 
 type GetSingleQuestionSummaryReply struct {
@@ -1899,7 +1831,7 @@ type GetSingleQuestionSummaryReply struct {
 
 func (x *GetSingleQuestionSummaryReply) Reset() {
 	*x = GetSingleQuestionSummaryReply{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[24]
+	mi := &file_seas_v1_analysis_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1911,7 +1843,7 @@ func (x *GetSingleQuestionSummaryReply) String() string {
 func (*GetSingleQuestionSummaryReply) ProtoMessage() {}
 
 func (x *GetSingleQuestionSummaryReply) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[24]
+	mi := &file_seas_v1_analysis_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1924,7 +1856,7 @@ func (x *GetSingleQuestionSummaryReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSingleQuestionSummaryReply.ProtoReflect.Descriptor instead.
 func (*GetSingleQuestionSummaryReply) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{24}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetSingleQuestionSummaryReply) GetExamId() string {
@@ -1975,7 +1907,7 @@ type GetSingleQuestionDetailRequest struct {
 
 func (x *GetSingleQuestionDetailRequest) Reset() {
 	*x = GetSingleQuestionDetailRequest{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[25]
+	mi := &file_seas_v1_analysis_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1987,7 +1919,7 @@ func (x *GetSingleQuestionDetailRequest) String() string {
 func (*GetSingleQuestionDetailRequest) ProtoMessage() {}
 
 func (x *GetSingleQuestionDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[25]
+	mi := &file_seas_v1_analysis_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2000,7 +1932,7 @@ func (x *GetSingleQuestionDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSingleQuestionDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetSingleQuestionDetailRequest) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{25}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetSingleQuestionDetailRequest) GetExamId() string {
@@ -2047,7 +1979,7 @@ type StudentQuestionDetail struct {
 
 func (x *StudentQuestionDetail) Reset() {
 	*x = StudentQuestionDetail{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[26]
+	mi := &file_seas_v1_analysis_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2059,7 +1991,7 @@ func (x *StudentQuestionDetail) String() string {
 func (*StudentQuestionDetail) ProtoMessage() {}
 
 func (x *StudentQuestionDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[26]
+	mi := &file_seas_v1_analysis_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2072,7 +2004,7 @@ func (x *StudentQuestionDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StudentQuestionDetail.ProtoReflect.Descriptor instead.
 func (*StudentQuestionDetail) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{26}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *StudentQuestionDetail) GetStudentId() string {
@@ -2151,7 +2083,7 @@ type GetSingleQuestionDetailReply struct {
 
 func (x *GetSingleQuestionDetailReply) Reset() {
 	*x = GetSingleQuestionDetailReply{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[27]
+	mi := &file_seas_v1_analysis_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2163,7 +2095,7 @@ func (x *GetSingleQuestionDetailReply) String() string {
 func (*GetSingleQuestionDetailReply) ProtoMessage() {}
 
 func (x *GetSingleQuestionDetailReply) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[27]
+	mi := &file_seas_v1_analysis_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2176,7 +2108,7 @@ func (x *GetSingleQuestionDetailReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSingleQuestionDetailReply.ProtoReflect.Descriptor instead.
 func (*GetSingleQuestionDetailReply) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{27}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetSingleQuestionDetailReply) GetExamId() string {
@@ -2275,7 +2207,7 @@ type RatingConfig struct {
 
 func (x *RatingConfig) Reset() {
 	*x = RatingConfig{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[28]
+	mi := &file_seas_v1_analysis_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2287,7 +2219,7 @@ func (x *RatingConfig) String() string {
 func (*RatingConfig) ProtoMessage() {}
 
 func (x *RatingConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[28]
+	mi := &file_seas_v1_analysis_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2300,7 +2232,7 @@ func (x *RatingConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RatingConfig.ProtoReflect.Descriptor instead.
 func (*RatingConfig) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{28}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *RatingConfig) GetExcellentThreshold() float64 {
@@ -2338,7 +2270,7 @@ type GetRatingDistributionRequest struct {
 
 func (x *GetRatingDistributionRequest) Reset() {
 	*x = GetRatingDistributionRequest{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[29]
+	mi := &file_seas_v1_analysis_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2350,7 +2282,7 @@ func (x *GetRatingDistributionRequest) String() string {
 func (*GetRatingDistributionRequest) ProtoMessage() {}
 
 func (x *GetRatingDistributionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[29]
+	mi := &file_seas_v1_analysis_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2363,7 +2295,7 @@ func (x *GetRatingDistributionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRatingDistributionRequest.ProtoReflect.Descriptor instead.
 func (*GetRatingDistributionRequest) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{29}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetRatingDistributionRequest) GetExamId() string {
@@ -2418,7 +2350,7 @@ type RatingItem struct {
 
 func (x *RatingItem) Reset() {
 	*x = RatingItem{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[30]
+	mi := &file_seas_v1_analysis_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2430,7 +2362,7 @@ func (x *RatingItem) String() string {
 func (*RatingItem) ProtoMessage() {}
 
 func (x *RatingItem) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[30]
+	mi := &file_seas_v1_analysis_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2443,7 +2375,7 @@ func (x *RatingItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RatingItem.ProtoReflect.Descriptor instead.
 func (*RatingItem) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{30}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *RatingItem) GetCount() int64 {
@@ -2462,9 +2394,9 @@ func (x *RatingItem) GetPercentage() float64 {
 
 type ClassRatingDistribution struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClassId       string                 `protobuf:"bytes,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	ClassId       int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
 	ClassName     string                 `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"`
-	TotalStudents int64                  `protobuf:"varint,3,opt,name=total_students,json=totalStudents,proto3" json:"total_students,omitempty"`
+	TotalStudents int32                  `protobuf:"varint,3,opt,name=total_students,json=totalStudents,proto3" json:"total_students,omitempty"`
 	AvgScore      float64                `protobuf:"fixed64,4,opt,name=avg_score,json=avgScore,proto3" json:"avg_score,omitempty"`
 	Excellent     *RatingItem            `protobuf:"bytes,5,opt,name=excellent,proto3" json:"excellent,omitempty"` // 优秀
 	Good          *RatingItem            `protobuf:"bytes,6,opt,name=good,proto3" json:"good,omitempty"`           // 良好
@@ -2476,7 +2408,7 @@ type ClassRatingDistribution struct {
 
 func (x *ClassRatingDistribution) Reset() {
 	*x = ClassRatingDistribution{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[31]
+	mi := &file_seas_v1_analysis_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2488,7 +2420,7 @@ func (x *ClassRatingDistribution) String() string {
 func (*ClassRatingDistribution) ProtoMessage() {}
 
 func (x *ClassRatingDistribution) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[31]
+	mi := &file_seas_v1_analysis_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2501,14 +2433,14 @@ func (x *ClassRatingDistribution) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClassRatingDistribution.ProtoReflect.Descriptor instead.
 func (*ClassRatingDistribution) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{31}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *ClassRatingDistribution) GetClassId() string {
+func (x *ClassRatingDistribution) GetClassId() int32 {
 	if x != nil {
 		return x.ClassId
 	}
-	return ""
+	return 0
 }
 
 func (x *ClassRatingDistribution) GetClassName() string {
@@ -2518,7 +2450,7 @@ func (x *ClassRatingDistribution) GetClassName() string {
 	return ""
 }
 
-func (x *ClassRatingDistribution) GetTotalStudents() int64 {
+func (x *ClassRatingDistribution) GetTotalStudents() int32 {
 	if x != nil {
 		return x.TotalStudents
 	}
@@ -2565,7 +2497,7 @@ type GetRatingDistributionReply struct {
 	ExamId            string                     `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
 	ExamName          string                     `protobuf:"bytes,2,opt,name=exam_name,json=examName,proto3" json:"exam_name,omitempty"`
 	Scope             string                     `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
-	TotalParticipants int64                      `protobuf:"varint,4,opt,name=total_participants,json=totalParticipants,proto3" json:"total_participants,omitempty"`
+	TotalParticipants int32                      `protobuf:"varint,4,opt,name=total_participants,json=totalParticipants,proto3" json:"total_participants,omitempty"`
 	Config            *RatingConfig              `protobuf:"bytes,5,opt,name=config,proto3" json:"config,omitempty"`
 	OverallGrade      *ClassRatingDistribution   `protobuf:"bytes,6,opt,name=overall_grade,json=overallGrade,proto3" json:"overall_grade,omitempty"`
 	ClassDetails      []*ClassRatingDistribution `protobuf:"bytes,7,rep,name=class_details,json=classDetails,proto3" json:"class_details,omitempty"`
@@ -2575,7 +2507,7 @@ type GetRatingDistributionReply struct {
 
 func (x *GetRatingDistributionReply) Reset() {
 	*x = GetRatingDistributionReply{}
-	mi := &file_seas_v1_analysis_proto_msgTypes[32]
+	mi := &file_seas_v1_analysis_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2587,7 +2519,7 @@ func (x *GetRatingDistributionReply) String() string {
 func (*GetRatingDistributionReply) ProtoMessage() {}
 
 func (x *GetRatingDistributionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_seas_v1_analysis_proto_msgTypes[32]
+	mi := &file_seas_v1_analysis_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2600,7 +2532,7 @@ func (x *GetRatingDistributionReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRatingDistributionReply.ProtoReflect.Descriptor instead.
 func (*GetRatingDistributionReply) Descriptor() ([]byte, []int) {
-	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{32}
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetRatingDistributionReply) GetExamId() string {
@@ -2624,7 +2556,7 @@ func (x *GetRatingDistributionReply) GetScope() string {
 	return ""
 }
 
-func (x *GetRatingDistributionReply) GetTotalParticipants() int64 {
+func (x *GetRatingDistributionReply) GetTotalParticipants() int32 {
 	if x != nil {
 		return x.TotalParticipants
 	}
@@ -2696,7 +2628,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x1d\n" +
 	"\n" +
-	"subject_id\x18\x03 \x01(\tR\tsubjectId\"\x81\x02\n" +
+	"subject_id\x18\x03 \x01(\tR\tsubjectId\"\xeb\x02\n" +
 	"\x12SubjectSummaryItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -2708,25 +2640,31 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\n" +
 	"difficulty\x18\a \x01(\x01R\n" +
 	"difficulty\x12#\n" +
-	"\rstudent_count\x18\b \x01(\x03R\fstudentCount\"\xa4\x02\n" +
+	"\rstudent_count\x18\b \x01(\x05R\fstudentCount\x12'\n" +
+	"\x0fscore_deviation\x18\t \x01(\x01R\x0escoreDeviation\x12\x17\n" +
+	"\astd_dev\x18\n" +
+	" \x01(\x01R\x06stdDev\x12&\n" +
+	"\x0ediscrimination\x18\v \x01(\x01R\x0ediscrimination\"\xdb\x02\n" +
 	"\x16GetSubjectSummaryReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
 	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x14\n" +
 	"\x05scope\x18\x03 \x01(\tR\x05scope\x12-\n" +
-	"\x12total_participants\x18\x04 \x01(\x03R\x11totalParticipants\x12+\n" +
+	"\x12total_participants\x18\x04 \x01(\x05R\x11totalParticipants\x12+\n" +
 	"\x11subjects_involved\x18\x05 \x01(\x05R\x10subjectsInvolved\x12)\n" +
 	"\x10classes_involved\x18\x06 \x01(\x05R\x0fclassesInvolved\x127\n" +
-	"\bsubjects\x18\a \x03(\v2\x1b.seas.v1.SubjectSummaryItemR\bsubjects\"f\n" +
+	"\bsubjects\x18\a \x03(\v2\x1b.seas.v1.SubjectSummaryItemR\bsubjects\x125\n" +
+	"\aoverall\x18\n" +
+	" \x01(\v2\x1b.seas.v1.SubjectSummaryItemR\aoverall\"f\n" +
 	"\x16GetClassSummaryRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x1d\n" +
 	"\n" +
-	"subject_id\x18\x03 \x01(\tR\tsubjectId\"\xba\x02\n" +
+	"subject_id\x18\x03 \x01(\tR\tsubjectId\"\x81\x03\n" +
 	"\x10ClassSummaryItem\x12\x19\n" +
-	"\bclass_id\x18\x01 \x01(\tR\aclassId\x12\x1d\n" +
+	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1d\n" +
 	"\n" +
 	"class_name\x18\x02 \x01(\tR\tclassName\x12%\n" +
-	"\x0etotal_students\x18\x03 \x01(\x03R\rtotalStudents\x12\x1b\n" +
+	"\x0etotal_students\x18\x03 \x01(\x05R\rtotalStudents\x12\x1b\n" +
 	"\tavg_score\x18\x04 \x01(\x01R\bavgScore\x12#\n" +
 	"\rhighest_score\x18\x05 \x01(\x01R\fhighestScore\x12!\n" +
 	"\flowest_score\x18\x06 \x01(\x01R\vlowestScore\x12'\n" +
@@ -2734,12 +2672,16 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\n" +
 	"difficulty\x18\b \x01(\x01R\n" +
 	"difficulty\x12\x17\n" +
-	"\astd_dev\x18\t \x01(\x01R\x06stdDev\"\x91\x02\n" +
+	"\astd_dev\x18\t \x01(\x01R\x06stdDev\x12\x1d\n" +
+	"\n" +
+	"full_score\x18\n" +
+	" \x01(\x01R\tfullScore\x12&\n" +
+	"\x0ediscrimination\x18\v \x01(\x01R\x0ediscrimination\"\x91\x02\n" +
 	"\x14GetClassSummaryReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
 	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x14\n" +
 	"\x05scope\x18\x03 \x01(\tR\x05scope\x12-\n" +
-	"\x12total_participants\x18\x04 \x01(\x03R\x11totalParticipants\x12>\n" +
+	"\x12total_participants\x18\x04 \x01(\x05R\x11totalParticipants\x12>\n" +
 	"\roverall_grade\x18\x05 \x01(\v2\x19.seas.v1.ClassSummaryItemR\foverallGrade\x12>\n" +
 	"\rclass_details\x18\x06 \x03(\v2\x19.seas.v1.ClassSummaryItemR\fclassDetails\"S\n" +
 	"\x1dGetClassSubjectSummaryRequest\x12\x17\n" +
@@ -2772,30 +2714,15 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x1cGetSingleClassSummaryRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1d\n" +
 	"\n" +
-	"subject_id\x18\x02 \x01(\tR\tsubjectId\"\xf4\x02\n" +
-	"\x16SingleClassSummaryItem\x12\x19\n" +
-	"\bclass_id\x18\x01 \x01(\tR\aclassId\x12\x1d\n" +
-	"\n" +
-	"class_name\x18\x02 \x01(\tR\tclassName\x12%\n" +
-	"\x0etotal_students\x18\x03 \x01(\x03R\rtotalStudents\x12*\n" +
-	"\x11subject_avg_score\x18\x04 \x01(\x01R\x0fsubjectAvgScore\x12&\n" +
-	"\x0fgrade_avg_score\x18\x05 \x01(\x01R\rgradeAvgScore\x12\x1d\n" +
-	"\n" +
-	"score_diff\x18\x06 \x01(\x01R\tscoreDiff\x12\x1d\n" +
-	"\n" +
-	"class_rank\x18\a \x01(\x05R\tclassRank\x12#\n" +
-	"\rtotal_classes\x18\b \x01(\x05R\ftotalClasses\x12\x1b\n" +
-	"\tpass_rate\x18\t \x01(\x01R\bpassRate\x12%\n" +
-	"\x0eexcellent_rate\x18\n" +
-	" \x01(\x01R\rexcellentRate\"\x8a\x02\n" +
+	"subject_id\x18\x02 \x01(\tR\tsubjectId\"\xfe\x01\n" +
 	"\x1aGetSingleClassSummaryReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
 	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x1d\n" +
 	"\n" +
 	"subject_id\x18\x03 \x01(\tR\tsubjectId\x12!\n" +
-	"\fsubject_name\x18\x04 \x01(\tR\vsubjectName\x129\n" +
-	"\aoverall\x18\x05 \x01(\v2\x1f.seas.v1.SingleClassSummaryItemR\aoverall\x129\n" +
-	"\aclasses\x18\x06 \x03(\v2\x1f.seas.v1.SingleClassSummaryItemR\aclasses\"s\n" +
+	"\fsubject_name\x18\x04 \x01(\tR\vsubjectName\x123\n" +
+	"\aoverall\x18\x05 \x01(\v2\x19.seas.v1.ClassSummaryItemR\aoverall\x123\n" +
+	"\aclasses\x18\x06 \x03(\v2\x19.seas.v1.ClassSummaryItemR\aclasses\"s\n" +
 	"\x1eGetSingleClassQuestionsRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1d\n" +
 	"\n" +
@@ -2813,7 +2740,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"score_rate\x18\x06 \x01(\x01R\tscoreRate\x12&\n" +
 	"\x0fgrade_avg_score\x18\a \x01(\x01R\rgradeAvgScore\x12\x1e\n" +
 	"\n" +
-	"difficulty\x18\b \x01(\tR\n" +
+	"difficulty\x18\b \x01(\x01R\n" +
 	"difficulty\"\x8a\x02\n" +
 	"\x1cGetSingleClassQuestionsReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
@@ -2830,7 +2757,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\n" +
 	"subject_id\x18\x02 \x01(\tR\tsubjectId\"o\n" +
 	"\x16QuestionClassBreakdown\x12\x19\n" +
-	"\bclass_id\x18\x01 \x01(\tR\aclassId\x12\x1d\n" +
+	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1d\n" +
 	"\n" +
 	"class_name\x18\x02 \x01(\tR\tclassName\x12\x1b\n" +
 	"\tavg_score\x18\x03 \x01(\x01R\bavgScore\"\xda\x02\n" +
@@ -2846,7 +2773,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\n" +
 	"score_rate\x18\a \x01(\x01R\tscoreRate\x12\x1e\n" +
 	"\n" +
-	"difficulty\x18\b \x01(\tR\n" +
+	"difficulty\x18\b \x01(\x01R\n" +
 	"difficulty\"\xd9\x01\n" +
 	"\x1dGetSingleQuestionSummaryReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
@@ -2913,10 +2840,10 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"percentage\x18\x02 \x01(\x01R\n" +
 	"percentage\"\xc5\x02\n" +
 	"\x17ClassRatingDistribution\x12\x19\n" +
-	"\bclass_id\x18\x01 \x01(\tR\aclassId\x12\x1d\n" +
+	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1d\n" +
 	"\n" +
 	"class_name\x18\x02 \x01(\tR\tclassName\x12%\n" +
-	"\x0etotal_students\x18\x03 \x01(\x03R\rtotalStudents\x12\x1b\n" +
+	"\x0etotal_students\x18\x03 \x01(\x05R\rtotalStudents\x12\x1b\n" +
 	"\tavg_score\x18\x04 \x01(\x01R\bavgScore\x121\n" +
 	"\texcellent\x18\x05 \x01(\v2\x13.seas.v1.RatingItemR\texcellent\x12'\n" +
 	"\x04good\x18\x06 \x01(\v2\x13.seas.v1.RatingItemR\x04good\x12'\n" +
@@ -2926,7 +2853,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
 	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x14\n" +
 	"\x05scope\x18\x03 \x01(\tR\x05scope\x12-\n" +
-	"\x12total_participants\x18\x04 \x01(\x03R\x11totalParticipants\x12-\n" +
+	"\x12total_participants\x18\x04 \x01(\x05R\x11totalParticipants\x12-\n" +
 	"\x06config\x18\x05 \x01(\v2\x15.seas.v1.RatingConfigR\x06config\x12E\n" +
 	"\roverall_grade\x18\x06 \x01(\v2 .seas.v1.ClassRatingDistributionR\foverallGrade\x12E\n" +
 	"\rclass_details\x18\a \x03(\v2 .seas.v1.ClassRatingDistributionR\fclassDetails2\xe8\f\n" +
@@ -2955,7 +2882,7 @@ func file_seas_v1_analysis_proto_rawDescGZIP() []byte {
 	return file_seas_v1_analysis_proto_rawDescData
 }
 
-var file_seas_v1_analysis_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_seas_v1_analysis_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_seas_v1_analysis_proto_goTypes = []any{
 	(*ListExamsRequest)(nil),                // 0: seas.v1.ListExamsRequest
 	(*ExamInfo)(nil),                        // 1: seas.v1.ExamInfo
@@ -2973,70 +2900,70 @@ var file_seas_v1_analysis_proto_goTypes = []any{
 	(*ClassSubjectItem)(nil),                // 13: seas.v1.ClassSubjectItem
 	(*GetClassSubjectSummaryReply)(nil),     // 14: seas.v1.GetClassSubjectSummaryReply
 	(*GetSingleClassSummaryRequest)(nil),    // 15: seas.v1.GetSingleClassSummaryRequest
-	(*SingleClassSummaryItem)(nil),          // 16: seas.v1.SingleClassSummaryItem
-	(*GetSingleClassSummaryReply)(nil),      // 17: seas.v1.GetSingleClassSummaryReply
-	(*GetSingleClassQuestionsRequest)(nil),  // 18: seas.v1.GetSingleClassQuestionsRequest
-	(*ClassQuestionItem)(nil),               // 19: seas.v1.ClassQuestionItem
-	(*GetSingleClassQuestionsReply)(nil),    // 20: seas.v1.GetSingleClassQuestionsReply
-	(*GetSingleQuestionSummaryRequest)(nil), // 21: seas.v1.GetSingleQuestionSummaryRequest
-	(*QuestionClassBreakdown)(nil),          // 22: seas.v1.QuestionClassBreakdown
-	(*SingleQuestionSummaryItem)(nil),       // 23: seas.v1.SingleQuestionSummaryItem
-	(*GetSingleQuestionSummaryReply)(nil),   // 24: seas.v1.GetSingleQuestionSummaryReply
-	(*GetSingleQuestionDetailRequest)(nil),  // 25: seas.v1.GetSingleQuestionDetailRequest
-	(*StudentQuestionDetail)(nil),           // 26: seas.v1.StudentQuestionDetail
-	(*GetSingleQuestionDetailReply)(nil),    // 27: seas.v1.GetSingleQuestionDetailReply
-	(*RatingConfig)(nil),                    // 28: seas.v1.RatingConfig
-	(*GetRatingDistributionRequest)(nil),    // 29: seas.v1.GetRatingDistributionRequest
-	(*RatingItem)(nil),                      // 30: seas.v1.RatingItem
-	(*ClassRatingDistribution)(nil),         // 31: seas.v1.ClassRatingDistribution
-	(*GetRatingDistributionReply)(nil),      // 32: seas.v1.GetRatingDistributionReply
+	(*GetSingleClassSummaryReply)(nil),      // 16: seas.v1.GetSingleClassSummaryReply
+	(*GetSingleClassQuestionsRequest)(nil),  // 17: seas.v1.GetSingleClassQuestionsRequest
+	(*ClassQuestionItem)(nil),               // 18: seas.v1.ClassQuestionItem
+	(*GetSingleClassQuestionsReply)(nil),    // 19: seas.v1.GetSingleClassQuestionsReply
+	(*GetSingleQuestionSummaryRequest)(nil), // 20: seas.v1.GetSingleQuestionSummaryRequest
+	(*QuestionClassBreakdown)(nil),          // 21: seas.v1.QuestionClassBreakdown
+	(*SingleQuestionSummaryItem)(nil),       // 22: seas.v1.SingleQuestionSummaryItem
+	(*GetSingleQuestionSummaryReply)(nil),   // 23: seas.v1.GetSingleQuestionSummaryReply
+	(*GetSingleQuestionDetailRequest)(nil),  // 24: seas.v1.GetSingleQuestionDetailRequest
+	(*StudentQuestionDetail)(nil),           // 25: seas.v1.StudentQuestionDetail
+	(*GetSingleQuestionDetailReply)(nil),    // 26: seas.v1.GetSingleQuestionDetailReply
+	(*RatingConfig)(nil),                    // 27: seas.v1.RatingConfig
+	(*GetRatingDistributionRequest)(nil),    // 28: seas.v1.GetRatingDistributionRequest
+	(*RatingItem)(nil),                      // 29: seas.v1.RatingItem
+	(*ClassRatingDistribution)(nil),         // 30: seas.v1.ClassRatingDistribution
+	(*GetRatingDistributionReply)(nil),      // 31: seas.v1.GetRatingDistributionReply
 }
 var file_seas_v1_analysis_proto_depIdxs = []int32{
 	1,  // 0: seas.v1.ListExamsReply.exams:type_name -> seas.v1.ExamInfo
 	4,  // 1: seas.v1.ListSubjectsByExamReply.subjects:type_name -> seas.v1.SubjectBasicInfo
 	7,  // 2: seas.v1.GetSubjectSummaryReply.subjects:type_name -> seas.v1.SubjectSummaryItem
-	10, // 3: seas.v1.GetClassSummaryReply.overall_grade:type_name -> seas.v1.ClassSummaryItem
-	10, // 4: seas.v1.GetClassSummaryReply.class_details:type_name -> seas.v1.ClassSummaryItem
-	13, // 5: seas.v1.GetClassSubjectSummaryReply.overall:type_name -> seas.v1.ClassSubjectItem
-	13, // 6: seas.v1.GetClassSubjectSummaryReply.subjects:type_name -> seas.v1.ClassSubjectItem
-	16, // 7: seas.v1.GetSingleClassSummaryReply.overall:type_name -> seas.v1.SingleClassSummaryItem
-	16, // 8: seas.v1.GetSingleClassSummaryReply.classes:type_name -> seas.v1.SingleClassSummaryItem
-	19, // 9: seas.v1.GetSingleClassQuestionsReply.questions:type_name -> seas.v1.ClassQuestionItem
-	22, // 10: seas.v1.SingleQuestionSummaryItem.class_breakdown:type_name -> seas.v1.QuestionClassBreakdown
-	23, // 11: seas.v1.GetSingleQuestionSummaryReply.questions:type_name -> seas.v1.SingleQuestionSummaryItem
-	26, // 12: seas.v1.GetSingleQuestionDetailReply.students:type_name -> seas.v1.StudentQuestionDetail
-	30, // 13: seas.v1.ClassRatingDistribution.excellent:type_name -> seas.v1.RatingItem
-	30, // 14: seas.v1.ClassRatingDistribution.good:type_name -> seas.v1.RatingItem
-	30, // 15: seas.v1.ClassRatingDistribution.pass:type_name -> seas.v1.RatingItem
-	30, // 16: seas.v1.ClassRatingDistribution.fail:type_name -> seas.v1.RatingItem
-	28, // 17: seas.v1.GetRatingDistributionReply.config:type_name -> seas.v1.RatingConfig
-	31, // 18: seas.v1.GetRatingDistributionReply.overall_grade:type_name -> seas.v1.ClassRatingDistribution
-	31, // 19: seas.v1.GetRatingDistributionReply.class_details:type_name -> seas.v1.ClassRatingDistribution
-	0,  // 20: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
-	3,  // 21: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
-	6,  // 22: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
-	9,  // 23: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
-	12, // 24: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
-	15, // 25: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
-	18, // 26: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
-	21, // 27: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
-	25, // 28: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
-	29, // 29: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
-	2,  // 30: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
-	5,  // 31: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
-	8,  // 32: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
-	11, // 33: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
-	14, // 34: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
-	17, // 35: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
-	20, // 36: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
-	24, // 37: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
-	27, // 38: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
-	32, // 39: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
-	30, // [30:40] is the sub-list for method output_type
-	20, // [20:30] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	7,  // 3: seas.v1.GetSubjectSummaryReply.overall:type_name -> seas.v1.SubjectSummaryItem
+	10, // 4: seas.v1.GetClassSummaryReply.overall_grade:type_name -> seas.v1.ClassSummaryItem
+	10, // 5: seas.v1.GetClassSummaryReply.class_details:type_name -> seas.v1.ClassSummaryItem
+	13, // 6: seas.v1.GetClassSubjectSummaryReply.overall:type_name -> seas.v1.ClassSubjectItem
+	13, // 7: seas.v1.GetClassSubjectSummaryReply.subjects:type_name -> seas.v1.ClassSubjectItem
+	10, // 8: seas.v1.GetSingleClassSummaryReply.overall:type_name -> seas.v1.ClassSummaryItem
+	10, // 9: seas.v1.GetSingleClassSummaryReply.classes:type_name -> seas.v1.ClassSummaryItem
+	18, // 10: seas.v1.GetSingleClassQuestionsReply.questions:type_name -> seas.v1.ClassQuestionItem
+	21, // 11: seas.v1.SingleQuestionSummaryItem.class_breakdown:type_name -> seas.v1.QuestionClassBreakdown
+	22, // 12: seas.v1.GetSingleQuestionSummaryReply.questions:type_name -> seas.v1.SingleQuestionSummaryItem
+	25, // 13: seas.v1.GetSingleQuestionDetailReply.students:type_name -> seas.v1.StudentQuestionDetail
+	29, // 14: seas.v1.ClassRatingDistribution.excellent:type_name -> seas.v1.RatingItem
+	29, // 15: seas.v1.ClassRatingDistribution.good:type_name -> seas.v1.RatingItem
+	29, // 16: seas.v1.ClassRatingDistribution.pass:type_name -> seas.v1.RatingItem
+	29, // 17: seas.v1.ClassRatingDistribution.fail:type_name -> seas.v1.RatingItem
+	27, // 18: seas.v1.GetRatingDistributionReply.config:type_name -> seas.v1.RatingConfig
+	30, // 19: seas.v1.GetRatingDistributionReply.overall_grade:type_name -> seas.v1.ClassRatingDistribution
+	30, // 20: seas.v1.GetRatingDistributionReply.class_details:type_name -> seas.v1.ClassRatingDistribution
+	0,  // 21: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
+	3,  // 22: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
+	6,  // 23: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
+	9,  // 24: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
+	12, // 25: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
+	15, // 26: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
+	17, // 27: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
+	20, // 28: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
+	24, // 29: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
+	28, // 30: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
+	2,  // 31: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
+	5,  // 32: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
+	8,  // 33: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
+	11, // 34: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
+	14, // 35: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
+	16, // 36: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
+	19, // 37: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
+	23, // 38: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
+	26, // 39: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
+	31, // 40: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
+	31, // [31:41] is the sub-list for method output_type
+	21, // [21:31] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_seas_v1_analysis_proto_init() }
@@ -3050,7 +2977,7 @@ func file_seas_v1_analysis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_seas_v1_analysis_proto_rawDesc), len(file_seas_v1_analysis_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   33,
+			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
