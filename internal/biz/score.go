@@ -32,6 +32,8 @@ type ScoreRepo interface {
 	GetClassSubjectSummary(ctx context.Context, examID, classID int64) (*ClassSubjectSummaryStats, error)
 	// GetSingleClassSummary 获取单科学科下班级汇总
 	GetSingleClassSummary(ctx context.Context, examID, subjectID int64) (*SingleClassSummaryStats, error)
+	// BatchCreate 批量创建成绩记录
+	BatchCreate(ctx context.Context, scores []*Score) error
 }
 
 // SubjectSummaryStats 学科统计数据

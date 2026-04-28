@@ -21,6 +21,8 @@ type ScoreItemRepo interface {
 	GetSingleClassQuestions(ctx context.Context, examID, subjectID, classID int64) (*SingleClassQuestionStats, error)
 	GetSingleQuestionSummary(ctx context.Context, examID, subjectID int64) (*SingleQuestionSummaryStats, error)
 	GetSingleQuestionDetail(ctx context.Context, examID, subjectID, classID int64, questionID string) (*SingleQuestionDetailStats, error)
+	// BatchCreate 批量创建小题成绩记录
+	BatchCreate(ctx context.Context, items []*ScoreItem) error
 }
 
 // SingleClassQuestionStats 单科班级题目汇总

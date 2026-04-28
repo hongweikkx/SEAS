@@ -35,4 +35,6 @@ type ExamRepo interface {
 	ListAll(ctx context.Context, pageIndex, pageSize int32) ([]*Exam, int64, error)
 	// GetExamName 获取考试名称
 	GetExamName(ctx context.Context, id int64) (string, error)
+	// Create 创建考试记录
+	Create(ctx context.Context, exam *Exam) error
 }

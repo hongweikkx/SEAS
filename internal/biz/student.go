@@ -31,10 +31,14 @@ func (Student) TableName() string {
 type StudentRepo interface {
 	GetByID(ctx context.Context, id int64) (*Student, error)
 	GetByStudentNumber(ctx context.Context, sn string) (*Student, error)
+	// FindOrCreateByNameClass 按姓名+班级查找或创建学生
+	FindOrCreateByNameClass(ctx context.Context, name string, classID int64) (*Student, error)
 }
 
 type ClassRepo interface {
 	GetByID(ctx context.Context, id int64) (*Class, error)
 	GetByName(ctx context.Context, name string) (*Class, error)
+	// FindOrCreateByName 按名称查找或创建班级
+	FindOrCreateByName(ctx context.Context, name string) (*Class, error)
 }
 
