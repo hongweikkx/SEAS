@@ -25,17 +25,17 @@ func TestDifficultyFromScoreRate(t *testing.T) {
 	cases := []struct {
 		name      string
 		scoreRate float64
-		want      string
+		want      float64
 	}{
-		{name: "easy at threshold", scoreRate: 80, want: "easy"},
-		{name: "medium at threshold", scoreRate: 60, want: "medium"},
-		{name: "hard below medium", scoreRate: 59.99, want: "hard"},
+		{name: "easy at threshold", scoreRate: 80, want: 80},
+		{name: "medium at threshold", scoreRate: 60, want: 60},
+		{name: "hard below medium", scoreRate: 59.99, want: 59.99},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := difficultyFromScoreRate(tc.scoreRate); got != tc.want {
-				t.Fatalf("difficultyFromScoreRate(%v) = %q, want %q", tc.scoreRate, got, tc.want)
+				t.Fatalf("difficultyFromScoreRate(%v) = %v, want %v", tc.scoreRate, got, tc.want)
 			}
 		})
 	}
@@ -153,4 +153,8 @@ func (s *stubScoreItemRepo) GetSingleQuestionDetail(context.Context, int64, int6
 		return nil, errors.New("missing detail stats")
 	}
 	return s.singleQuestionDetail, nil
+}
+
+func (s *stubScoreItemRepo) BatchCreate(context.Context, []*ScoreItem) error {
+	return s.err
 }

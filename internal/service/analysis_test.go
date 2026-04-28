@@ -35,7 +35,7 @@ func TestMapStudentQuestionDetail(t *testing.T) {
 	}
 	for _, student := range stats.Students {
 		reply.Students = append(reply.Students, &pb.StudentQuestionDetail{
-			StudentId:   student.StudentID,
+			StudentId:   strconv.FormatInt(student.StudentID, 10),
 			StudentName: student.StudentName,
 			Score:       student.Score,
 			FullScore:   student.FullScore,
@@ -84,13 +84,13 @@ func TestMapClassSubjectItem(t *testing.T) {
 	}
 
 	reply := &pb.GetClassSubjectSummaryReply{
-		ExamId:    stats.ExamID,
-		ClassId:   stats.ClassID,
+		ExamId:    strconv.FormatInt(stats.ExamID, 10),
+		ClassId:   strconv.FormatInt(stats.ClassID, 10),
 		ClassName: stats.ClassName,
 	}
 	if stats.Overall != nil {
 		reply.Overall = &pb.ClassSubjectItem{
-			SubjectId:     stats.Overall.SubjectID,
+			SubjectId:     strconv.FormatInt(stats.Overall.SubjectID, 10),
 			SubjectName:   stats.Overall.SubjectName,
 			FullScore:     stats.Overall.FullScore,
 			ClassAvgScore: stats.Overall.ClassAvgScore,
@@ -104,7 +104,7 @@ func TestMapClassSubjectItem(t *testing.T) {
 	}
 	for _, subject := range stats.Subjects {
 		reply.Subjects = append(reply.Subjects, &pb.ClassSubjectItem{
-			SubjectId:     subject.SubjectID,
+			SubjectId:     strconv.FormatInt(subject.SubjectID, 10),
 			SubjectName:   subject.SubjectName,
 			FullScore:     subject.FullScore,
 			ClassAvgScore: subject.ClassAvgScore,
@@ -226,10 +226,10 @@ func TestMapClassQuestionItem(t *testing.T) {
 	}
 
 	reply := &pb.GetSingleClassQuestionsReply{
-		ExamId:      stats.ExamID,
-		SubjectId:   stats.SubjectID,
+		ExamId:      strconv.FormatInt(stats.ExamID, 10),
+		SubjectId:   strconv.FormatInt(stats.SubjectID, 10),
 		SubjectName: stats.SubjectName,
-		ClassId:     stats.ClassID,
+		ClassId:     strconv.FormatInt(stats.ClassID, 10),
 		ClassName:   stats.ClassName,
 	}
 	reply.Questions = make([]*pb.ClassQuestionItem, len(stats.Questions))
@@ -274,8 +274,8 @@ func TestMapSingleQuestionSummaryItem(t *testing.T) {
 	}
 
 	reply := &pb.GetSingleQuestionSummaryReply{
-		ExamId:      stats.ExamID,
-		SubjectId:   stats.SubjectID,
+		ExamId:      strconv.FormatInt(stats.ExamID, 10),
+		SubjectId:   strconv.FormatInt(stats.SubjectID, 10),
 		SubjectName: stats.SubjectName,
 	}
 	reply.Questions = make([]*pb.SingleQuestionSummaryItem, len(stats.Questions))
@@ -292,7 +292,7 @@ func TestMapSingleQuestionSummaryItem(t *testing.T) {
 		item.ClassBreakdown = make([]*pb.QuestionClassBreakdown, len(q.ClassBreakdown))
 		for j, cb := range q.ClassBreakdown {
 			item.ClassBreakdown[j] = &pb.QuestionClassBreakdown{
-				ClassId:   cb.ClassID,
+				ClassId:   int32(cb.ClassID),
 				ClassName: cb.ClassName,
 				AvgScore:  cb.AvgScore,
 			}
@@ -305,7 +305,7 @@ func TestMapSingleQuestionSummaryItem(t *testing.T) {
 	}
 	q := reply.Questions[0]
 	if q.Difficulty != 70 {
-		t.Fatalf("expected difficulty medium, got %s", q.Difficulty)
+		t.Fatalf("expected difficulty medium, got %v", q.Difficulty)
 	}
 	if len(q.ClassBreakdown) != 2 {
 		t.Fatalf("expected 2 class breakdowns, got %d", len(q.ClassBreakdown))
