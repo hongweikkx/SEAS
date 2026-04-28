@@ -15,7 +15,7 @@ import (
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, analysis *service.AnalysisService, tp trace.TracerProvider, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, analysis *service.AnalysisService, examImport *service.ExamImportService, tp trace.TracerProvider, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
@@ -35,5 +35,6 @@ func NewGRPCServer(c *conf.Server, analysis *service.AnalysisService, tp trace.T
 	}
 	srv := grpc.NewServer(opts...)
 	v1.RegisterAnalysisServer(srv, analysis)
+	v1.RegisterExamImportServer(srv, examImport)
 	return srv
 }
