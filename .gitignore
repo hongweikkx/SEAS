@@ -3,6 +3,7 @@
 /bin
 /logs
 /configs/config.yaml
+/docs
 
 # worktrees
 .worktrees/
