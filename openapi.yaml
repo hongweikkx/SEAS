@@ -3,7 +3,7 @@
 
 openapi: 3.0.3
 info:
-    title: Analysis API
+    title: ""
     version: 0.0.1
 paths:
     /seas/api/v1/exams:
@@ -30,6 +30,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.ListExamsReply'
+        post:
+            tags:
+                - ExamImport
+            description: 创建考试（不含成绩数据，仅创建考试记录）
+            operationId: ExamImport_CreateExam
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/seas.v1.CreateExamRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.CreateExamReply'
     /seas/api/v1/exams/{examId}/analysis/class-summary:
         get:
             tags:
@@ -150,6 +168,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.GetClassSubjectSummaryReply'
+    /seas/api/v1/exams/{examId}/scores/import:
+        post:
+            tags:
+                - ExamImport
+            description: 导入成绩（multipart/form-data 上传 Excel）
+            operationId: ExamImport_ImportScores
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/seas.v1.ImportScoresRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.ImportScoresReply'
     /seas/api/v1/exams/{examId}/subjects:
         get:
             tags:
@@ -404,6 +447,22 @@ components:
                 discrimination:
                     type: number
                     format: double
+        seas.v1.CreateExamReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                name:
+                    type: string
+                examDate:
+                    type: string
+        seas.v1.CreateExamRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                examDate:
+                    type: string
         seas.v1.ExamInfo:
             type: object
             properties:
@@ -575,6 +634,28 @@ components:
                         $ref: '#/components/schemas/seas.v1.SubjectSummaryItem'
                 overall:
                     $ref: '#/components/schemas/seas.v1.SubjectSummaryItem'
+        seas.v1.ImportScoresReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                importedStudents:
+                    type: integer
+                    format: int32
+                importedSubjects:
+                    type: integer
+                    format: int32
+                mode:
+                    type: string
+                warnings:
+                    type: array
+                    items:
+                        type: string
+        seas.v1.ImportScoresRequest:
+            type: object
+            properties:
+                examId:
+                    type: string
         seas.v1.ListExamsReply:
             type: object
             properties:
@@ -734,3 +815,4 @@ components:
                     format: double
 tags:
     - name: Analysis
+    - name: ExamImport
