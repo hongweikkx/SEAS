@@ -66,3 +66,22 @@ func (r *subjectRepo) GetFullScoreByExamSubject(ctx context.Context, examID, sub
 	}
 	return fullScore, err
 }
+
+// FindOrCreateByName 按名称查找或创建学科
+func (r *subjectRepo) FindOrCreateByName(ctx context.Context, name string) (*biz.Subject, error) {
+	var subject biz.Subject
+	err := r.data.db.WithContext(ctx).Where("name = ?", name).First(&subject).Error
+	if err == nil {
+		return &subject, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Context(ctx).Errorf("subjectRepo.FindOrCreateByName find err: %+v", err)
+		return nil, err
+	}
+	subject = biz.Subject{Name: name}
+	if err := r.data.db.WithContext(ctx).Create(&subject).Error; err != nil {
+		log.Context(ctx).Errorf("subjectRepo.FindOrCreateByName create err: %+v", err)
+		return nil, err
+	}
+	return &subject, nil
+}

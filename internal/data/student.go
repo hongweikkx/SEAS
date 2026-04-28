@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"errors"
+	"fmt"
 	"seas/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -37,4 +38,30 @@ func (r *studentRepo) GetByStudentNumber(ctx context.Context, sn string) (*biz.S
 		log.Context(ctx).Errorf("studentRepo.GetByStudentNumber err: %+v", err)
 	}
 	return &student, err
+}
+
+// FindOrCreateByNameClass 按姓名+班级查找或创建学生
+func (r *studentRepo) FindOrCreateByNameClass(ctx context.Context, name string, classID int64) (*biz.Student, error) {
+	var student biz.Student
+	// 按姓名+班级查找（假设同一班级内姓名唯一）
+	err := r.data.db.WithContext(ctx).Where("name = ? AND class_id = ?", name, classID).First(&student).Error
+	if err == nil {
+		return &student, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		r.log.Errorf("studentRepo.FindOrCreateByNameClass find err: %+v", err)
+		return nil, err
+	}
+	// 不存在则创建，自动生成学号
+	sn := fmt.Sprintf("TEMP_%d_%s", classID, name)
+	student = biz.Student{
+		StudentNumber: sn,
+		Name:          name,
+		ClassID:       classID,
+	}
+	if err := r.data.db.WithContext(ctx).Create(&student).Error; err != nil {
+		r.log.Errorf("studentRepo.FindOrCreateByNameClass create err: %+v", err)
+		return nil, err
+	}
+	return &student, nil
 }

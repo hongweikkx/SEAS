@@ -60,3 +60,8 @@ func (r *examRepo) GetExamName(ctx context.Context, id int64) (string, error) {
 	}
 	return exam.Name, err
 }
+
+// Create 创建考试记录
+func (r *examRepo) Create(ctx context.Context, exam *biz.Exam) error {
+	return r.data.db.WithContext(ctx).Create(exam).Error
+}

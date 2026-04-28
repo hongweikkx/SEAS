@@ -72,6 +72,14 @@ func (r *scoreItemRepo) GetSingleClassQuestions(ctx context.Context, examID, sub
 	return stats, nil
 }
 
+// BatchCreate 批量创建小题成绩记录
+func (r *scoreItemRepo) BatchCreate(ctx context.Context, items []*biz.ScoreItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+	return r.data.db.WithContext(ctx).CreateInBatches(items, 100).Error
+}
+
 func (r *scoreItemRepo) GetSingleQuestionSummary(ctx context.Context, examID, subjectID int64) (*biz.SingleQuestionSummaryStats, error) {
 	var rows []struct {
 		QuestionNumber string  `gorm:"column:question_number"`

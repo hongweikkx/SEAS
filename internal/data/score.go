@@ -712,6 +712,14 @@ func (r *scoreRepo) GetClassSubjectSummary(ctx context.Context, examID, classID 
 	return &summary, nil
 }
 
+// BatchCreate 批量创建成绩记录
+func (r *scoreRepo) BatchCreate(ctx context.Context, scores []*biz.Score) error {
+	if len(scores) == 0 {
+		return nil
+	}
+	return r.data.db.WithContext(ctx).CreateInBatches(scores, 100).Error
+}
+
 // GetSingleClassSummary 获取单科学科下班级汇总
 func (r *scoreRepo) GetSingleClassSummary(ctx context.Context, examID, subjectID int64) (*biz.SingleClassSummaryStats, error) {
 	var summary biz.SingleClassSummaryStats
