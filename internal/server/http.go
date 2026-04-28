@@ -48,7 +48,7 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, aiAnalysis
 	}
 	srv := httptransport.NewServer(opts...)
 	v1.RegisterAnalysisHTTPServer(srv, analysis)
-	srv.Handle("/ai/analysis", aiAnalysis)
+	srv.Handle("/seas/api/v1/ai/analysis", aiAnalysis)
 	srv.Handle("/metrics", promhttp.Handler())
 	return srv
 }
