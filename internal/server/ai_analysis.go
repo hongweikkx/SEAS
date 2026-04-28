@@ -412,7 +412,12 @@ func (h *AIAnalysisHandler) buildSingleQuestionDetailPrompt(ctx context.Context,
 	fmt.Fprintf(&b, "【数据】\n")
 	fmt.Fprintf(&b, "学科：%s，班级：%s，第%s题（%s）\n",
 		reply.GetSubjectName(), reply.GetClassName(), reply.GetQuestionNumber(), reply.GetQuestionType())
-	fmt.Fprintf(&b, "满分%.0f，得分率%.1f%%\n", reply.GetFullScore(), reply.GetStudents()[0].GetScoreRate()*100)
+	students := reply.GetStudents()
+	if len(students) > 0 {
+		fmt.Fprintf(&b, "满分%.0f，得分率%.1f%%\n", reply.GetFullScore(), students[0].GetScoreRate()*100)
+	} else {
+		fmt.Fprintf(&b, "满分%.0f\n", reply.GetFullScore())
+	}
 	fmt.Fprintf(&b, "\n【分析要求】\n")
 	fmt.Fprintf(&b, "1. 分析该题的得分分布\n")
 	fmt.Fprintf(&b, "2. 给出针对性的讲评建议\n")
