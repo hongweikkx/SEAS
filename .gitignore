@@ -3,3 +3,4 @@
 /bin
 /logs
 /configs/config.yaml
+.worktrees/
