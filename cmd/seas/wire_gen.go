@@ -38,7 +38,8 @@ func wireApp(confServer *conf.Server, confData *conf.Data, llm *conf.LLM, logger
 	analysisService := service.NewAnalysisService(analysisUseCase, examAnalysisUseCase)
 	tracerProvider := NewTraceProvider()
 	grpcServer := server.NewGRPCServer(confServer, analysisService, tracerProvider, logger)
-	httpServer := server.NewHTTPServer(confServer, analysisService, tracerProvider, logger)
+	aiAnalysisHandler := server.NewAIAnalysisHandler(analysisService, llm, logger)
+	httpServer := server.NewHTTPServer(confServer, analysisService, aiAnalysisHandler, tracerProvider, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup()

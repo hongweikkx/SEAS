@@ -19,7 +19,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
+func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, aiAnalysis *AIAnalysisHandler, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
 	var opts = []httptransport.ServerOption{
 		httptransport.Middleware(
 			recovery.Recovery(),
@@ -48,6 +48,7 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, tp trace.T
 	}
 	srv := httptransport.NewServer(opts...)
 	v1.RegisterAnalysisHTTPServer(srv, analysis)
+	srv.Handle("/ai/analysis", aiAnalysis)
 	srv.Handle("/metrics", promhttp.Handler())
 	return srv
 }
