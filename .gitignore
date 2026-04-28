@@ -3,4 +3,13 @@
 /bin
 /logs
 /configs/config.yaml
+
+# worktrees
 .worktrees/
+
+# superpowers brainstorming
+.superpowers/
+
+# playwright mcp temp files
+.playwright-mcp/
+.playwright-cli/
