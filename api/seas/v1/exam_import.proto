@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package seas.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "api/seas/v1;v1";
+option java_multiple_files = true;
+option java_package = "dev.kratos.api.seas.v1";
+option java_outer_classname = "seasProtoV1";
+
+service ExamImport {
+  // 创建考试（不含成绩数据，仅创建考试记录）
+  rpc CreateExam (CreateExamRequest) returns (CreateExamReply) {
+    option (google.api.http) = {
+      post: "/seas/api/v1/exams"
+      body: "*"
+    };
+  }
+
+  // 导入成绩（multipart/form-data 上传 Excel）
+  rpc ImportScores (ImportScoresRequest) returns (ImportScoresReply) {
+    option (google.api.http) = {
+      post: "/seas/api/v1/exams/{exam_id}/scores/import"
+      body: "*"
+    };
+  }
+}
+
+// ============ 创建考试 ============
+
+message CreateExamRequest {
+  string name = 1;       // 考试名称，如"2025年春季期中考试"
+  string exam_date = 2;  // 考试时间，RFC3339格式，如"2025-04-15"
+}
+
+message CreateExamReply {
+  string exam_id = 1;    // 创建的考试ID
+  string name = 2;
+  string exam_date = 3;
+}
+
+// ============ 导入成绩 ============
+
+message ImportScoresRequest {
+  string exam_id = 1;    // 考试ID（URL path参数）
+  // 文件通过 multipart/form-data 上传，字段名 "file"
+  // protobuf 中不定义文件字段，由 HTTP handler 直接处理
+}
+
+message ImportScoresReply {
+  string exam_id = 1;
+  int32 imported_students = 2;   // 导入学生数
+  int32 imported_subjects = 3;   // 导入学科数
+  string mode = 4;               // "simple" 或 "full"
+  repeated string warnings = 5;  // 警告信息列表
+}
