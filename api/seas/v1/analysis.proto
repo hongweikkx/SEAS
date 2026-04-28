@@ -87,6 +87,7 @@ service Analysis {
 message ListExamsRequest {
   int32 page_index = 1;  // 默认1
   int32 page_size = 2;   // 默认20
+  string keyword = 3;    // 可选：考试名称搜索关键词
 }
 
 message ExamInfo {
@@ -94,6 +95,7 @@ message ExamInfo {
   string name = 2;
   string exam_date = 3;  // RFC3339格式
   string created_at = 4; // RFC3339格式
+  int32 student_count = 5;  // 参考人数
 }
 
 message ListExamsReply {

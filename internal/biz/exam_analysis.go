@@ -26,8 +26,8 @@ func NewExamAnalysisUseCase(examRepo ExamRepo, subjectRepo SubjectRepo, scoreRep
 }
 
 // ListExams 获取考试列表
-func (uc *ExamAnalysisUseCase) ListExams(ctx context.Context, pageIndex, pageSize int32) ([]*Exam, int64, error) {
-	return uc.examRepo.ListAll(ctx, pageIndex, pageSize)
+func (uc *ExamAnalysisUseCase) ListExams(ctx context.Context, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error) {
+	return uc.examRepo.ListAll(ctx, pageIndex, pageSize, keyword)
 }
 
 // ListSubjectsByExam 获取考试关联的学科列表
@@ -244,4 +244,9 @@ func assignSequentialRanks(items []*StudentQuestionDetailStats, setRank func(ite
 // GetExamName 获取考试名称
 func (uc *ExamAnalysisUseCase) GetExamName(ctx context.Context, examID int64) (string, error) {
 	return uc.examRepo.GetExamName(ctx, examID)
+}
+
+// GetExamStudentCounts 批量获取考试的独立学生人数
+func (uc *ExamAnalysisUseCase) GetExamStudentCounts(ctx context.Context, examIDs []int64) (map[int64]int64, error) {
+	return uc.examRepo.GetExamStudentCounts(ctx, examIDs)
 }

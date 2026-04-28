@@ -33,7 +33,7 @@ func parseInt64(s string) int64 {
 func (s *AnalysisService) ListExams(ctx context.Context, req *pb.ListExamsRequest) (*pb.ListExamsReply, error) {
 	log.Context(ctx).Infof("Received ListExamsRequest: %v", req)
 
-	exams, total, err := s.examAnalysisUC.ListExams(ctx, req.GetPageIndex(), req.GetPageSize())
+	exams, total, err := s.examAnalysisUC.ListExams(ctx, req.GetPageIndex(), req.GetPageSize(), req.GetKeyword())
 	if err != nil {
 		return nil, err
 	}
@@ -44,13 +44,25 @@ func (s *AnalysisService) ListExams(ctx context.Context, req *pb.ListExamsReques
 		PageSize:   req.GetPageSize(),
 	}
 
+	// 批量获取各考试的学生人数
+	examIDs := make([]int64, len(exams))
+	for i, exam := range exams {
+		examIDs[i] = exam.ID
+	}
+	studentCounts, err := s.examAnalysisUC.GetExamStudentCounts(ctx, examIDs)
+	if err != nil {
+		log.Context(ctx).Errorf("GetExamStudentCounts failed: %v", err)
+		studentCounts = make(map[int64]int64)
+	}
+
 	reply.Exams = make([]*pb.ExamInfo, len(exams))
 	for i, exam := range exams {
 		reply.Exams[i] = &pb.ExamInfo{
-			Id:        strconv.FormatInt(exam.ID, 10),
-			Name:      exam.Name,
-			ExamDate:  exam.ExamDate.Format("2006-01-02T15:04:05Z"),
-			CreatedAt: exam.CreatedAt.Format("2006-01-02T15:04:05Z"),
+			Id:           strconv.FormatInt(exam.ID, 10),
+			Name:         exam.Name,
+			ExamDate:     exam.ExamDate.Format("2006-01-02T15:04:05Z"),
+			CreatedAt:    exam.CreatedAt.Format("2006-01-02T15:04:05Z"),
+			StudentCount: int32(studentCounts[exam.ID]),
 		}
 	}
 

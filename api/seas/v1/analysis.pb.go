@@ -27,6 +27,7 @@ type ListExamsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PageIndex     int32                  `protobuf:"varint,1,opt,name=page_index,json=pageIndex,proto3" json:"page_index,omitempty"` // 默认1
 	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`    // 默认20
+	Keyword       string                 `protobuf:"bytes,3,opt,name=keyword,proto3" json:"keyword,omitempty"`                       // 可选：考试名称搜索关键词
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -75,12 +76,20 @@ func (x *ListExamsRequest) GetPageSize() int32 {
 	return 0
 }
 
+func (x *ListExamsRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
 type ExamInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ExamDate      string                 `protobuf:"bytes,3,opt,name=exam_date,json=examDate,proto3" json:"exam_date,omitempty"`    // RFC3339格式
-	CreatedAt     string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // RFC3339格式
+	ExamDate      string                 `protobuf:"bytes,3,opt,name=exam_date,json=examDate,proto3" json:"exam_date,omitempty"`              // RFC3339格式
+	CreatedAt     string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`           // RFC3339格式
+	StudentCount  int32                  `protobuf:"varint,5,opt,name=student_count,json=studentCount,proto3" json:"student_count,omitempty"` // 参考人数
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -141,6 +150,13 @@ func (x *ExamInfo) GetCreatedAt() string {
 		return x.CreatedAt
 	}
 	return ""
+}
+
+func (x *ExamInfo) GetStudentCount() int32 {
+	if x != nil {
+		return x.StudentCount
+	}
+	return 0
 }
 
 type ListExamsReply struct {
@@ -2588,17 +2604,19 @@ var File_seas_v1_analysis_proto protoreflect.FileDescriptor
 
 const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\n" +
-	"\x16seas/v1/analysis.proto\x12\aseas.v1\x1a\x1cgoogle/api/annotations.proto\"N\n" +
+	"\x16seas/v1/analysis.proto\x12\aseas.v1\x1a\x1cgoogle/api/annotations.proto\"h\n" +
 	"\x10ListExamsRequest\x12\x1d\n" +
 	"\n" +
 	"page_index\x18\x01 \x01(\x05R\tpageIndex\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"j\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x18\n" +
+	"\akeyword\x18\x03 \x01(\tR\akeyword\"\x8f\x01\n" +
 	"\bExamInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
 	"\texam_date\x18\x03 \x01(\tR\bexamDate\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\tR\tcreatedAt\"\x96\x01\n" +
+	"created_at\x18\x04 \x01(\tR\tcreatedAt\x12#\n" +
+	"\rstudent_count\x18\x05 \x01(\x05R\fstudentCount\"\x96\x01\n" +
 	"\x0eListExamsReply\x12'\n" +
 	"\x05exams\x18\x01 \x03(\v2\x11.seas.v1.ExamInfoR\x05exams\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x03R\n" +

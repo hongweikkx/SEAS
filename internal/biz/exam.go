@@ -31,10 +31,12 @@ func (ExamSubject) TableName() string {
 
 type ExamRepo interface {
 	GetByID(ctx context.Context, id int64) (*Exam, error)
-	// ListAll 获取所有考试，支持分页
-	ListAll(ctx context.Context, pageIndex, pageSize int32) ([]*Exam, int64, error)
+	// ListAll 获取所有考试，支持分页和关键词搜索
+	ListAll(ctx context.Context, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error)
 	// GetExamName 获取考试名称
 	GetExamName(ctx context.Context, id int64) (string, error)
 	// Create 创建考试记录
 	Create(ctx context.Context, exam *Exam) error
+	// GetExamStudentCounts 批量获取考试的独立学生人数（从 scores 表统计）
+	GetExamStudentCounts(ctx context.Context, examIDs []int64) (map[int64]int64, error)
 }

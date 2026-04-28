@@ -23,6 +23,10 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -474,6 +478,9 @@ components:
                     type: string
                 createdAt:
                     type: string
+                studentCount:
+                    type: integer
+                    format: int32
         seas.v1.GetClassSubjectSummaryReply:
             type: object
             properties:
