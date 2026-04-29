@@ -79,6 +79,13 @@ service Analysis {
       get: "/seas/api/v1/exams/{exam_id}/analysis/rating-distribution"
     };
   }
+
+  // 新增接口：删除考试（级联删除关联数据）
+  rpc DeleteExam (DeleteExamRequest) returns (DeleteExamReply) {
+    option (google.api.http) = {
+      delete: "/seas/api/v1/exams/{exam_id}"
+    };
+  }
 }
 
 // ============ 新增消息类型 ============
@@ -366,4 +373,14 @@ message GetRatingDistributionReply {
   RatingConfig config = 5;
   ClassRatingDistribution overall_grade = 6;
   repeated ClassRatingDistribution class_details = 7;
+}
+
+// 11. 删除考试
+message DeleteExamRequest {
+  string exam_id = 1;
+}
+
+message DeleteExamReply {
+  bool success = 1;
+  string message = 2;
 }

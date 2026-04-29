@@ -279,7 +279,8 @@ func (uc *ExamImportUseCase) ImportScoresFromExcel(ctx context.Context, examID i
 			case "总分":
 				totalScoreIdx = i
 			default:
-				if strings.HasPrefix(h, "题") {
+				// 排除常见非题目列，其余全部视为题目得分列
+				if !isNonQuestionColumn(h) {
 					questionCols[i] = h
 				}
 			}
@@ -332,6 +333,17 @@ func (uc *ExamImportUseCase) ImportScoresFromExcel(ctx context.Context, examID i
 			_ = totalScoreIdx
 		}
 
+		// 计算每道题的满分（取该题所有学生中的最高得分）
+		questionMaxScores := make(map[string]float64)
+		for _, item := range scoreItems {
+			if item.Score > questionMaxScores[item.QuestionNumber] {
+				questionMaxScores[item.QuestionNumber] = item.Score
+			}
+		}
+		for i := range scoreItems {
+			scoreItems[i].FullScore = questionMaxScores[scoreItems[i].QuestionNumber]
+		}
+
 		if len(scoreItems) > 0 {
 			result.Mode = "full"
 			if err := uc.scoreItemRepo.BatchCreate(ctx, scoreItems); err != nil {
@@ -341,4 +353,17 @@ func (uc *ExamImportUseCase) ImportScoresFromExcel(ctx context.Context, examID i
 	}
 
 	return result, nil
+}
+
+// isNonQuestionColumn 判断表头是否为已知的非题目列（如姓名、班级、总分等）
+func isNonQuestionColumn(header string) bool {
+	header = strings.TrimSpace(header)
+	if header == "" {
+		return true
+	}
+	switch header {
+	case "姓名", "班级", "总分", "学号", "序号", "排名", "备注", "性别", "准考证号":
+		return true
+	}
+	return false
 }

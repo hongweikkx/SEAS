@@ -71,6 +71,41 @@ func (r *examRepo) Create(ctx context.Context, exam *biz.Exam) error {
 	return r.data.db.WithContext(ctx).Create(exam).Error
 }
 
+// Delete 删除考试及其关联数据（scores、score_items、exam_subjects）
+func (r *examRepo) Delete(ctx context.Context, id int64) error {
+	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. 删除 score_items（通过 scores 关联）
+		if err := tx.Exec(`
+			DELETE si FROM score_items si
+			JOIN scores sc ON sc.id = si.score_id
+			WHERE sc.exam_id = ?
+		`, id).Error; err != nil {
+			log.Context(ctx).Errorf("examRepo.Delete score_items err: %+v", err)
+			return err
+		}
+
+		// 2. 删除 scores
+		if err := tx.Where("exam_id = ?", id).Delete(&biz.Score{}).Error; err != nil {
+			log.Context(ctx).Errorf("examRepo.Delete scores err: %+v", err)
+			return err
+		}
+
+		// 3. 删除 exam_subjects
+		if err := tx.Where("exam_id = ?", id).Delete(&biz.ExamSubject{}).Error; err != nil {
+			log.Context(ctx).Errorf("examRepo.Delete exam_subjects err: %+v", err)
+			return err
+		}
+
+		// 4. 删除 exams
+		if err := tx.Delete(&biz.Exam{}, id).Error; err != nil {
+			log.Context(ctx).Errorf("examRepo.Delete exam err: %+v", err)
+			return err
+		}
+
+		return nil
+	})
+}
+
 // GetExamStudentCounts 批量获取考试的独立学生人数
 func (r *examRepo) GetExamStudentCounts(ctx context.Context, examIDs []int64) (map[int64]int64, error) {
 	counts := make(map[int64]int64)

@@ -29,6 +29,7 @@ const (
 	Analysis_GetSingleQuestionSummary_FullMethodName = "/seas.v1.Analysis/GetSingleQuestionSummary"
 	Analysis_GetSingleQuestionDetail_FullMethodName  = "/seas.v1.Analysis/GetSingleQuestionDetail"
 	Analysis_GetRatingDistribution_FullMethodName    = "/seas.v1.Analysis/GetRatingDistribution"
+	Analysis_DeleteExam_FullMethodName               = "/seas.v1.Analysis/DeleteExam"
 )
 
 // AnalysisClient is the client API for Analysis service.
@@ -55,6 +56,8 @@ type AnalysisClient interface {
 	GetSingleQuestionDetail(ctx context.Context, in *GetSingleQuestionDetailRequest, opts ...grpc.CallOption) (*GetSingleQuestionDetailReply, error)
 	// 新增接口：四率分析
 	GetRatingDistribution(ctx context.Context, in *GetRatingDistributionRequest, opts ...grpc.CallOption) (*GetRatingDistributionReply, error)
+	// 新增接口：删除考试（级联删除关联数据）
+	DeleteExam(ctx context.Context, in *DeleteExamRequest, opts ...grpc.CallOption) (*DeleteExamReply, error)
 }
 
 type analysisClient struct {
@@ -165,6 +168,16 @@ func (c *analysisClient) GetRatingDistribution(ctx context.Context, in *GetRatin
 	return out, nil
 }
 
+func (c *analysisClient) DeleteExam(ctx context.Context, in *DeleteExamRequest, opts ...grpc.CallOption) (*DeleteExamReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteExamReply)
+	err := c.cc.Invoke(ctx, Analysis_DeleteExam_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AnalysisServer is the server API for Analysis service.
 // All implementations must embed UnimplementedAnalysisServer
 // for forward compatibility.
@@ -189,6 +202,8 @@ type AnalysisServer interface {
 	GetSingleQuestionDetail(context.Context, *GetSingleQuestionDetailRequest) (*GetSingleQuestionDetailReply, error)
 	// 新增接口：四率分析
 	GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error)
+	// 新增接口：删除考试（级联删除关联数据）
+	DeleteExam(context.Context, *DeleteExamRequest) (*DeleteExamReply, error)
 	mustEmbedUnimplementedAnalysisServer()
 }
 
@@ -228,6 +243,9 @@ func (UnimplementedAnalysisServer) GetSingleQuestionDetail(context.Context, *Get
 }
 func (UnimplementedAnalysisServer) GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRatingDistribution not implemented")
+}
+func (UnimplementedAnalysisServer) DeleteExam(context.Context, *DeleteExamRequest) (*DeleteExamReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteExam not implemented")
 }
 func (UnimplementedAnalysisServer) mustEmbedUnimplementedAnalysisServer() {}
 func (UnimplementedAnalysisServer) testEmbeddedByValue()                  {}
@@ -430,6 +448,24 @@ func _Analysis_GetRatingDistribution_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Analysis_DeleteExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteExamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysisServer).DeleteExam(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Analysis_DeleteExam_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysisServer).DeleteExam(ctx, req.(*DeleteExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Analysis_ServiceDesc is the grpc.ServiceDesc for Analysis service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -476,6 +512,10 @@ var Analysis_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRatingDistribution",
 			Handler:    _Analysis_GetRatingDistribution_Handler,
+		},
+		{
+			MethodName: "DeleteExam",
+			Handler:    _Analysis_DeleteExam_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

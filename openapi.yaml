@@ -52,6 +52,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.CreateExamReply'
+    /seas/api/v1/exams/{examId}:
+        delete:
+            tags:
+                - Analysis
+            description: 新增接口：删除考试（级联删除关联数据）
+            operationId: Analysis_DeleteExam
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.DeleteExamReply'
     /seas/api/v1/exams/{examId}/analysis/class-summary:
         get:
             tags:
@@ -503,6 +522,13 @@ components:
                 name:
                     type: string
                 examDate:
+                    type: string
+        seas.v1.DeleteExamReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                message:
                     type: string
         seas.v1.ExamInfo:
             type: object

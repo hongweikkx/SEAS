@@ -557,3 +557,19 @@ func (s *AnalysisService) GetSingleQuestionDetail(ctx context.Context, req *pb.G
 
 	return reply, nil
 }
+
+// DeleteExam 删除考试（级联删除关联数据）
+func (s *AnalysisService) DeleteExam(ctx context.Context, req *pb.DeleteExamRequest) (*pb.DeleteExamReply, error) {
+	log.Context(ctx).Infof("Received DeleteExamRequest: %v", req)
+
+	err := s.examAnalysisUC.DeleteExam(ctx, parseInt64(req.GetExamId()))
+	if err != nil {
+		log.Context(ctx).Errorf("DeleteExam failed: %v", err)
+		return nil, err
+	}
+
+	return &pb.DeleteExamReply{
+		Success: true,
+		Message: "删除成功",
+	}, nil
+}

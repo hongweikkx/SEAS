@@ -2616,6 +2616,103 @@ func (x *GetRatingDistributionReply) GetClassDetails() []*ClassRatingDistributio
 	return nil
 }
 
+// 11. 删除考试
+type DeleteExamRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamId        string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteExamRequest) Reset() {
+	*x = DeleteExamRequest{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteExamRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteExamRequest) ProtoMessage() {}
+
+func (x *DeleteExamRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteExamRequest.ProtoReflect.Descriptor instead.
+func (*DeleteExamRequest) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *DeleteExamRequest) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+type DeleteExamReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteExamReply) Reset() {
+	*x = DeleteExamReply{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteExamReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteExamReply) ProtoMessage() {}
+
+func (x *DeleteExamReply) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteExamReply.ProtoReflect.Descriptor instead.
+func (*DeleteExamReply) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *DeleteExamReply) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *DeleteExamReply) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_seas_v1_analysis_proto protoreflect.FileDescriptor
 
 const file_seas_v1_analysis_proto_rawDesc = "" +
@@ -2893,7 +2990,12 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x12total_participants\x18\x04 \x01(\x05R\x11totalParticipants\x12-\n" +
 	"\x06config\x18\x05 \x01(\v2\x15.seas.v1.RatingConfigR\x06config\x12E\n" +
 	"\roverall_grade\x18\x06 \x01(\v2 .seas.v1.ClassRatingDistributionR\foverallGrade\x12E\n" +
-	"\rclass_details\x18\a \x03(\v2 .seas.v1.ClassRatingDistributionR\fclassDetails2\xe8\f\n" +
+	"\rclass_details\x18\a \x03(\v2 .seas.v1.ClassRatingDistributionR\fclassDetails\",\n" +
+	"\x11DeleteExamRequest\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\tR\x06examId\"E\n" +
+	"\x0fDeleteExamReply\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xd2\r\n" +
 	"\bAnalysis\x12[\n" +
 	"\tListExams\x12\x19.seas.v1.ListExamsRequest\x1a\x17.seas.v1.ListExamsReply\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/seas/api/v1/exams\x12\x89\x01\n" +
 	"\x12ListSubjectsByExam\x12\".seas.v1.ListSubjectsByExamRequest\x1a .seas.v1.ListSubjectsByExamReply\"-\x82\xd3\xe4\x93\x02'\x12%/seas/api/v1/exams/{exam_id}/subjects\x12\x96\x01\n" +
@@ -2904,7 +3006,9 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x17GetSingleClassQuestions\x12'.seas.v1.GetSingleClassQuestionsRequest\x1a%.seas.v1.GetSingleClassQuestionsReply\"W\x82\xd3\xe4\x93\x02Q\x12O/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions\x12\xb2\x01\n" +
 	"\x18GetSingleQuestionSummary\x12(.seas.v1.GetSingleQuestionSummaryRequest\x1a&.seas.v1.GetSingleQuestionSummaryReply\"D\x82\xd3\xe4\x93\x02>\x12</seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions\x12\xd0\x01\n" +
 	"\x17GetSingleQuestionDetail\x12'.seas.v1.GetSingleQuestionDetailRequest\x1a%.seas.v1.GetSingleQuestionDetailReply\"e\x82\xd3\xe4\x93\x02_\x12]/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}\x12\xa6\x01\n" +
-	"\x15GetRatingDistribution\x12%.seas.v1.GetRatingDistributionRequest\x1a#.seas.v1.GetRatingDistributionReply\"A\x82\xd3\xe4\x93\x02;\x129/seas/api/v1/exams/{exam_id}/analysis/rating-distributionB7\n" +
+	"\x15GetRatingDistribution\x12%.seas.v1.GetRatingDistributionRequest\x1a#.seas.v1.GetRatingDistributionReply\"A\x82\xd3\xe4\x93\x02;\x129/seas/api/v1/exams/{exam_id}/analysis/rating-distribution\x12h\n" +
+	"\n" +
+	"DeleteExam\x12\x1a.seas.v1.DeleteExamRequest\x1a\x18.seas.v1.DeleteExamReply\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/seas/api/v1/exams/{exam_id}B7\n" +
 	"\x16dev.kratos.api.seas.v1B\vseasProtoV1P\x01Z\x0eapi/seas/v1;v1b\x06proto3"
 
 var (
@@ -2919,7 +3023,7 @@ func file_seas_v1_analysis_proto_rawDescGZIP() []byte {
 	return file_seas_v1_analysis_proto_rawDescData
 }
 
-var file_seas_v1_analysis_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_seas_v1_analysis_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_seas_v1_analysis_proto_goTypes = []any{
 	(*ListExamsRequest)(nil),                // 0: seas.v1.ListExamsRequest
 	(*ExamInfo)(nil),                        // 1: seas.v1.ExamInfo
@@ -2953,6 +3057,8 @@ var file_seas_v1_analysis_proto_goTypes = []any{
 	(*RatingItem)(nil),                      // 29: seas.v1.RatingItem
 	(*ClassRatingDistribution)(nil),         // 30: seas.v1.ClassRatingDistribution
 	(*GetRatingDistributionReply)(nil),      // 31: seas.v1.GetRatingDistributionReply
+	(*DeleteExamRequest)(nil),               // 32: seas.v1.DeleteExamRequest
+	(*DeleteExamReply)(nil),                 // 33: seas.v1.DeleteExamReply
 }
 var file_seas_v1_analysis_proto_depIdxs = []int32{
 	1,  // 0: seas.v1.ListExamsReply.exams:type_name -> seas.v1.ExamInfo
@@ -2985,18 +3091,20 @@ var file_seas_v1_analysis_proto_depIdxs = []int32{
 	20, // 27: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
 	24, // 28: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
 	28, // 29: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
-	2,  // 30: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
-	5,  // 31: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
-	8,  // 32: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
-	11, // 33: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
-	14, // 34: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
-	16, // 35: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
-	19, // 36: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
-	23, // 37: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
-	26, // 38: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
-	31, // 39: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
-	30, // [30:40] is the sub-list for method output_type
-	20, // [20:30] is the sub-list for method input_type
+	32, // 30: seas.v1.Analysis.DeleteExam:input_type -> seas.v1.DeleteExamRequest
+	2,  // 31: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
+	5,  // 32: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
+	8,  // 33: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
+	11, // 34: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
+	14, // 35: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
+	16, // 36: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
+	19, // 37: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
+	23, // 38: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
+	26, // 39: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
+	31, // 40: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
+	33, // 41: seas.v1.Analysis.DeleteExam:output_type -> seas.v1.DeleteExamReply
+	31, // [31:42] is the sub-list for method output_type
+	20, // [20:31] is the sub-list for method input_type
 	20, // [20:20] is the sub-list for extension type_name
 	20, // [20:20] is the sub-list for extension extendee
 	0,  // [0:20] is the sub-list for field type_name
@@ -3013,7 +3121,7 @@ func file_seas_v1_analysis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_seas_v1_analysis_proto_rawDesc), len(file_seas_v1_analysis_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   32,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

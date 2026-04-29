@@ -38,7 +38,7 @@ func (r *scoreItemRepo) GetSingleClassQuestions(ctx context.Context, examID, sub
 	err := r.data.db.WithContext(ctx).Raw(`
 		SELECT
 			si.question_number,
-			MAX(si.full_score) AS full_score,
+			GREATEST(MAX(si.full_score), MAX(si.score)) AS full_score,
 			ROUND(AVG(CASE WHEN st.class_id = ? THEN si.score END), 2) AS class_avg_score,
 			ROUND(AVG(si.score), 2) AS grade_avg_score
 		FROM score_items si
@@ -52,7 +52,18 @@ func (r *scoreItemRepo) GetSingleClassQuestions(ctx context.Context, examID, sub
 		return nil, err
 	}
 
-	stats := &biz.SingleClassQuestionStats{ExamID: examID, SubjectID: subjectID, ClassID: classID}
+	// 查询科目名称和班级名称
+	var subjectName, className string
+	r.data.db.WithContext(ctx).Raw(`SELECT name FROM subjects WHERE id = ?`, subjectID).Scan(&subjectName)
+	r.data.db.WithContext(ctx).Raw(`SELECT name FROM classes WHERE id = ?`, classID).Scan(&className)
+
+	stats := &biz.SingleClassQuestionStats{
+		ExamID:      examID,
+		SubjectID:   subjectID,
+		SubjectName: subjectName,
+		ClassID:     classID,
+		ClassName:   className,
+	}
 	stats.Questions = make([]*biz.ClassQuestionItemStats, 0, len(rows))
 	for _, row := range rows {
 		scoreRate := 0.0
@@ -90,7 +101,7 @@ func (r *scoreItemRepo) GetSingleQuestionSummary(ctx context.Context, examID, su
 	err := r.data.db.WithContext(ctx).Raw(`
 		SELECT
 			si.question_number,
-			MAX(si.full_score) AS full_score,
+			GREATEST(MAX(si.full_score), MAX(si.score)) AS full_score,
 			ROUND(AVG(si.score), 2) AS grade_avg_score
 		FROM score_items si
 		JOIN scores sc ON sc.id = si.score_id
@@ -135,7 +146,11 @@ func (r *scoreItemRepo) GetSingleQuestionSummary(ctx context.Context, examID, su
 		})
 	}
 
-	stats := &biz.SingleQuestionSummaryStats{ExamID: examID, SubjectID: subjectID}
+	// 查询科目名称
+	var subjectName string
+	r.data.db.WithContext(ctx).Raw(`SELECT name FROM subjects WHERE id = ?`, subjectID).Scan(&subjectName)
+
+	stats := &biz.SingleQuestionSummaryStats{ExamID: examID, SubjectID: subjectID, SubjectName: subjectName}
 	stats.Questions = make([]*biz.SingleQuestionSummaryItemStats, 0, len(rows))
 	for _, row := range rows {
 		item := &biz.SingleQuestionSummaryItemStats{

@@ -255,3 +255,8 @@ func (uc *ExamAnalysisUseCase) GetExamName(ctx context.Context, examID int64) (s
 func (uc *ExamAnalysisUseCase) GetExamStudentCounts(ctx context.Context, examIDs []int64) (map[int64]int64, error) {
 	return uc.examRepo.GetExamStudentCounts(ctx, examIDs)
 }
+
+// DeleteExam 删除考试及其关联数据
+func (uc *ExamAnalysisUseCase) DeleteExam(ctx context.Context, examID int64) error {
+	return uc.examRepo.Delete(ctx, examID)
+}

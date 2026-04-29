@@ -39,4 +39,6 @@ type ExamRepo interface {
 	Create(ctx context.Context, exam *Exam) error
 	// GetExamStudentCounts 批量获取考试的独立学生人数（从 scores 表统计）
 	GetExamStudentCounts(ctx context.Context, examIDs []int64) (map[int64]int64, error)
+	// Delete 删除考试及其关联数据
+	Delete(ctx context.Context, id int64) error
 }
