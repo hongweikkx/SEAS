@@ -20,4 +20,8 @@ type SubjectRepo interface {
 	GetFullScoreByExamSubject(ctx context.Context, examID, subjectID int64) (float64, error)
 	// FindOrCreateByName 按名称查找或创建学科
 	FindOrCreateByName(ctx context.Context, name string) (*Subject, error)
+	// CreateExamSubjects 批量创建考试-学科关联记录
+	CreateExamSubjects(ctx context.Context, examID int64, subjectIDs []int64, fullScore float64) error
+	// UpdateExamSubjectFullScore 更新考试中某学科的满分（不存在则创建）
+	UpdateExamSubjectFullScore(ctx context.Context, examID, subjectID int64, fullScore float64) error
 }

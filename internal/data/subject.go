@@ -54,6 +54,33 @@ func (r *subjectRepo) ListByExamID(ctx context.Context, examID int64, pageIndex,
 	return subjects, total, nil
 }
 
+// CreateExamSubjects 批量创建考试-学科关联记录（已存在则跳过）
+func (r *subjectRepo) CreateExamSubjects(ctx context.Context, examID int64, subjectIDs []int64, fullScore float64) error {
+	if len(subjectIDs) == 0 {
+		return nil
+	}
+
+	records := make([]biz.ExamSubject, 0, len(subjectIDs))
+	for _, sid := range subjectIDs {
+		var count int64
+		r.data.db.WithContext(ctx).Model(&biz.ExamSubject{}).
+			Where("exam_id = ? AND subject_id = ?", examID, sid).
+			Count(&count)
+		if count == 0 {
+			records = append(records, biz.ExamSubject{
+				ExamID:    examID,
+				SubjectID: sid,
+				FullScore: fullScore,
+			})
+		}
+	}
+
+	if len(records) > 0 {
+		return r.data.db.WithContext(ctx).Create(&records).Error
+	}
+	return nil
+}
+
 // GetFullScoreByExamSubject 获取考试中该学科的满分
 func (r *subjectRepo) GetFullScoreByExamSubject(ctx context.Context, examID, subjectID int64) (float64, error) {
 	var fullScore float64
@@ -67,6 +94,32 @@ func (r *subjectRepo) GetFullScoreByExamSubject(ctx context.Context, examID, sub
 	return fullScore, err
 }
 
+// UpdateExamSubjectFullScore 更新考试中某学科的满分（不存在则创建）
+func (r *subjectRepo) UpdateExamSubjectFullScore(ctx context.Context, examID, subjectID int64, fullScore float64) error {
+	var count int64
+	err := r.data.db.WithContext(ctx).Model(&biz.ExamSubject{}).
+		Where("exam_id = ? AND subject_id = ?", examID, subjectID).
+		Count(&count).Error
+	if err != nil {
+		log.Context(ctx).Errorf("subjectRepo.UpdateExamSubjectFullScore count err: %+v", err)
+		return err
+	}
+
+	if count > 0 {
+		// 更新现有记录
+		return r.data.db.WithContext(ctx).Model(&biz.ExamSubject{}).
+			Where("exam_id = ? AND subject_id = ?", examID, subjectID).
+			Update("full_score", fullScore).Error
+	}
+
+	// 创建新记录
+	return r.data.db.WithContext(ctx).Create(&biz.ExamSubject{
+		ExamID:    examID,
+		SubjectID: subjectID,
+		FullScore: fullScore,
+	}).Error
+}
+
 // FindOrCreateByName 按名称查找或创建学科
 func (r *subjectRepo) FindOrCreateByName(ctx context.Context, name string) (*biz.Subject, error) {
 	var subject biz.Subject
@@ -78,7 +131,7 @@ func (r *subjectRepo) FindOrCreateByName(ctx context.Context, name string) (*biz
 		log.Context(ctx).Errorf("subjectRepo.FindOrCreateByName find err: %+v", err)
 		return nil, err
 	}
-	subject = biz.Subject{Name: name}
+	subject = biz.Subject{Name: name, Code: name}
 	if err := r.data.db.WithContext(ctx).Create(&subject).Error; err != nil {
 		log.Context(ctx).Errorf("subjectRepo.FindOrCreateByName create err: %+v", err)
 		return nil, err
