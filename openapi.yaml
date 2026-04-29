@@ -226,6 +226,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.ListSubjectsByExamReply'
+    /seas/api/v1/exams/{examId}/subjects/full-scores:
+        put:
+            tags:
+                - ExamImport
+            description: 更新考试各学科满分
+            operationId: ExamImport_UpdateSubjectFullScores
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/seas.v1.UpdateSubjectFullScoresRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.UpdateSubjectFullScoresReply'
     /seas/api/v1/exams/{examId}/subjects/{subjectId}/classes:
         get:
             tags:
@@ -416,6 +441,18 @@ components:
                 totalClasses:
                     type: integer
                     format: int32
+                studentCount:
+                    type: integer
+                    format: int32
+                difficulty:
+                    type: number
+                    format: double
+                stdDev:
+                    type: number
+                    format: double
+                discrimination:
+                    type: number
+                    format: double
         seas.v1.ClassSummaryItem:
             type: object
             properties:
@@ -639,8 +676,6 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/seas.v1.SubjectSummaryItem'
-                overall:
-                    $ref: '#/components/schemas/seas.v1.SubjectSummaryItem'
         seas.v1.ImportScoresReply:
             type: object
             properties:
@@ -811,15 +846,25 @@ components:
                 studentCount:
                     type: integer
                     format: int32
-                scoreDeviation:
-                    type: number
-                    format: double
                 stdDev:
                     type: number
                     format: double
                 discrimination:
                     type: number
                     format: double
+        seas.v1.UpdateSubjectFullScoresReply:
+            type: object
+            properties: {}
+        seas.v1.UpdateSubjectFullScoresRequest:
+            type: object
+            properties:
+                examId:
+                    type: string
+                fullScores:
+                    type: object
+                    additionalProperties:
+                        type: number
+                        format: double
 tags:
     - name: Analysis
     - name: ExamImport

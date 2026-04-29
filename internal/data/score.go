@@ -128,41 +128,10 @@ func (r *scoreRepo) GetSubjectSummary(ctx context.Context, examID, subjectID int
 		`, examID).Scan(&classesInvolved)
 		stats.ClassesInvolved = classesInvolved
 
-		// 查询所有学生全科总分（这才是正确的全年级总体统计基础）
-		allScores, _ := r.getAllStudentScores(ctx, examID, 0)
-		var overallAvg, overallHighest, overallLowest float64
-		if len(allScores) > 0 {
-			sort.Float64s(allScores)
-			var sum float64
-			for _, s := range allScores {
-				sum += s
-			}
-			overallAvg = sum / float64(len(allScores))
-			overallHighest = allScores[len(allScores)-1]
-			overallLowest = allScores[0]
-		}
-		overallFullScore := r.calculateOverallFullScore(ctx, examID)
-		overallStdDev := calculateStdDev(allScores)
-
-		stats.Overall = &biz.SubjectStats{
-			ID:             0,
-			Name:           "全年级",
-			FullScore:      overallFullScore,
-			AvgScore:       roundTo2Decimal(overallAvg),
-			HighestScore:   overallHighest,
-			LowestScore:    overallLowest,
-			Difficulty:     r.calculateDifficulty(overallAvg, overallFullScore),
-			StudentCount:   int64(len(allScores)),
-			ScoreDeviation: 0,
-			StdDev:         roundTo2Decimal(overallStdDev),
-			Discrimination: calculateDiscrimination(allScores, overallFullScore),
-		}
-
-		// 为每个学科计算标准差、离均差和区分度
+		// 为每个学科计算标准差和区分度
 		for _, subject := range stats.Subjects {
 			subjectScores, _ := r.getAllStudentScores(ctx, examID, subject.ID)
 			subject.StdDev = roundTo2Decimal(calculateStdDev(subjectScores))
-			subject.ScoreDeviation = roundTo2Decimal(subject.AvgScore - overallAvg)
 			subject.Discrimination = calculateDiscrimination(subjectScores, subject.FullScore)
 		}
 
@@ -216,7 +185,6 @@ func (r *scoreRepo) GetSubjectSummary(ctx context.Context, examID, subjectID int
 		allScores, _ := r.getAllStudentScores(ctx, examID, subjectID)
 		stats.Subjects[0].StdDev = roundTo2Decimal(calculateStdDev(allScores))
 		stats.Subjects[0].Discrimination = calculateDiscrimination(allScores, stats.Subjects[0].FullScore)
-		stats.Subjects[0].ScoreDeviation = 0 // 单科模式下无离均差
 	}
 
 	return &stats, nil
@@ -649,7 +617,15 @@ func (r *scoreRepo) GetClassSubjectSummary(ctx context.Context, examID, classID 
 			ClassLowest:   roundTo2Decimal(row.ClassLowest),
 			ClassRank:     ranksBySubject[row.SubjectID][classID],
 			TotalClasses:  totalClassesBySubject[row.SubjectID],
+			StudentCount:  row.Participations,
 		}
+		// 计算难度、标准差、区分度
+		if item.FullScore > 0 {
+			item.Difficulty = roundTo2Decimal(item.ClassAvgScore / item.FullScore)
+		}
+		scores, _ := r.getClassStudentScores(ctx, examID, classID, row.SubjectID)
+		item.StdDev = roundTo2Decimal(calculateStdDev(scores))
+		item.Discrimination = calculateDiscrimination(scores, item.FullScore)
 		summary.Subjects = append(summary.Subjects, item)
 	}
 
@@ -740,6 +716,14 @@ func (r *scoreRepo) GetClassSubjectSummary(ctx context.Context, examID, classID 
 		ClassRank:     overallRank,
 		TotalClasses:  int32(len(overallRanks)),
 	}
+	// 计算 overall 的难度、标准差、区分度
+	if summary.Overall.FullScore > 0 {
+		summary.Overall.Difficulty = roundTo2Decimal(summary.Overall.ClassAvgScore / summary.Overall.FullScore)
+	}
+	overallScores, _ := r.getClassStudentScores(ctx, examID, classID, 0)
+	summary.Overall.StudentCount = int64(len(overallScores))
+	summary.Overall.StdDev = roundTo2Decimal(calculateStdDev(overallScores))
+	summary.Overall.Discrimination = calculateDiscrimination(overallScores, summary.Overall.FullScore)
 
 	return &summary, nil
 }
@@ -1019,6 +1003,36 @@ func (r *scoreRepo) getAllStudentScores(ctx context.Context, examID, subjectID i
 			GROUP BY student_id
 			ORDER BY total_score
 		`, examID).Pluck("total_score", &scores).Error
+	}
+	if err != nil {
+		return nil, err
+	}
+	return scores, nil
+}
+
+// getClassStudentScores 获取指定班级内所有学生分数
+// 全科模式下返回每个学生的总分；单科模式下返回该科分数
+func (r *scoreRepo) getClassStudentScores(ctx context.Context, examID, classID, subjectID int64) ([]float64, error) {
+	var scores []float64
+	var err error
+
+	if subjectID > 0 {
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT sc.total_score
+			FROM scores sc
+			JOIN students st ON st.id = sc.student_id
+			WHERE sc.exam_id = ? AND sc.subject_id = ? AND st.class_id = ?
+			ORDER BY sc.total_score
+		`, examID, subjectID, classID).Pluck("total_score", &scores).Error
+	} else {
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT SUM(sc.total_score) as total_score
+			FROM scores sc
+			JOIN students st ON st.id = sc.student_id
+			WHERE sc.exam_id = ? AND st.class_id = ?
+			GROUP BY sc.student_id
+			ORDER BY total_score
+		`, examID, classID).Pluck("total_score", &scores).Error
 	}
 	if err != nil {
 		return nil, err

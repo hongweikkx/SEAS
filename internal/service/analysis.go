@@ -127,22 +127,6 @@ func (s *AnalysisService) GetSubjectSummary(ctx context.Context, req *pb.GetSubj
 		ClassesInvolved:   stats.ClassesInvolved,
 	}
 
-	if stats.Overall != nil {
-		reply.Overall = &pb.SubjectSummaryItem{
-			Id:             strconv.FormatInt(stats.Overall.ID, 10),
-			Name:           stats.Overall.Name,
-			FullScore:      stats.Overall.FullScore,
-			AvgScore:       stats.Overall.AvgScore,
-			HighestScore:   stats.Overall.HighestScore,
-			LowestScore:    stats.Overall.LowestScore,
-			Difficulty:     stats.Overall.Difficulty,
-			StudentCount:   int32(stats.Overall.StudentCount),
-			ScoreDeviation: stats.Overall.ScoreDeviation,
-			StdDev:         stats.Overall.StdDev,
-			Discrimination: stats.Overall.Discrimination,
-		}
-	}
-
 	reply.Subjects = make([]*pb.SubjectSummaryItem, len(stats.Subjects))
 	for i, subject := range stats.Subjects {
 		reply.Subjects[i] = &pb.SubjectSummaryItem{
@@ -154,7 +138,6 @@ func (s *AnalysisService) GetSubjectSummary(ctx context.Context, req *pb.GetSubj
 			LowestScore:    subject.LowestScore,
 			Difficulty:     subject.Difficulty,
 			StudentCount:   int32(subject.StudentCount),
-			ScoreDeviation: subject.ScoreDeviation,
 			StdDev:         subject.StdDev,
 			Discrimination: subject.Discrimination,
 		}
@@ -343,32 +326,40 @@ func (s *AnalysisService) GetClassSubjectSummary(ctx context.Context, req *pb.Ge
 
 	if stats.Overall != nil {
 		reply.Overall = &pb.ClassSubjectItem{
-			SubjectId:     strconv.FormatInt(stats.Overall.SubjectID, 10),
-			SubjectName:   stats.Overall.SubjectName,
-			FullScore:     stats.Overall.FullScore,
-			ClassAvgScore: stats.Overall.ClassAvgScore,
-			GradeAvgScore: stats.Overall.GradeAvgScore,
-			ScoreDiff:     stats.Overall.ScoreDiff,
-			ClassHighest:  stats.Overall.ClassHighest,
-			ClassLowest:   stats.Overall.ClassLowest,
-			ClassRank:     stats.Overall.ClassRank,
-			TotalClasses:  stats.Overall.TotalClasses,
+			SubjectId:      strconv.FormatInt(stats.Overall.SubjectID, 10),
+			SubjectName:    stats.Overall.SubjectName,
+			FullScore:      stats.Overall.FullScore,
+			ClassAvgScore:  stats.Overall.ClassAvgScore,
+			GradeAvgScore:  stats.Overall.GradeAvgScore,
+			ScoreDiff:      stats.Overall.ScoreDiff,
+			ClassHighest:   stats.Overall.ClassHighest,
+			ClassLowest:    stats.Overall.ClassLowest,
+			ClassRank:      stats.Overall.ClassRank,
+			TotalClasses:   stats.Overall.TotalClasses,
+			StudentCount:   int32(stats.Overall.StudentCount),
+			Difficulty:     stats.Overall.Difficulty,
+			StdDev:         stats.Overall.StdDev,
+			Discrimination: stats.Overall.Discrimination,
 		}
 	}
 
 	reply.Subjects = make([]*pb.ClassSubjectItem, len(stats.Subjects))
 	for i, subject := range stats.Subjects {
 		reply.Subjects[i] = &pb.ClassSubjectItem{
-			SubjectId:     strconv.FormatInt(subject.SubjectID, 10),
-			SubjectName:   subject.SubjectName,
-			FullScore:     subject.FullScore,
-			ClassAvgScore: subject.ClassAvgScore,
-			GradeAvgScore: subject.GradeAvgScore,
-			ScoreDiff:     subject.ScoreDiff,
-			ClassHighest:  subject.ClassHighest,
-			ClassLowest:   subject.ClassLowest,
-			ClassRank:     subject.ClassRank,
-			TotalClasses:  subject.TotalClasses,
+			SubjectId:      strconv.FormatInt(subject.SubjectID, 10),
+			SubjectName:    subject.SubjectName,
+			FullScore:      subject.FullScore,
+			ClassAvgScore:  subject.ClassAvgScore,
+			GradeAvgScore:  subject.GradeAvgScore,
+			ScoreDiff:      subject.ScoreDiff,
+			ClassHighest:   subject.ClassHighest,
+			ClassLowest:    subject.ClassLowest,
+			ClassRank:      subject.ClassRank,
+			TotalClasses:   subject.TotalClasses,
+			StudentCount:   int32(subject.StudentCount),
+			Difficulty:     subject.Difficulty,
+			StdDev:         subject.StdDev,
+			Discrimination: subject.Discrimination,
 		}
 	}
 

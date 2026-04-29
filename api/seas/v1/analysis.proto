@@ -142,9 +142,8 @@ message SubjectSummaryItem {
   double lowest_score = 6;
   double difficulty = 7;      // 平均分/满分*100
   int32 student_count = 8;
-  double score_deviation = 9;    // 新增：离均差
-  double std_dev = 10;           // 新增：标准差
-  double discrimination = 11;    // 新增：区分度
+  double std_dev = 10;           // 标准差
+  double discrimination = 11;    // 区分度
 }
 
 message GetSubjectSummaryReply {
@@ -155,7 +154,6 @@ message GetSubjectSummaryReply {
   int32 subjects_involved = 5;    // 仅在 scope=all_subjects 时有意义
   int32 classes_involved = 6;     // 仅在 scope=all_subjects 时有意义
   repeated SubjectSummaryItem subjects = 7;
-  SubjectSummaryItem overall = 10;  // 新增：全年级总体
 }
 
 // 4. 班级情况汇总
@@ -205,6 +203,10 @@ message ClassSubjectItem {
   double class_lowest = 8;
   int32 class_rank = 9;
   int32 total_classes = 10;
+  int32 student_count = 11;
+  double difficulty = 12;
+  double std_dev = 13;
+  double discrimination = 14;
 }
 
 message GetClassSubjectSummaryReply {

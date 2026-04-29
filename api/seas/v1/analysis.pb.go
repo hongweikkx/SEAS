@@ -495,9 +495,8 @@ type SubjectSummaryItem struct {
 	LowestScore    float64                `protobuf:"fixed64,6,opt,name=lowest_score,json=lowestScore,proto3" json:"lowest_score,omitempty"`
 	Difficulty     float64                `protobuf:"fixed64,7,opt,name=difficulty,proto3" json:"difficulty,omitempty"` // 平均分/满分*100
 	StudentCount   int32                  `protobuf:"varint,8,opt,name=student_count,json=studentCount,proto3" json:"student_count,omitempty"`
-	ScoreDeviation float64                `protobuf:"fixed64,9,opt,name=score_deviation,json=scoreDeviation,proto3" json:"score_deviation,omitempty"` // 新增：离均差
-	StdDev         float64                `protobuf:"fixed64,10,opt,name=std_dev,json=stdDev,proto3" json:"std_dev,omitempty"`                        // 新增：标准差
-	Discrimination float64                `protobuf:"fixed64,11,opt,name=discrimination,proto3" json:"discrimination,omitempty"`                      // 新增：区分度
+	StdDev         float64                `protobuf:"fixed64,10,opt,name=std_dev,json=stdDev,proto3" json:"std_dev,omitempty"`   // 标准差
+	Discrimination float64                `protobuf:"fixed64,11,opt,name=discrimination,proto3" json:"discrimination,omitempty"` // 区分度
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -588,13 +587,6 @@ func (x *SubjectSummaryItem) GetStudentCount() int32 {
 	return 0
 }
 
-func (x *SubjectSummaryItem) GetScoreDeviation() float64 {
-	if x != nil {
-		return x.ScoreDeviation
-	}
-	return 0
-}
-
 func (x *SubjectSummaryItem) GetStdDev() float64 {
 	if x != nil {
 		return x.StdDev
@@ -618,7 +610,6 @@ type GetSubjectSummaryReply struct {
 	SubjectsInvolved  int32                  `protobuf:"varint,5,opt,name=subjects_involved,json=subjectsInvolved,proto3" json:"subjects_involved,omitempty"` // 仅在 scope=all_subjects 时有意义
 	ClassesInvolved   int32                  `protobuf:"varint,6,opt,name=classes_involved,json=classesInvolved,proto3" json:"classes_involved,omitempty"`    // 仅在 scope=all_subjects 时有意义
 	Subjects          []*SubjectSummaryItem  `protobuf:"bytes,7,rep,name=subjects,proto3" json:"subjects,omitempty"`
-	Overall           *SubjectSummaryItem    `protobuf:"bytes,10,opt,name=overall,proto3" json:"overall,omitempty"` // 新增：全年级总体
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -698,13 +689,6 @@ func (x *GetSubjectSummaryReply) GetClassesInvolved() int32 {
 func (x *GetSubjectSummaryReply) GetSubjects() []*SubjectSummaryItem {
 	if x != nil {
 		return x.Subjects
-	}
-	return nil
-}
-
-func (x *GetSubjectSummaryReply) GetOverall() *SubjectSummaryItem {
-	if x != nil {
-		return x.Overall
 	}
 	return nil
 }
@@ -1032,19 +1016,23 @@ func (x *GetClassSubjectSummaryRequest) GetClassId() string {
 }
 
 type ClassSubjectItem struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SubjectId     string                 `protobuf:"bytes,1,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
-	SubjectName   string                 `protobuf:"bytes,2,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
-	FullScore     float64                `protobuf:"fixed64,3,opt,name=full_score,json=fullScore,proto3" json:"full_score,omitempty"`
-	ClassAvgScore float64                `protobuf:"fixed64,4,opt,name=class_avg_score,json=classAvgScore,proto3" json:"class_avg_score,omitempty"`
-	GradeAvgScore float64                `protobuf:"fixed64,5,opt,name=grade_avg_score,json=gradeAvgScore,proto3" json:"grade_avg_score,omitempty"`
-	ScoreDiff     float64                `protobuf:"fixed64,6,opt,name=score_diff,json=scoreDiff,proto3" json:"score_diff,omitempty"`
-	ClassHighest  float64                `protobuf:"fixed64,7,opt,name=class_highest,json=classHighest,proto3" json:"class_highest,omitempty"`
-	ClassLowest   float64                `protobuf:"fixed64,8,opt,name=class_lowest,json=classLowest,proto3" json:"class_lowest,omitempty"`
-	ClassRank     int32                  `protobuf:"varint,9,opt,name=class_rank,json=classRank,proto3" json:"class_rank,omitempty"`
-	TotalClasses  int32                  `protobuf:"varint,10,opt,name=total_classes,json=totalClasses,proto3" json:"total_classes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	SubjectId      string                 `protobuf:"bytes,1,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	SubjectName    string                 `protobuf:"bytes,2,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
+	FullScore      float64                `protobuf:"fixed64,3,opt,name=full_score,json=fullScore,proto3" json:"full_score,omitempty"`
+	ClassAvgScore  float64                `protobuf:"fixed64,4,opt,name=class_avg_score,json=classAvgScore,proto3" json:"class_avg_score,omitempty"`
+	GradeAvgScore  float64                `protobuf:"fixed64,5,opt,name=grade_avg_score,json=gradeAvgScore,proto3" json:"grade_avg_score,omitempty"`
+	ScoreDiff      float64                `protobuf:"fixed64,6,opt,name=score_diff,json=scoreDiff,proto3" json:"score_diff,omitempty"`
+	ClassHighest   float64                `protobuf:"fixed64,7,opt,name=class_highest,json=classHighest,proto3" json:"class_highest,omitempty"`
+	ClassLowest    float64                `protobuf:"fixed64,8,opt,name=class_lowest,json=classLowest,proto3" json:"class_lowest,omitempty"`
+	ClassRank      int32                  `protobuf:"varint,9,opt,name=class_rank,json=classRank,proto3" json:"class_rank,omitempty"`
+	TotalClasses   int32                  `protobuf:"varint,10,opt,name=total_classes,json=totalClasses,proto3" json:"total_classes,omitempty"`
+	StudentCount   int32                  `protobuf:"varint,11,opt,name=student_count,json=studentCount,proto3" json:"student_count,omitempty"`
+	Difficulty     float64                `protobuf:"fixed64,12,opt,name=difficulty,proto3" json:"difficulty,omitempty"`
+	StdDev         float64                `protobuf:"fixed64,13,opt,name=std_dev,json=stdDev,proto3" json:"std_dev,omitempty"`
+	Discrimination float64                `protobuf:"fixed64,14,opt,name=discrimination,proto3" json:"discrimination,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ClassSubjectItem) Reset() {
@@ -1143,6 +1131,34 @@ func (x *ClassSubjectItem) GetClassRank() int32 {
 func (x *ClassSubjectItem) GetTotalClasses() int32 {
 	if x != nil {
 		return x.TotalClasses
+	}
+	return 0
+}
+
+func (x *ClassSubjectItem) GetStudentCount() int32 {
+	if x != nil {
+		return x.StudentCount
+	}
+	return 0
+}
+
+func (x *ClassSubjectItem) GetDifficulty() float64 {
+	if x != nil {
+		return x.Difficulty
+	}
+	return 0
+}
+
+func (x *ClassSubjectItem) GetStdDev() float64 {
+	if x != nil {
+		return x.StdDev
+	}
+	return 0
+}
+
+func (x *ClassSubjectItem) GetDiscrimination() float64 {
+	if x != nil {
+		return x.Discrimination
 	}
 	return 0
 }
@@ -2646,7 +2662,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x1d\n" +
 	"\n" +
-	"subject_id\x18\x03 \x01(\tR\tsubjectId\"\xeb\x02\n" +
+	"subject_id\x18\x03 \x01(\tR\tsubjectId\"\xc2\x02\n" +
 	"\x12SubjectSummaryItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -2658,11 +2674,10 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\n" +
 	"difficulty\x18\a \x01(\x01R\n" +
 	"difficulty\x12#\n" +
-	"\rstudent_count\x18\b \x01(\x05R\fstudentCount\x12'\n" +
-	"\x0fscore_deviation\x18\t \x01(\x01R\x0escoreDeviation\x12\x17\n" +
+	"\rstudent_count\x18\b \x01(\x05R\fstudentCount\x12\x17\n" +
 	"\astd_dev\x18\n" +
 	" \x01(\x01R\x06stdDev\x12&\n" +
-	"\x0ediscrimination\x18\v \x01(\x01R\x0ediscrimination\"\xdb\x02\n" +
+	"\x0ediscrimination\x18\v \x01(\x01R\x0ediscrimination\"\xa4\x02\n" +
 	"\x16GetSubjectSummaryReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
 	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x14\n" +
@@ -2670,9 +2685,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x12total_participants\x18\x04 \x01(\x05R\x11totalParticipants\x12+\n" +
 	"\x11subjects_involved\x18\x05 \x01(\x05R\x10subjectsInvolved\x12)\n" +
 	"\x10classes_involved\x18\x06 \x01(\x05R\x0fclassesInvolved\x127\n" +
-	"\bsubjects\x18\a \x03(\v2\x1b.seas.v1.SubjectSummaryItemR\bsubjects\x125\n" +
-	"\aoverall\x18\n" +
-	" \x01(\v2\x1b.seas.v1.SubjectSummaryItemR\aoverall\"f\n" +
+	"\bsubjects\x18\a \x03(\v2\x1b.seas.v1.SubjectSummaryItemR\bsubjects\"f\n" +
 	"\x16GetClassSummaryRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x1d\n" +
@@ -2704,7 +2717,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\rclass_details\x18\x06 \x03(\v2\x19.seas.v1.ClassSummaryItemR\fclassDetails\"S\n" +
 	"\x1dGetClassSubjectSummaryRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x19\n" +
-	"\bclass_id\x18\x02 \x01(\tR\aclassId\"\xee\x02\n" +
+	"\bclass_id\x18\x02 \x01(\tR\aclassId\"\xf4\x03\n" +
 	"\x10ClassSubjectItem\x12\x1d\n" +
 	"\n" +
 	"subject_id\x18\x01 \x01(\tR\tsubjectId\x12!\n" +
@@ -2720,7 +2733,13 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\n" +
 	"class_rank\x18\t \x01(\x05R\tclassRank\x12#\n" +
 	"\rtotal_classes\x18\n" +
-	" \x01(\x05R\ftotalClasses\"\xf9\x01\n" +
+	" \x01(\x05R\ftotalClasses\x12#\n" +
+	"\rstudent_count\x18\v \x01(\x05R\fstudentCount\x12\x1e\n" +
+	"\n" +
+	"difficulty\x18\f \x01(\x01R\n" +
+	"difficulty\x12\x17\n" +
+	"\astd_dev\x18\r \x01(\x01R\x06stdDev\x12&\n" +
+	"\x0ediscrimination\x18\x0e \x01(\x01R\x0ediscrimination\"\xf9\x01\n" +
 	"\x1bGetClassSubjectSummaryReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
 	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x19\n" +
@@ -2939,49 +2958,48 @@ var file_seas_v1_analysis_proto_depIdxs = []int32{
 	1,  // 0: seas.v1.ListExamsReply.exams:type_name -> seas.v1.ExamInfo
 	4,  // 1: seas.v1.ListSubjectsByExamReply.subjects:type_name -> seas.v1.SubjectBasicInfo
 	7,  // 2: seas.v1.GetSubjectSummaryReply.subjects:type_name -> seas.v1.SubjectSummaryItem
-	7,  // 3: seas.v1.GetSubjectSummaryReply.overall:type_name -> seas.v1.SubjectSummaryItem
-	10, // 4: seas.v1.GetClassSummaryReply.overall_grade:type_name -> seas.v1.ClassSummaryItem
-	10, // 5: seas.v1.GetClassSummaryReply.class_details:type_name -> seas.v1.ClassSummaryItem
-	13, // 6: seas.v1.GetClassSubjectSummaryReply.overall:type_name -> seas.v1.ClassSubjectItem
-	13, // 7: seas.v1.GetClassSubjectSummaryReply.subjects:type_name -> seas.v1.ClassSubjectItem
-	10, // 8: seas.v1.GetSingleClassSummaryReply.overall:type_name -> seas.v1.ClassSummaryItem
-	10, // 9: seas.v1.GetSingleClassSummaryReply.classes:type_name -> seas.v1.ClassSummaryItem
-	18, // 10: seas.v1.GetSingleClassQuestionsReply.questions:type_name -> seas.v1.ClassQuestionItem
-	21, // 11: seas.v1.SingleQuestionSummaryItem.class_breakdown:type_name -> seas.v1.QuestionClassBreakdown
-	22, // 12: seas.v1.GetSingleQuestionSummaryReply.questions:type_name -> seas.v1.SingleQuestionSummaryItem
-	25, // 13: seas.v1.GetSingleQuestionDetailReply.students:type_name -> seas.v1.StudentQuestionDetail
-	29, // 14: seas.v1.ClassRatingDistribution.excellent:type_name -> seas.v1.RatingItem
-	29, // 15: seas.v1.ClassRatingDistribution.good:type_name -> seas.v1.RatingItem
-	29, // 16: seas.v1.ClassRatingDistribution.pass:type_name -> seas.v1.RatingItem
-	29, // 17: seas.v1.ClassRatingDistribution.fail:type_name -> seas.v1.RatingItem
-	27, // 18: seas.v1.GetRatingDistributionReply.config:type_name -> seas.v1.RatingConfig
-	30, // 19: seas.v1.GetRatingDistributionReply.overall_grade:type_name -> seas.v1.ClassRatingDistribution
-	30, // 20: seas.v1.GetRatingDistributionReply.class_details:type_name -> seas.v1.ClassRatingDistribution
-	0,  // 21: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
-	3,  // 22: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
-	6,  // 23: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
-	9,  // 24: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
-	12, // 25: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
-	15, // 26: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
-	17, // 27: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
-	20, // 28: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
-	24, // 29: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
-	28, // 30: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
-	2,  // 31: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
-	5,  // 32: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
-	8,  // 33: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
-	11, // 34: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
-	14, // 35: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
-	16, // 36: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
-	19, // 37: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
-	23, // 38: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
-	26, // 39: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
-	31, // 40: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
-	31, // [31:41] is the sub-list for method output_type
-	21, // [21:31] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	10, // 3: seas.v1.GetClassSummaryReply.overall_grade:type_name -> seas.v1.ClassSummaryItem
+	10, // 4: seas.v1.GetClassSummaryReply.class_details:type_name -> seas.v1.ClassSummaryItem
+	13, // 5: seas.v1.GetClassSubjectSummaryReply.overall:type_name -> seas.v1.ClassSubjectItem
+	13, // 6: seas.v1.GetClassSubjectSummaryReply.subjects:type_name -> seas.v1.ClassSubjectItem
+	10, // 7: seas.v1.GetSingleClassSummaryReply.overall:type_name -> seas.v1.ClassSummaryItem
+	10, // 8: seas.v1.GetSingleClassSummaryReply.classes:type_name -> seas.v1.ClassSummaryItem
+	18, // 9: seas.v1.GetSingleClassQuestionsReply.questions:type_name -> seas.v1.ClassQuestionItem
+	21, // 10: seas.v1.SingleQuestionSummaryItem.class_breakdown:type_name -> seas.v1.QuestionClassBreakdown
+	22, // 11: seas.v1.GetSingleQuestionSummaryReply.questions:type_name -> seas.v1.SingleQuestionSummaryItem
+	25, // 12: seas.v1.GetSingleQuestionDetailReply.students:type_name -> seas.v1.StudentQuestionDetail
+	29, // 13: seas.v1.ClassRatingDistribution.excellent:type_name -> seas.v1.RatingItem
+	29, // 14: seas.v1.ClassRatingDistribution.good:type_name -> seas.v1.RatingItem
+	29, // 15: seas.v1.ClassRatingDistribution.pass:type_name -> seas.v1.RatingItem
+	29, // 16: seas.v1.ClassRatingDistribution.fail:type_name -> seas.v1.RatingItem
+	27, // 17: seas.v1.GetRatingDistributionReply.config:type_name -> seas.v1.RatingConfig
+	30, // 18: seas.v1.GetRatingDistributionReply.overall_grade:type_name -> seas.v1.ClassRatingDistribution
+	30, // 19: seas.v1.GetRatingDistributionReply.class_details:type_name -> seas.v1.ClassRatingDistribution
+	0,  // 20: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
+	3,  // 21: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
+	6,  // 22: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
+	9,  // 23: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
+	12, // 24: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
+	15, // 25: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
+	17, // 26: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
+	20, // 27: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
+	24, // 28: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
+	28, // 29: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
+	2,  // 30: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
+	5,  // 31: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
+	8,  // 32: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
+	11, // 33: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
+	14, // 34: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
+	16, // 35: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
+	19, // 36: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
+	23, // 37: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
+	26, // 38: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
+	31, // 39: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
+	30, // [30:40] is the sub-list for method output_type
+	20, // [20:30] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_seas_v1_analysis_proto_init() }

@@ -41,7 +41,6 @@ type SubjectSummaryStats struct {
 	TotalParticipants int64           // 总参考人数
 	SubjectsInvolved  int32           // 涉及学科数（仅 subjectID=0 时有意义）
 	ClassesInvolved   int32           // 涉及班级数（仅 subjectID=0 时有意义）
-	Overall           *SubjectStats   // 新增：全年级总体
 	Subjects          []*SubjectStats // 学科统计详情
 }
 
@@ -55,9 +54,8 @@ type SubjectStats struct {
 	LowestScore    float64
 	Difficulty     float64 // 平均分/满分*100
 	StudentCount   int64
-	ScoreDeviation float64 // 新增：离均差
-	StdDev         float64 // 新增：标准差
-	Discrimination float64 // 新增：区分度
+	StdDev         float64 // 标准差
+	Discrimination float64 // 区分度
 }
 
 // ClassSummaryStats 班级统计数据
@@ -127,16 +125,20 @@ type ClassSubjectSummaryStats struct {
 
 // ClassSubjectItemStats 班级学科下钻项
 type ClassSubjectItemStats struct {
-	SubjectID     int64
-	SubjectName   string
-	FullScore     float64
-	ClassAvgScore float64
-	GradeAvgScore float64
-	ScoreDiff     float64
-	ClassHighest  float64
-	ClassLowest   float64
-	ClassRank     int32
-	TotalClasses  int32
+	SubjectID      int64
+	SubjectName    string
+	FullScore      float64
+	ClassAvgScore  float64
+	GradeAvgScore  float64
+	ScoreDiff      float64
+	ClassHighest   float64
+	ClassLowest    float64
+	ClassRank      int32
+	TotalClasses   int32
+	StudentCount   int64
+	Difficulty     float64
+	StdDev         float64
+	Discrimination float64
 }
 
 // SingleClassSummaryStats 单科班级汇总
