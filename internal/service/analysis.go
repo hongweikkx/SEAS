@@ -87,11 +87,15 @@ func (s *AnalysisService) ListSubjectsByExam(ctx context.Context, req *pb.ListSu
 
 	reply.Subjects = make([]*pb.SubjectBasicInfo, len(subjects))
 	for i, subject := range subjects {
-		// 暂时使用默认满分，后续需要从 exam_subjects 表获取
+		fullScore, err := s.examAnalysisUC.GetSubjectFullScore(ctx, parseInt64(req.GetExamId()), subject.ID)
+		if err != nil {
+			log.Context(ctx).Errorf("GetSubjectFullScore failed for subject %d: %v", subject.ID, err)
+			fullScore = 100 // fallback
+		}
 		reply.Subjects[i] = &pb.SubjectBasicInfo{
 			Id:        strconv.FormatInt(subject.ID, 10),
 			Name:      subject.Name,
-			FullScore: 100, // 默认值
+			FullScore: fullScore,
 		}
 	}
 

@@ -35,6 +35,11 @@ func (uc *ExamAnalysisUseCase) ListSubjectsByExam(ctx context.Context, examID in
 	return uc.subjectRepo.ListByExamID(ctx, examID, pageIndex, pageSize)
 }
 
+// GetSubjectFullScore 获取考试中某学科的满分
+func (uc *ExamAnalysisUseCase) GetSubjectFullScore(ctx context.Context, examID, subjectID int64) (float64, error) {
+	return uc.subjectRepo.GetFullScoreByExamSubject(ctx, examID, subjectID)
+}
+
 // GetSubjectSummary 获取学科情况汇总
 func (uc *ExamAnalysisUseCase) GetSubjectSummary(ctx context.Context, examID, subjectID int64) (*SubjectSummaryStats, error) {
 	return uc.scoreRepo.GetSubjectSummary(ctx, examID, subjectID)
