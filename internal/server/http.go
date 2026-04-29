@@ -35,7 +35,7 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport
 		),
 		httptransport.Filter(gorilla.CORS(
 			gorilla.AllowedOrigins([]string{"*"}),
-			gorilla.AllowedMethods([]string{"GET", "POST", "DELETE", "OPTIONS"}),
+			gorilla.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
 			gorilla.AllowedHeaders([]string{"Accept", "Authorization", "Content-Type", "Last-Event-ID", "Origin"}),
 		)),
 	}
@@ -49,10 +49,9 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport
 		opts = append(opts, httptransport.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := httptransport.NewServer(opts...)
-	v1.RegisterAnalysisHTTPServer(srv, analysis)
-	v1.RegisterExamImportHTTPServer(srv, examImport)
 
-	// 覆盖 protobuf 生成的 ImportScores 路由，支持 multipart 文件上传
+	// 先注册自定义 multipart 路由（覆盖 protobuf 生成的 ImportScores 路由）
+	// 注意：必须在 RegisterExamImportHTTPServer 之前注册，否则 protobuf 生成的 JSON handler 会先匹配
 	r := srv.Route("/")
 	r.POST("/seas/api/v1/exams/{exam_id}/scores/import", func(ctx httptransport.Context) error {
 		if err := ctx.Request().ParseMultipartForm(32 << 20); err != nil { // 32MB
@@ -83,6 +82,10 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport
 
 		return ctx.Result(200, reply)
 	})
+
+	// 再注册 protobuf 生成的路由（其他接口）
+	v1.RegisterAnalysisHTTPServer(srv, analysis)
+	v1.RegisterExamImportHTTPServer(srv, examImport)
 
 	srv.Handle("/seas/api/v1/ai/analysis", aiAnalysis)
 	srv.Handle("/metrics", promhttp.Handler())

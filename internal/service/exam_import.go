@@ -77,3 +77,22 @@ func (s *ExamImportService) ImportScoresFromMultipart(ctx context.Context, examI
 		Warnings:         result.Warnings,
 	}, nil
 }
+
+// UpdateSubjectFullScores 更新考试各学科满分
+func (s *ExamImportService) UpdateSubjectFullScores(ctx context.Context, req *pb.UpdateSubjectFullScoresRequest) (*pb.UpdateSubjectFullScoresReply, error) {
+	examID, err := strconv.ParseInt(req.GetExamId(), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	fullScores := make(map[string]float64, len(req.GetFullScores()))
+	for k, v := range req.GetFullScores() {
+		fullScores[k] = v
+	}
+
+	if err := s.importUC.UpdateSubjectFullScores(ctx, examID, fullScores); err != nil {
+		return nil, err
+	}
+
+	return &pb.UpdateSubjectFullScoresReply{}, nil
+}
