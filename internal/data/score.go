@@ -51,15 +51,21 @@ func (r *scoreRepo) GetByStudentID(ctx context.Context, studentID int64) ([]*biz
 func (r *scoreRepo) GetSubjectSummary(ctx context.Context, examID, subjectID int64) (*biz.SubjectSummaryStats, error) {
 	var stats biz.SubjectSummaryStats
 
-	// 获取总参考人数
+	// 获取总参考人数（全科模式下统计独立学生数）
 	var totalParticipants int64
-	query := r.data.db.WithContext(ctx).Model(&biz.Score{}).Where("exam_id = ?", examID)
 	if subjectID > 0 {
-		query = query.Where("subject_id = ?", subjectID)
-	}
-	if err := query.Count(&totalParticipants).Error; err != nil {
-		log.Context(ctx).Errorf("GetSubjectSummary count participants err: %+v", err)
-		return nil, err
+		query := r.data.db.WithContext(ctx).Model(&biz.Score{}).Where("exam_id = ? AND subject_id = ?", examID, subjectID)
+		if err := query.Count(&totalParticipants).Error; err != nil {
+			log.Context(ctx).Errorf("GetSubjectSummary count participants err: %+v", err)
+			return nil, err
+		}
+	} else {
+		if err := r.data.db.WithContext(ctx).Raw(`
+			SELECT COUNT(DISTINCT student_id) FROM scores WHERE exam_id = ?
+		`, examID).Scan(&totalParticipants).Error; err != nil {
+			log.Context(ctx).Errorf("GetSubjectSummary count participants err: %+v", err)
+			return nil, err
+		}
 	}
 	stats.TotalParticipants = totalParticipants
 
@@ -122,26 +128,19 @@ func (r *scoreRepo) GetSubjectSummary(ctx context.Context, examID, subjectID int
 		`, examID).Scan(&classesInvolved)
 		stats.ClassesInvolved = classesInvolved
 
-		// 计算全年级总体数据（overall）
-		var overallAvg, overallHighest, overallLowest float64
-		overallLowest = 99999
-		var totalStudentCount int64
-		for _, s := range stats.Subjects {
-			totalStudentCount += s.StudentCount
-			overallAvg += s.AvgScore * float64(s.StudentCount)
-			if s.HighestScore > overallHighest {
-				overallHighest = s.HighestScore
-			}
-			if s.LowestScore < overallLowest {
-				overallLowest = s.LowestScore
-			}
-		}
-		if totalStudentCount > 0 {
-			overallAvg = overallAvg / float64(totalStudentCount)
-		}
-
-		// 查询所有学生全科总分用于计算标准差和区分度
+		// 查询所有学生全科总分（这才是正确的全年级总体统计基础）
 		allScores, _ := r.getAllStudentScores(ctx, examID, 0)
+		var overallAvg, overallHighest, overallLowest float64
+		if len(allScores) > 0 {
+			sort.Float64s(allScores)
+			var sum float64
+			for _, s := range allScores {
+				sum += s
+			}
+			overallAvg = sum / float64(len(allScores))
+			overallHighest = allScores[len(allScores)-1]
+			overallLowest = allScores[0]
+		}
 		overallFullScore := r.calculateOverallFullScore(ctx, examID)
 		overallStdDev := calculateStdDev(allScores)
 
@@ -153,7 +152,7 @@ func (r *scoreRepo) GetSubjectSummary(ctx context.Context, examID, subjectID int
 			HighestScore:   overallHighest,
 			LowestScore:    overallLowest,
 			Difficulty:     r.calculateDifficulty(overallAvg, overallFullScore),
-			StudentCount:   totalStudentCount,
+			StudentCount:   int64(len(allScores)),
 			ScoreDeviation: 0,
 			StdDev:         roundTo2Decimal(overallStdDev),
 			Discrimination: calculateDiscrimination(allScores, overallFullScore),
@@ -227,15 +226,22 @@ func (r *scoreRepo) GetSubjectSummary(ctx context.Context, examID, subjectID int
 func (r *scoreRepo) GetClassSummary(ctx context.Context, examID, subjectID int64) (*biz.ClassSummaryStats, error) {
 	var stats biz.ClassSummaryStats
 
-	// 获取总参考人数
+	// 获取总参考人数（全科模式下统计独立学生数，单科模式下统计该科分数记录数）
 	var totalParticipants int64
-	query := r.data.db.WithContext(ctx).Model(&biz.Score{}).Where("exam_id = ?", examID)
 	if subjectID > 0 {
-		query = query.Where("subject_id = ?", subjectID)
-	}
-	if err := query.Count(&totalParticipants).Error; err != nil {
-		log.Context(ctx).Errorf("GetClassSummary count participants err: %+v", err)
-		return nil, err
+		err := r.data.db.WithContext(ctx).Model(&biz.Score{}).Where("exam_id = ? AND subject_id = ?", examID, subjectID).Count(&totalParticipants).Error
+		if err != nil {
+			log.Context(ctx).Errorf("GetClassSummary count participants err: %+v", err)
+			return nil, err
+		}
+	} else {
+		err := r.data.db.WithContext(ctx).Raw(`
+			SELECT COUNT(DISTINCT student_id) FROM scores WHERE exam_id = ?
+		`, examID).Scan(&totalParticipants).Error
+		if err != nil {
+			log.Context(ctx).Errorf("GetClassSummary count participants err: %+v", err)
+			return nil, err
+		}
 	}
 	stats.TotalParticipants = totalParticipants
 
@@ -258,29 +264,49 @@ func (r *scoreRepo) GetClassSummary(ctx context.Context, examID, subjectID int64
 		StdDev        float64 `gorm:"column:std_dev"`
 	}
 
-	whereClause := "sc.exam_id = ?"
-	args := []interface{}{examID}
+	var err error
 	if subjectID > 0 {
-		whereClause += " AND sc.subject_id = ?"
-		args = append(args, subjectID)
+		// 单科模式：直接统计该科分数
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT
+				c.id as class_id,
+				c.name as class_name,
+				COUNT(DISTINCT sc.student_id) as total_students,
+				ROUND(AVG(sc.total_score), 2) as avg_score,
+				MAX(sc.total_score) as highest_score,
+				MIN(sc.total_score) as lowest_score,
+				ROUND(STDDEV_POP(sc.total_score), 2) as std_dev
+			FROM classes c
+			LEFT JOIN students st ON st.class_id = c.id
+			LEFT JOIN scores sc ON sc.student_id = st.id AND sc.exam_id = ? AND sc.subject_id = ?
+			GROUP BY c.id, c.name
+			HAVING COUNT(sc.student_id) > 0
+			ORDER BY c.id
+		`, examID, subjectID).Scan(&classStats).Error
+	} else {
+		// 全科模式：先按学生汇总各科总分，再按班级统计
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT
+				c.id as class_id,
+				c.name as class_name,
+				COUNT(DISTINCT st.id) as total_students,
+				ROUND(AVG(student_total.total_score), 2) as avg_score,
+				MAX(student_total.total_score) as highest_score,
+				MIN(student_total.total_score) as lowest_score,
+				ROUND(STDDEV_POP(student_total.total_score), 2) as std_dev
+			FROM classes c
+			JOIN students st ON st.class_id = c.id
+			JOIN (
+				SELECT student_id, SUM(total_score) as total_score
+				FROM scores
+				WHERE exam_id = ?
+				GROUP BY student_id
+			) student_total ON student_total.student_id = st.id
+			GROUP BY c.id, c.name
+			HAVING COUNT(DISTINCT st.id) > 0
+			ORDER BY c.id
+		`, examID).Scan(&classStats).Error
 	}
-
-	err := r.data.db.WithContext(ctx).Raw(`
-		SELECT
-			c.id as class_id,
-			c.name as class_name,
-			COUNT(sc.student_id) as total_students,
-			ROUND(AVG(sc.total_score), 2) as avg_score,
-			MAX(sc.total_score) as highest_score,
-			MIN(sc.total_score) as lowest_score,
-			ROUND(STDDEV_POP(sc.total_score), 2) as std_dev
-		FROM classes c
-		LEFT JOIN students st ON st.class_id = c.id
-		LEFT JOIN scores sc ON sc.student_id = st.id AND `+whereClause+`
-		GROUP BY c.id, c.name
-		HAVING COUNT(sc.student_id) > 0
-		ORDER BY c.id
-	`, args...).Scan(&classStats).Error
 
 	if err != nil {
 		log.Context(ctx).Errorf("GetClassSummary class stats err: %+v", err)
@@ -361,15 +387,21 @@ func (r *scoreRepo) GetClassSummary(ctx context.Context, examID, subjectID int64
 func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, passThreshold float64) (*biz.RatingDistributionStats, error) {
 	var stats biz.RatingDistributionStats
 
-	// 获取总参考人数
+	// 获取总参考人数（全科模式下统计独立学生数）
 	var totalParticipants int64
-	query := r.data.db.WithContext(ctx).Model(&biz.Score{}).Where("exam_id = ?", examID)
 	if subjectID > 0 {
-		query = query.Where("subject_id = ?", subjectID)
-	}
-	if err := query.Count(&totalParticipants).Error; err != nil {
-		log.Context(ctx).Errorf("GetRatingDistribution count participants err: %+v", err)
-		return nil, err
+		query := r.data.db.WithContext(ctx).Model(&biz.Score{}).Where("exam_id = ? AND subject_id = ?", examID, subjectID)
+		if err := query.Count(&totalParticipants).Error; err != nil {
+			log.Context(ctx).Errorf("GetRatingDistribution count participants err: %+v", err)
+			return nil, err
+		}
+	} else {
+		if err := r.data.db.WithContext(ctx).Raw(`
+			SELECT COUNT(DISTINCT student_id) FROM scores WHERE exam_id = ?
+		`, examID).Scan(&totalParticipants).Error; err != nil {
+			log.Context(ctx).Errorf("GetRatingDistribution count participants err: %+v", err)
+			return nil, err
+		}
 	}
 	stats.TotalParticipants = totalParticipants
 
@@ -881,15 +913,15 @@ func orderClassRanks(rows []classRankRow) {
 	}
 }
 
-// calculateOverallFullScore 计算全科平均满分
+// calculateOverallFullScore 计算全科总满分
 func (r *scoreRepo) calculateOverallFullScore(ctx context.Context, examID int64) float64 {
-	var avgFullScore float64
+	var totalFullScore float64
 	r.data.db.WithContext(ctx).Raw(`
-		SELECT AVG(es.full_score) as avg_full_score
+		SELECT SUM(es.full_score) as total_full_score
 		FROM exam_subjects es
 		WHERE es.exam_id = ?
-	`, examID).Scan(&avgFullScore)
-	return avgFullScore
+	`, examID).Scan(&totalFullScore)
+	return totalFullScore
 }
 
 // calculateDiscrimination 计算区分度：高低分组得分率之差
