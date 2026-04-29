@@ -63,6 +63,21 @@ func (uc *ExamImportUseCase) CreateExam(ctx context.Context, name string, examDa
 	return exam.ID, nil
 }
 
+// UpdateSubjectFullScores 更新考试各学科满分
+func (uc *ExamImportUseCase) UpdateSubjectFullScores(ctx context.Context, examID int64, fullScores map[string]float64) error {
+	for subjName, score := range fullScores {
+		subj, err := uc.subjectRepo.FindOrCreateByName(ctx, subjName)
+		if err != nil {
+			return fmt.Errorf("find or create subject '%s' failed: %w", subjName, err)
+		}
+		err = uc.subjectRepo.UpdateExamSubjectFullScore(ctx, examID, subj.ID, score)
+		if err != nil {
+			return fmt.Errorf("update full score for '%s' failed: %w", subjName, err)
+		}
+	}
+	return nil
+}
+
 // ImportScoresFromExcel 从 Excel 导入成绩
 func (uc *ExamImportUseCase) ImportScoresFromExcel(ctx context.Context, examID int64, filePath string) (*ImportResult, error) {
 	f, err := excelize.OpenFile(filePath)
@@ -136,6 +151,15 @@ func (uc *ExamImportUseCase) ImportScoresFromExcel(ctx context.Context, examID i
 			return nil, fmt.Errorf("find or create subject '%s' failed: %w", subjName, err)
 		}
 		subjectMap[subjName] = subj.ID
+	}
+
+	// 创建考试-学科关联记录（否则 listSubjects 等查询无法关联到学科）
+	subjectIDs := make([]int64, 0, len(subjectMap))
+	for _, sid := range subjectMap {
+		subjectIDs = append(subjectIDs, sid)
+	}
+	if err := uc.subjectRepo.CreateExamSubjects(ctx, examID, subjectIDs, 100); err != nil {
+		return nil, fmt.Errorf("create exam-subject relations failed: %w", err)
 	}
 
 	// 解析学生数据
