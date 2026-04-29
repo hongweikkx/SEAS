@@ -25,6 +25,14 @@ service ExamImport {
       body: "*"
     };
   }
+
+  // 更新考试各学科满分
+  rpc UpdateSubjectFullScores (UpdateSubjectFullScoresRequest) returns (UpdateSubjectFullScoresReply) {
+    option (google.api.http) = {
+      put: "/seas/api/v1/exams/{exam_id}/subjects/full-scores"
+      body: "*"
+    };
+  }
 }
 
 // ============ 创建考试 ============
@@ -55,3 +63,10 @@ message ImportScoresReply {
   string mode = 4;               // "simple" 或 "full"
   repeated string warnings = 5;  // 警告信息列表
 }
+
+message UpdateSubjectFullScoresRequest {
+  string exam_id = 1;
+  map<string, double> full_scores = 2;
+}
+
+message UpdateSubjectFullScoresReply {}

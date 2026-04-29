@@ -254,6 +254,94 @@ func (x *ImportScoresReply) GetWarnings() []string {
 	return nil
 }
 
+type UpdateSubjectFullScoresRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamId        string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	FullScores    map[string]float64     `protobuf:"bytes,2,rep,name=full_scores,json=fullScores,proto3" json:"full_scores,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"fixed64,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSubjectFullScoresRequest) Reset() {
+	*x = UpdateSubjectFullScoresRequest{}
+	mi := &file_seas_v1_exam_import_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSubjectFullScoresRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSubjectFullScoresRequest) ProtoMessage() {}
+
+func (x *UpdateSubjectFullScoresRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_exam_import_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSubjectFullScoresRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSubjectFullScoresRequest) Descriptor() ([]byte, []int) {
+	return file_seas_v1_exam_import_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UpdateSubjectFullScoresRequest) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *UpdateSubjectFullScoresRequest) GetFullScores() map[string]float64 {
+	if x != nil {
+		return x.FullScores
+	}
+	return nil
+}
+
+type UpdateSubjectFullScoresReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSubjectFullScoresReply) Reset() {
+	*x = UpdateSubjectFullScoresReply{}
+	mi := &file_seas_v1_exam_import_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSubjectFullScoresReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSubjectFullScoresReply) ProtoMessage() {}
+
+func (x *UpdateSubjectFullScoresReply) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_exam_import_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSubjectFullScoresReply.ProtoReflect.Descriptor instead.
+func (*UpdateSubjectFullScoresReply) Descriptor() ([]byte, []int) {
+	return file_seas_v1_exam_import_proto_rawDescGZIP(), []int{5}
+}
+
 var File_seas_v1_exam_import_proto protoreflect.FileDescriptor
 
 const file_seas_v1_exam_import_proto_rawDesc = "" +
@@ -273,12 +361,21 @@ const file_seas_v1_exam_import_proto_rawDesc = "" +
 	"\x11imported_students\x18\x02 \x01(\x05R\x10importedStudents\x12+\n" +
 	"\x11imported_subjects\x18\x03 \x01(\x05R\x10importedSubjects\x12\x12\n" +
 	"\x04mode\x18\x04 \x01(\tR\x04mode\x12\x1a\n" +
-	"\bwarnings\x18\x05 \x03(\tR\bwarnings2\xf0\x01\n" +
+	"\bwarnings\x18\x05 \x03(\tR\bwarnings\"\xd2\x01\n" +
+	"\x1eUpdateSubjectFullScoresRequest\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12X\n" +
+	"\vfull_scores\x18\x02 \x03(\v27.seas.v1.UpdateSubjectFullScoresRequest.FullScoresEntryR\n" +
+	"fullScores\x1a=\n" +
+	"\x0fFullScoresEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x01R\x05value:\x028\x01\"\x1e\n" +
+	"\x1cUpdateSubjectFullScoresReply2\x9a\x03\n" +
 	"\n" +
 	"ExamImport\x12a\n" +
 	"\n" +
 	"CreateExam\x12\x1a.seas.v1.CreateExamRequest\x1a\x18.seas.v1.CreateExamReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/seas/api/v1/exams\x12\x7f\n" +
-	"\fImportScores\x12\x1c.seas.v1.ImportScoresRequest\x1a\x1a.seas.v1.ImportScoresReply\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/seas/api/v1/exams/{exam_id}/scores/importB7\n" +
+	"\fImportScores\x12\x1c.seas.v1.ImportScoresRequest\x1a\x1a.seas.v1.ImportScoresReply\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/seas/api/v1/exams/{exam_id}/scores/import\x12\xa7\x01\n" +
+	"\x17UpdateSubjectFullScores\x12'.seas.v1.UpdateSubjectFullScoresRequest\x1a%.seas.v1.UpdateSubjectFullScoresReply\"<\x82\xd3\xe4\x93\x026:\x01*\x1a1/seas/api/v1/exams/{exam_id}/subjects/full-scoresB7\n" +
 	"\x16dev.kratos.api.seas.v1B\vseasProtoV1P\x01Z\x0eapi/seas/v1;v1b\x06proto3"
 
 var (
@@ -293,23 +390,29 @@ func file_seas_v1_exam_import_proto_rawDescGZIP() []byte {
 	return file_seas_v1_exam_import_proto_rawDescData
 }
 
-var file_seas_v1_exam_import_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_seas_v1_exam_import_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_seas_v1_exam_import_proto_goTypes = []any{
-	(*CreateExamRequest)(nil),   // 0: seas.v1.CreateExamRequest
-	(*CreateExamReply)(nil),     // 1: seas.v1.CreateExamReply
-	(*ImportScoresRequest)(nil), // 2: seas.v1.ImportScoresRequest
-	(*ImportScoresReply)(nil),   // 3: seas.v1.ImportScoresReply
+	(*CreateExamRequest)(nil),              // 0: seas.v1.CreateExamRequest
+	(*CreateExamReply)(nil),                // 1: seas.v1.CreateExamReply
+	(*ImportScoresRequest)(nil),            // 2: seas.v1.ImportScoresRequest
+	(*ImportScoresReply)(nil),              // 3: seas.v1.ImportScoresReply
+	(*UpdateSubjectFullScoresRequest)(nil), // 4: seas.v1.UpdateSubjectFullScoresRequest
+	(*UpdateSubjectFullScoresReply)(nil),   // 5: seas.v1.UpdateSubjectFullScoresReply
+	nil,                                    // 6: seas.v1.UpdateSubjectFullScoresRequest.FullScoresEntry
 }
 var file_seas_v1_exam_import_proto_depIdxs = []int32{
-	0, // 0: seas.v1.ExamImport.CreateExam:input_type -> seas.v1.CreateExamRequest
-	2, // 1: seas.v1.ExamImport.ImportScores:input_type -> seas.v1.ImportScoresRequest
-	1, // 2: seas.v1.ExamImport.CreateExam:output_type -> seas.v1.CreateExamReply
-	3, // 3: seas.v1.ExamImport.ImportScores:output_type -> seas.v1.ImportScoresReply
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	6, // 0: seas.v1.UpdateSubjectFullScoresRequest.full_scores:type_name -> seas.v1.UpdateSubjectFullScoresRequest.FullScoresEntry
+	0, // 1: seas.v1.ExamImport.CreateExam:input_type -> seas.v1.CreateExamRequest
+	2, // 2: seas.v1.ExamImport.ImportScores:input_type -> seas.v1.ImportScoresRequest
+	4, // 3: seas.v1.ExamImport.UpdateSubjectFullScores:input_type -> seas.v1.UpdateSubjectFullScoresRequest
+	1, // 4: seas.v1.ExamImport.CreateExam:output_type -> seas.v1.CreateExamReply
+	3, // 5: seas.v1.ExamImport.ImportScores:output_type -> seas.v1.ImportScoresReply
+	5, // 6: seas.v1.ExamImport.UpdateSubjectFullScores:output_type -> seas.v1.UpdateSubjectFullScoresReply
+	4, // [4:7] is the sub-list for method output_type
+	1, // [1:4] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_seas_v1_exam_import_proto_init() }
@@ -323,7 +426,7 @@ func file_seas_v1_exam_import_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_seas_v1_exam_import_proto_rawDesc), len(file_seas_v1_exam_import_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

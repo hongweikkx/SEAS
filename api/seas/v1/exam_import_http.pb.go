@@ -21,18 +21,22 @@ const _ = http.SupportPackageIsVersion1
 
 const OperationExamImportCreateExam = "/seas.v1.ExamImport/CreateExam"
 const OperationExamImportImportScores = "/seas.v1.ExamImport/ImportScores"
+const OperationExamImportUpdateSubjectFullScores = "/seas.v1.ExamImport/UpdateSubjectFullScores"
 
 type ExamImportHTTPServer interface {
 	// CreateExam 创建考试（不含成绩数据，仅创建考试记录）
 	CreateExam(context.Context, *CreateExamRequest) (*CreateExamReply, error)
 	// ImportScores 导入成绩（multipart/form-data 上传 Excel）
 	ImportScores(context.Context, *ImportScoresRequest) (*ImportScoresReply, error)
+	// UpdateSubjectFullScores 更新考试各学科满分
+	UpdateSubjectFullScores(context.Context, *UpdateSubjectFullScoresRequest) (*UpdateSubjectFullScoresReply, error)
 }
 
 func RegisterExamImportHTTPServer(s *http.Server, srv ExamImportHTTPServer) {
 	r := s.Route("/")
 	r.POST("/seas/api/v1/exams", _ExamImport_CreateExam0_HTTP_Handler(srv))
 	r.POST("/seas/api/v1/exams/{exam_id}/scores/import", _ExamImport_ImportScores0_HTTP_Handler(srv))
+	r.PUT("/seas/api/v1/exams/{exam_id}/subjects/full-scores", _ExamImport_UpdateSubjectFullScores0_HTTP_Handler(srv))
 }
 
 func _ExamImport_CreateExam0_HTTP_Handler(srv ExamImportHTTPServer) func(ctx http.Context) error {
@@ -82,9 +86,35 @@ func _ExamImport_ImportScores0_HTTP_Handler(srv ExamImportHTTPServer) func(ctx h
 	}
 }
 
+func _ExamImport_UpdateSubjectFullScores0_HTTP_Handler(srv ExamImportHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateSubjectFullScoresRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationExamImportUpdateSubjectFullScores)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateSubjectFullScores(ctx, req.(*UpdateSubjectFullScoresRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UpdateSubjectFullScoresReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type ExamImportHTTPClient interface {
 	CreateExam(ctx context.Context, req *CreateExamRequest, opts ...http.CallOption) (rsp *CreateExamReply, err error)
 	ImportScores(ctx context.Context, req *ImportScoresRequest, opts ...http.CallOption) (rsp *ImportScoresReply, err error)
+	UpdateSubjectFullScores(ctx context.Context, req *UpdateSubjectFullScoresRequest, opts ...http.CallOption) (rsp *UpdateSubjectFullScoresReply, err error)
 }
 
 type ExamImportHTTPClientImpl struct {
@@ -115,6 +145,19 @@ func (c *ExamImportHTTPClientImpl) ImportScores(ctx context.Context, in *ImportS
 	opts = append(opts, http.Operation(OperationExamImportImportScores))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ExamImportHTTPClientImpl) UpdateSubjectFullScores(ctx context.Context, in *UpdateSubjectFullScoresRequest, opts ...http.CallOption) (*UpdateSubjectFullScoresReply, error) {
+	var out UpdateSubjectFullScoresReply
+	pattern := "/seas/api/v1/exams/{exam_id}/subjects/full-scores"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationExamImportUpdateSubjectFullScores))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

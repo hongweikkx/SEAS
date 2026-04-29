@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ExamImport_CreateExam_FullMethodName   = "/seas.v1.ExamImport/CreateExam"
-	ExamImport_ImportScores_FullMethodName = "/seas.v1.ExamImport/ImportScores"
+	ExamImport_CreateExam_FullMethodName              = "/seas.v1.ExamImport/CreateExam"
+	ExamImport_ImportScores_FullMethodName            = "/seas.v1.ExamImport/ImportScores"
+	ExamImport_UpdateSubjectFullScores_FullMethodName = "/seas.v1.ExamImport/UpdateSubjectFullScores"
 )
 
 // ExamImportClient is the client API for ExamImport service.
@@ -31,6 +32,8 @@ type ExamImportClient interface {
 	CreateExam(ctx context.Context, in *CreateExamRequest, opts ...grpc.CallOption) (*CreateExamReply, error)
 	// 导入成绩（multipart/form-data 上传 Excel）
 	ImportScores(ctx context.Context, in *ImportScoresRequest, opts ...grpc.CallOption) (*ImportScoresReply, error)
+	// 更新考试各学科满分
+	UpdateSubjectFullScores(ctx context.Context, in *UpdateSubjectFullScoresRequest, opts ...grpc.CallOption) (*UpdateSubjectFullScoresReply, error)
 }
 
 type examImportClient struct {
@@ -61,6 +64,16 @@ func (c *examImportClient) ImportScores(ctx context.Context, in *ImportScoresReq
 	return out, nil
 }
 
+func (c *examImportClient) UpdateSubjectFullScores(ctx context.Context, in *UpdateSubjectFullScoresRequest, opts ...grpc.CallOption) (*UpdateSubjectFullScoresReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateSubjectFullScoresReply)
+	err := c.cc.Invoke(ctx, ExamImport_UpdateSubjectFullScores_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ExamImportServer is the server API for ExamImport service.
 // All implementations must embed UnimplementedExamImportServer
 // for forward compatibility.
@@ -69,6 +82,8 @@ type ExamImportServer interface {
 	CreateExam(context.Context, *CreateExamRequest) (*CreateExamReply, error)
 	// 导入成绩（multipart/form-data 上传 Excel）
 	ImportScores(context.Context, *ImportScoresRequest) (*ImportScoresReply, error)
+	// 更新考试各学科满分
+	UpdateSubjectFullScores(context.Context, *UpdateSubjectFullScoresRequest) (*UpdateSubjectFullScoresReply, error)
 	mustEmbedUnimplementedExamImportServer()
 }
 
@@ -84,6 +99,9 @@ func (UnimplementedExamImportServer) CreateExam(context.Context, *CreateExamRequ
 }
 func (UnimplementedExamImportServer) ImportScores(context.Context, *ImportScoresRequest) (*ImportScoresReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportScores not implemented")
+}
+func (UnimplementedExamImportServer) UpdateSubjectFullScores(context.Context, *UpdateSubjectFullScoresRequest) (*UpdateSubjectFullScoresReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubjectFullScores not implemented")
 }
 func (UnimplementedExamImportServer) mustEmbedUnimplementedExamImportServer() {}
 func (UnimplementedExamImportServer) testEmbeddedByValue()                    {}
@@ -142,6 +160,24 @@ func _ExamImport_ImportScores_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ExamImport_UpdateSubjectFullScores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSubjectFullScoresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExamImportServer).UpdateSubjectFullScores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExamImport_UpdateSubjectFullScores_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExamImportServer).UpdateSubjectFullScores(ctx, req.(*UpdateSubjectFullScoresRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ExamImport_ServiceDesc is the grpc.ServiceDesc for ExamImport service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -156,6 +192,10 @@ var ExamImport_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportScores",
 			Handler:    _ExamImport_ImportScores_Handler,
+		},
+		{
+			MethodName: "UpdateSubjectFullScores",
+			Handler:    _ExamImport_UpdateSubjectFullScores_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
