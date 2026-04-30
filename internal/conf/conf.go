@@ -1,3 +1,4 @@
+// Package conf
 package conf
 
 const (

@@ -1,9 +1,11 @@
+// Package main
 package main
 
 import (
 	"flag"
 	"io"
 	"os"
+
 	"seas/pkg/zaplog"
 
 	"seas/internal/conf"
@@ -47,6 +49,7 @@ func newApp(logger log.Logger, gs *grpc.Server, hs *http.Server) *kratos.App {
 		),
 	)
 }
+
 func NewTraceProvider() trace.TracerProvider {
 	exporter, err := stdouttrace.New(stdouttrace.WithWriter(io.Discard))
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package data
 package data
 
 import (
@@ -27,13 +28,13 @@ type Data struct {
 
 // NewData 创建 Data 并注入所有 repo 所需依赖
 func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
-	db, closeSqlF, err := gormsql.Init(logger, c.Database.Source)
+	db, closeSQLF, err := gormsql.Init(logger, c.Database.Source)
 	if err != nil {
 		return nil, nil, err
 	}
 	d := &Data{db: db}
 	closeF := func() {
-		closeSqlF()
+		closeSQLF()
 	}
 	return d, closeF, nil
 }
