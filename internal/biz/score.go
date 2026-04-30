@@ -27,7 +27,7 @@ type ScoreRepo interface {
 	// GetClassSummary 获取班级统计信息（全科或单科）
 	GetClassSummary(ctx context.Context, examID, subjectID int64) (*ClassSummaryStats, error)
 	// GetRatingDistribution 获取四率分布统计
-	GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, passThreshold float64) (*RatingDistributionStats, error)
+	GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, mediumThreshold, passThreshold, lowScoreThreshold float64) (*RatingDistributionStats, error)
 	// GetClassSubjectSummary 获取班级学科下钻汇总
 	GetClassSubjectSummary(ctx context.Context, examID, classID int64) (*ClassSubjectSummaryStats, error)
 	// GetSingleClassSummary 获取单科学科下班级汇总
@@ -92,7 +92,9 @@ type RatingDistributionStats struct {
 type RatingConfigStats struct {
 	ExcellentThreshold float64
 	GoodThreshold      float64
+	MediumThreshold    float64 // 新增：中等得分率%，默认68
 	PassThreshold      float64
+	LowScoreThreshold  float64 // 新增：低分得分率%，默认40
 }
 
 // RatingItemStats 单个等级的统计
@@ -109,8 +111,9 @@ type ClassRatingStats struct {
 	AvgScore      float64
 	Excellent     *RatingItemStats // 优秀
 	Good          *RatingItemStats // 良好
-	Pass          *RatingItemStats // 合格
-	Fail          *RatingItemStats // 低分
+	Medium        *RatingItemStats // 新增：中等
+	Pass          *RatingItemStats // 及格
+	LowScore      *RatingItemStats // 新增：低分（原 Fail 改名）
 }
 
 // ClassSubjectSummaryStats 班级学科下钻汇总
