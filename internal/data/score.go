@@ -395,15 +395,15 @@ func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID
 				c.name as class_name,
 				COUNT(sc.student_id) as total_students,
 				ROUND(AVG(sc.total_score), 2) as avg_score,
-				SUM(CASE WHEN sc.total_score / sub.full_score * 100 >= ? THEN 1 ELSE 0 END) as excellent,
-				SUM(CASE WHEN sc.total_score / sub.full_score * 100 >= ? THEN 1 ELSE 0 END) as good,
-				SUM(CASE WHEN sc.total_score / sub.full_score * 100 >= ? THEN 1 ELSE 0 END) as medium,
-				SUM(CASE WHEN sc.total_score / sub.full_score * 100 >= ? THEN 1 ELSE 0 END) as pass,
-				SUM(CASE WHEN sc.total_score / sub.full_score * 100 < ? THEN 1 ELSE 0 END) as low_score
+				SUM(CASE WHEN sc.total_score / es.full_score * 100 >= ? THEN 1 ELSE 0 END) as excellent,
+				SUM(CASE WHEN sc.total_score / es.full_score * 100 >= ? THEN 1 ELSE 0 END) as good,
+				SUM(CASE WHEN sc.total_score / es.full_score * 100 >= ? THEN 1 ELSE 0 END) as medium,
+				SUM(CASE WHEN sc.total_score / es.full_score * 100 >= ? THEN 1 ELSE 0 END) as pass,
+				SUM(CASE WHEN sc.total_score / es.full_score * 100 < ? THEN 1 ELSE 0 END) as low_score
 			FROM classes c
 			LEFT JOIN students st ON st.class_id = c.id
 			LEFT JOIN scores sc ON sc.student_id = st.id AND sc.exam_id = ? AND sc.subject_id = ?
-			LEFT JOIN subjects sub ON sub.id = sc.subject_id
+			LEFT JOIN exam_subjects es ON es.subject_id = sc.subject_id AND es.exam_id = sc.exam_id
 			GROUP BY c.id, c.name
 			HAVING COUNT(sc.student_id) > 0
 			ORDER BY c.id
@@ -415,10 +415,10 @@ func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID
 				SELECT
 					st.id as student_id,
 					st.class_id,
-					SUM(sc.total_score / sub.full_score * 100 * sub.full_score) / SUM(sub.full_score) as weighted_score_rate
+					SUM(sc.total_score / es.full_score * 100 * es.full_score) / SUM(es.full_score) as weighted_score_rate
 				FROM students st
 				JOIN scores sc ON sc.student_id = st.id AND sc.exam_id = ?
-				JOIN subjects sub ON sub.id = sc.subject_id
+				JOIN exam_subjects es ON es.subject_id = sc.subject_id AND es.exam_id = sc.exam_id
 				GROUP BY st.id, st.class_id
 			)
 			SELECT
