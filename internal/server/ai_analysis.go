@@ -264,15 +264,17 @@ func (h *AIAnalysisHandler) buildRatingAnalysisPrompt(ctx context.Context, examI
 			cfg.GetExcellentThreshold(), cfg.GetGoodThreshold(), cfg.GetPassThreshold())
 	}
 	if overall := reply.GetOverallGrade(); overall != nil {
-		fmt.Fprintf(&b, "年级整体：优秀%.1f%%，良好%.1f%%，合格%.1f%%，低分%.1f%%\n",
+		fmt.Fprintf(&b, "年级整体：优秀%.1f%%，良好%.1f%%，中等%.1f%%，及格%.1f%%，低分%.1f%%\n",
 			overall.GetExcellent().GetPercentage(), overall.GetGood().GetPercentage(),
-			overall.GetPass().GetPercentage(), overall.GetFail().GetPercentage())
+			overall.GetMedium().GetPercentage(), overall.GetPass().GetPercentage(),
+			overall.GetLowScore().GetPercentage())
 	}
 	fmt.Fprintf(&b, "各班明细：\n")
 	for _, class := range reply.GetClassDetails() {
-		fmt.Fprintf(&b, "  %s：优秀%.1f%%，良好%.1f%%，合格%.1f%%\n",
+		fmt.Fprintf(&b, "  %s：优秀%.1f%%，良好%.1f%%，中等%.1f%%，及格%.1f%%，低分%.1f%%\n",
 			class.GetClassName(), class.GetExcellent().GetPercentage(),
-			class.GetGood().GetPercentage(), class.GetPass().GetPercentage())
+			class.GetGood().GetPercentage(), class.GetMedium().GetPercentage(),
+			class.GetPass().GetPercentage(), class.GetLowScore().GetPercentage())
 	}
 	fmt.Fprintf(&b, "\n【分析要求】\n")
 	fmt.Fprintf(&b, "1. 评价整体四率表现\n")

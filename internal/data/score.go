@@ -351,8 +351,8 @@ func (r *scoreRepo) GetClassSummary(ctx context.Context, examID, subjectID int64
 	return &stats, nil
 }
 
-// GetRatingDistribution 获取四率分布统计
-func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, passThreshold float64) (*biz.RatingDistributionStats, error) {
+// GetRatingDistribution 获取四率分布统计（一分四率：基于得分率的累积达标率统计）
+func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, mediumThreshold, passThreshold, lowScoreThreshold float64) (*biz.RatingDistributionStats, error) {
 	var stats biz.RatingDistributionStats
 
 	// 获取总参考人数（全科模式下统计独立学生数）
@@ -381,34 +381,63 @@ func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID
 		AvgScore      float64 `gorm:"column:avg_score"`
 		Excellent     int64   `gorm:"column:excellent"`
 		Good          int64   `gorm:"column:good"`
+		Medium        int64   `gorm:"column:medium"`
 		Pass          int64   `gorm:"column:pass"`
-		Fail          int64   `gorm:"column:fail"`
+		LowScore      int64   `gorm:"column:low_score"`
 	}
 
-	whereClause := "sc.exam_id = ?"
-	args := []interface{}{examID}
+	var err error
 	if subjectID > 0 {
-		whereClause += " AND sc.subject_id = ?"
-		args = append(args, subjectID)
+		// 单科模式：基于得分率的累积达标率统计
+		err = r.data.db.WithContext(ctx).Raw(`
+			SELECT
+				c.id as class_id,
+				c.name as class_name,
+				COUNT(sc.student_id) as total_students,
+				ROUND(AVG(sc.total_score), 2) as avg_score,
+				SUM(CASE WHEN sc.total_score / sub.full_score * 100 >= ? THEN 1 ELSE 0 END) as excellent,
+				SUM(CASE WHEN sc.total_score / sub.full_score * 100 >= ? THEN 1 ELSE 0 END) as good,
+				SUM(CASE WHEN sc.total_score / sub.full_score * 100 >= ? THEN 1 ELSE 0 END) as medium,
+				SUM(CASE WHEN sc.total_score / sub.full_score * 100 >= ? THEN 1 ELSE 0 END) as pass,
+				SUM(CASE WHEN sc.total_score / sub.full_score * 100 < ? THEN 1 ELSE 0 END) as low_score
+			FROM classes c
+			LEFT JOIN students st ON st.class_id = c.id
+			LEFT JOIN scores sc ON sc.student_id = st.id AND sc.exam_id = ? AND sc.subject_id = ?
+			LEFT JOIN subjects sub ON sub.id = sc.subject_id
+			GROUP BY c.id, c.name
+			HAVING COUNT(sc.student_id) > 0
+			ORDER BY c.id
+		`, excellentThreshold, goodThreshold, mediumThreshold, passThreshold, lowScoreThreshold, examID, subjectID).Scan(&ratingStats).Error
+	} else {
+		// 全科模式：使用CTE先计算每个学生的加权平均得分率
+		err = r.data.db.WithContext(ctx).Raw(`
+			WITH student_score_rates AS (
+				SELECT
+					st.id as student_id,
+					st.class_id,
+					SUM(sc.total_score / sub.full_score * 100 * sub.full_score) / SUM(sub.full_score) as weighted_score_rate
+				FROM students st
+				JOIN scores sc ON sc.student_id = st.id AND sc.exam_id = ?
+				JOIN subjects sub ON sub.id = sc.subject_id
+				GROUP BY st.id, st.class_id
+			)
+			SELECT
+				c.id as class_id,
+				c.name as class_name,
+				COUNT(ssr.student_id) as total_students,
+				ROUND(AVG(ssr.weighted_score_rate), 2) as avg_score,
+				SUM(CASE WHEN ssr.weighted_score_rate >= ? THEN 1 ELSE 0 END) as excellent,
+				SUM(CASE WHEN ssr.weighted_score_rate >= ? THEN 1 ELSE 0 END) as good,
+				SUM(CASE WHEN ssr.weighted_score_rate >= ? THEN 1 ELSE 0 END) as medium,
+				SUM(CASE WHEN ssr.weighted_score_rate >= ? THEN 1 ELSE 0 END) as pass,
+				SUM(CASE WHEN ssr.weighted_score_rate < ? THEN 1 ELSE 0 END) as low_score
+			FROM classes c
+			LEFT JOIN student_score_rates ssr ON ssr.class_id = c.id
+			GROUP BY c.id, c.name
+			HAVING COUNT(ssr.student_id) > 0
+			ORDER BY c.id
+		`, examID, excellentThreshold, goodThreshold, mediumThreshold, passThreshold, lowScoreThreshold).Scan(&ratingStats).Error
 	}
-
-	err := r.data.db.WithContext(ctx).Raw(`
-		SELECT
-			c.id as class_id,
-			c.name as class_name,
-			COUNT(sc.student_id) as total_students,
-			ROUND(AVG(sc.total_score), 2) as avg_score,
-			SUM(CASE WHEN sc.total_score >= ? THEN 1 ELSE 0 END) as excellent,
-			SUM(CASE WHEN sc.total_score >= ? AND sc.total_score < ? THEN 1 ELSE 0 END) as good,
-			SUM(CASE WHEN sc.total_score >= ? AND sc.total_score < ? THEN 1 ELSE 0 END) as pass,
-			SUM(CASE WHEN sc.total_score < ? THEN 1 ELSE 0 END) as fail
-		FROM classes c
-		LEFT JOIN students st ON st.class_id = c.id
-		LEFT JOIN scores sc ON sc.student_id = st.id AND `+whereClause+`
-		GROUP BY c.id, c.name
-		HAVING COUNT(sc.student_id) > 0
-		ORDER BY c.id
-	`, append([]interface{}{excellentThreshold, goodThreshold, excellentThreshold, passThreshold, goodThreshold, passThreshold}, args...)...).Scan(&ratingStats).Error
 
 	if err != nil {
 		log.Context(ctx).Errorf("GetRatingDistribution rating stats err: %+v", err)
@@ -416,7 +445,7 @@ func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID
 	}
 
 	stats.ClassDetails = make([]*biz.ClassRatingStats, len(ratingStats))
-	var overallExcellent, overallGood, overallPass, overallFail int64
+	var overallExcellent, overallGood, overallMedium, overallPass, overallLowScore int64
 	var overallAvg float64
 
 	for i, stat := range ratingStats {
@@ -431,19 +460,23 @@ func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID
 			Good: &biz.RatingItemStats{
 				Count: stat.Good,
 			},
+			Medium: &biz.RatingItemStats{
+				Count: stat.Medium,
+			},
 			Pass: &biz.RatingItemStats{
 				Count: stat.Pass,
 			},
-			Fail: &biz.RatingItemStats{
-				Count: stat.Fail,
+			LowScore: &biz.RatingItemStats{
+				Count: stat.LowScore,
 			},
 		}
 
 		// 累加全年级统计
 		overallExcellent += stat.Excellent
 		overallGood += stat.Good
+		overallMedium += stat.Medium
 		overallPass += stat.Pass
-		overallFail += stat.Fail
+		overallLowScore += stat.LowScore
 		overallAvg += stat.AvgScore * float64(stat.TotalStudents)
 	}
 
@@ -463,11 +496,14 @@ func (r *scoreRepo) GetRatingDistribution(ctx context.Context, examID, subjectID
 		Good: &biz.RatingItemStats{
 			Count: overallGood,
 		},
+		Medium: &biz.RatingItemStats{
+			Count: overallMedium,
+		},
 		Pass: &biz.RatingItemStats{
 			Count: overallPass,
 		},
-		Fail: &biz.RatingItemStats{
-			Count: overallFail,
+		LowScore: &biz.RatingItemStats{
+			Count: overallLowScore,
 		},
 	}
 

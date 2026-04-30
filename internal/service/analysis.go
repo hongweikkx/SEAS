@@ -212,19 +212,27 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 	// 使用默认值或请求中的配置
 	excellentThreshold := req.GetExcellentThreshold()
 	goodThreshold := req.GetGoodThreshold()
+	mediumThreshold := req.GetMediumThreshold()
 	passThreshold := req.GetPassThreshold()
+	lowScoreThreshold := req.GetLowScoreThreshold()
 
 	if excellentThreshold == 0 {
-		excellentThreshold = 90
+		excellentThreshold = 85
 	}
 	if goodThreshold == 0 {
-		goodThreshold = 70
+		goodThreshold = 76
+	}
+	if mediumThreshold == 0 {
+		mediumThreshold = 68
 	}
 	if passThreshold == 0 {
 		passThreshold = 60
 	}
+	if lowScoreThreshold == 0 {
+		lowScoreThreshold = 40
+	}
 
-	stats, err := s.examAnalysisUC.GetRatingDistribution(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()), excellentThreshold, goodThreshold, passThreshold)
+	stats, err := s.examAnalysisUC.GetRatingDistribution(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()), excellentThreshold, goodThreshold, mediumThreshold, passThreshold, lowScoreThreshold)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +252,9 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 		Config: &pb.RatingConfig{
 			ExcellentThreshold: excellentThreshold,
 			GoodThreshold:      goodThreshold,
+			MediumThreshold:    mediumThreshold,
 			PassThreshold:      passThreshold,
+			LowScoreThreshold:  lowScoreThreshold,
 		},
 	}
 
@@ -262,13 +272,17 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 				Count:      stats.OverallGrade.Good.Count,
 				Percentage: stats.OverallGrade.Good.Percentage,
 			},
+			Medium: &pb.RatingItem{
+				Count:      stats.OverallGrade.Medium.Count,
+				Percentage: stats.OverallGrade.Medium.Percentage,
+			},
 			Pass: &pb.RatingItem{
 				Count:      stats.OverallGrade.Pass.Count,
 				Percentage: stats.OverallGrade.Pass.Percentage,
 			},
-			Fail: &pb.RatingItem{
-				Count:      stats.OverallGrade.Fail.Count,
-				Percentage: stats.OverallGrade.Fail.Percentage,
+			LowScore: &pb.RatingItem{
+				Count:      stats.OverallGrade.LowScore.Count,
+				Percentage: stats.OverallGrade.LowScore.Percentage,
 			},
 		}
 	}
@@ -288,13 +302,17 @@ func (s *AnalysisService) GetRatingDistribution(ctx context.Context, req *pb.Get
 				Count:      class.Good.Count,
 				Percentage: class.Good.Percentage,
 			},
+			Medium: &pb.RatingItem{
+				Count:      class.Medium.Count,
+				Percentage: class.Medium.Percentage,
+			},
 			Pass: &pb.RatingItem{
 				Count:      class.Pass.Count,
 				Percentage: class.Pass.Percentage,
 			},
-			Fail: &pb.RatingItem{
-				Count:      class.Fail.Count,
-				Percentage: class.Fail.Percentage,
+			LowScore: &pb.RatingItem{
+				Count:      class.LowScore.Count,
+				Percentage: class.LowScore.Percentage,
 			},
 		}
 	}

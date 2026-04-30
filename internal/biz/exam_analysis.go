@@ -66,19 +66,25 @@ func (uc *ExamAnalysisUseCase) GetClassSummary(ctx context.Context, examID, subj
 }
 
 // GetRatingDistribution 获取四率分析
-func (uc *ExamAnalysisUseCase) GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, passThreshold float64) (*RatingDistributionStats, error) {
+func (uc *ExamAnalysisUseCase) GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, mediumThreshold, passThreshold, lowScoreThreshold float64) (*RatingDistributionStats, error) {
 	// 使用默认值如果参数为0
 	if excellentThreshold == 0 {
-		excellentThreshold = 90
+		excellentThreshold = 85
 	}
 	if goodThreshold == 0 {
-		goodThreshold = 70
+		goodThreshold = 76
+	}
+	if mediumThreshold == 0 {
+		mediumThreshold = 68
 	}
 	if passThreshold == 0 {
 		passThreshold = 60
 	}
+	if lowScoreThreshold == 0 {
+		lowScoreThreshold = 40
+	}
 
-	stats, err := uc.scoreRepo.GetRatingDistribution(ctx, examID, subjectID, excellentThreshold, goodThreshold, passThreshold)
+	stats, err := uc.scoreRepo.GetRatingDistribution(ctx, examID, subjectID, excellentThreshold, goodThreshold, mediumThreshold, passThreshold, lowScoreThreshold)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +93,9 @@ func (uc *ExamAnalysisUseCase) GetRatingDistribution(ctx context.Context, examID
 	stats.Config = &RatingConfigStats{
 		ExcellentThreshold: excellentThreshold,
 		GoodThreshold:      goodThreshold,
+		MediumThreshold:    mediumThreshold,
 		PassThreshold:      passThreshold,
+		LowScoreThreshold:  lowScoreThreshold,
 	}
 
 	// 计算百分比
@@ -207,8 +215,9 @@ func (uc *ExamAnalysisUseCase) calculateRatingPercentages(classRating *ClassRati
 	total := float64(classRating.TotalStudents)
 	classRating.Excellent.Percentage = roundTo2Decimal(float64(classRating.Excellent.Count) / total * 100)
 	classRating.Good.Percentage = roundTo2Decimal(float64(classRating.Good.Count) / total * 100)
+	classRating.Medium.Percentage = roundTo2Decimal(float64(classRating.Medium.Count) / total * 100)
 	classRating.Pass.Percentage = roundTo2Decimal(float64(classRating.Pass.Count) / total * 100)
-	classRating.Fail.Percentage = roundTo2Decimal(float64(classRating.Fail.Count) / total * 100)
+	classRating.LowScore.Percentage = roundTo2Decimal(float64(classRating.LowScore.Count) / total * 100)
 }
 
 // roundTo2Decimal 四舍五入到2位小数

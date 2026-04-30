@@ -2230,9 +2230,11 @@ func (x *GetSingleQuestionDetailReply) GetStudents() []*StudentQuestionDetail {
 // 10. 四率分析
 type RatingConfig struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	ExcellentThreshold float64                `protobuf:"fixed64,1,opt,name=excellent_threshold,json=excellentThreshold,proto3" json:"excellent_threshold,omitempty"` // 优秀分数线，默认90
-	GoodThreshold      float64                `protobuf:"fixed64,2,opt,name=good_threshold,json=goodThreshold,proto3" json:"good_threshold,omitempty"`                // 良好分数线，默认70
-	PassThreshold      float64                `protobuf:"fixed64,3,opt,name=pass_threshold,json=passThreshold,proto3" json:"pass_threshold,omitempty"`                // 合格分数线，默认60
+	ExcellentThreshold float64                `protobuf:"fixed64,1,opt,name=excellent_threshold,json=excellentThreshold,proto3" json:"excellent_threshold,omitempty"` // 优秀得分率%，默认85
+	GoodThreshold      float64                `protobuf:"fixed64,2,opt,name=good_threshold,json=goodThreshold,proto3" json:"good_threshold,omitempty"`                // 良好得分率%，默认76
+	PassThreshold      float64                `protobuf:"fixed64,3,opt,name=pass_threshold,json=passThreshold,proto3" json:"pass_threshold,omitempty"`                // 及格得分率%，默认60
+	MediumThreshold    float64                `protobuf:"fixed64,4,opt,name=medium_threshold,json=mediumThreshold,proto3" json:"medium_threshold,omitempty"`          // 中等得分率%，默认68
+	LowScoreThreshold  float64                `protobuf:"fixed64,5,opt,name=low_score_threshold,json=lowScoreThreshold,proto3" json:"low_score_threshold,omitempty"`  // 低分得分率%，默认40
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -2288,14 +2290,30 @@ func (x *RatingConfig) GetPassThreshold() float64 {
 	return 0
 }
 
+func (x *RatingConfig) GetMediumThreshold() float64 {
+	if x != nil {
+		return x.MediumThreshold
+	}
+	return 0
+}
+
+func (x *RatingConfig) GetLowScoreThreshold() float64 {
+	if x != nil {
+		return x.LowScoreThreshold
+	}
+	return 0
+}
+
 type GetRatingDistributionRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	ExamId             string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
 	Scope              string                 `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`                                                       // "all_subjects" 或 "single_subject"
 	SubjectId          string                 `protobuf:"bytes,3,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`                              // scope=single_subject时必传
-	ExcellentThreshold float64                `protobuf:"fixed64,4,opt,name=excellent_threshold,json=excellentThreshold,proto3" json:"excellent_threshold,omitempty"` // 优秀分数线，默认90（可选）
-	GoodThreshold      float64                `protobuf:"fixed64,5,opt,name=good_threshold,json=goodThreshold,proto3" json:"good_threshold,omitempty"`                // 良好分数线，默认70（可选）
-	PassThreshold      float64                `protobuf:"fixed64,6,opt,name=pass_threshold,json=passThreshold,proto3" json:"pass_threshold,omitempty"`                // 合格分数线，默认60（可选）
+	ExcellentThreshold float64                `protobuf:"fixed64,4,opt,name=excellent_threshold,json=excellentThreshold,proto3" json:"excellent_threshold,omitempty"` // 优秀得分率%，默认85（可选）
+	GoodThreshold      float64                `protobuf:"fixed64,5,opt,name=good_threshold,json=goodThreshold,proto3" json:"good_threshold,omitempty"`                // 良好得分率%，默认76（可选）
+	PassThreshold      float64                `protobuf:"fixed64,6,opt,name=pass_threshold,json=passThreshold,proto3" json:"pass_threshold,omitempty"`                // 及格得分率%，默认60（可选）
+	MediumThreshold    float64                `protobuf:"fixed64,7,opt,name=medium_threshold,json=mediumThreshold,proto3" json:"medium_threshold,omitempty"`          // 中等得分率%，默认68（可选）
+	LowScoreThreshold  float64                `protobuf:"fixed64,8,opt,name=low_score_threshold,json=lowScoreThreshold,proto3" json:"low_score_threshold,omitempty"`  // 低分得分率%，默认40（可选）
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -2372,6 +2390,20 @@ func (x *GetRatingDistributionRequest) GetPassThreshold() float64 {
 	return 0
 }
 
+func (x *GetRatingDistributionRequest) GetMediumThreshold() float64 {
+	if x != nil {
+		return x.MediumThreshold
+	}
+	return 0
+}
+
+func (x *GetRatingDistributionRequest) GetLowScoreThreshold() float64 {
+	if x != nil {
+		return x.LowScoreThreshold
+	}
+	return 0
+}
+
 type RatingItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Count         int64                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
@@ -2430,10 +2462,11 @@ type ClassRatingDistribution struct {
 	ClassName     string                 `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"`
 	TotalStudents int32                  `protobuf:"varint,3,opt,name=total_students,json=totalStudents,proto3" json:"total_students,omitempty"`
 	AvgScore      float64                `protobuf:"fixed64,4,opt,name=avg_score,json=avgScore,proto3" json:"avg_score,omitempty"`
-	Excellent     *RatingItem            `protobuf:"bytes,5,opt,name=excellent,proto3" json:"excellent,omitempty"` // 优秀
-	Good          *RatingItem            `protobuf:"bytes,6,opt,name=good,proto3" json:"good,omitempty"`           // 良好
-	Pass          *RatingItem            `protobuf:"bytes,7,opt,name=pass,proto3" json:"pass,omitempty"`           // 合格
-	Fail          *RatingItem            `protobuf:"bytes,8,opt,name=fail,proto3" json:"fail,omitempty"`           // 低分
+	Excellent     *RatingItem            `protobuf:"bytes,5,opt,name=excellent,proto3" json:"excellent,omitempty"`               // 优秀
+	Good          *RatingItem            `protobuf:"bytes,6,opt,name=good,proto3" json:"good,omitempty"`                         // 良好
+	Pass          *RatingItem            `protobuf:"bytes,7,opt,name=pass,proto3" json:"pass,omitempty"`                         // 及格
+	LowScore      *RatingItem            `protobuf:"bytes,8,opt,name=low_score,json=lowScore,proto3" json:"low_score,omitempty"` // 低分
+	Medium        *RatingItem            `protobuf:"bytes,9,opt,name=medium,proto3" json:"medium,omitempty"`                     // 中等
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2517,9 +2550,16 @@ func (x *ClassRatingDistribution) GetPass() *RatingItem {
 	return nil
 }
 
-func (x *ClassRatingDistribution) GetFail() *RatingItem {
+func (x *ClassRatingDistribution) GetLowScore() *RatingItem {
 	if x != nil {
-		return x.Fail
+		return x.LowScore
+	}
+	return nil
+}
+
+func (x *ClassRatingDistribution) GetMedium() *RatingItem {
+	if x != nil {
+		return x.Medium
 	}
 	return nil
 }
@@ -2954,11 +2994,13 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"full_score\x18\n" +
 	" \x01(\x01R\tfullScore\x12)\n" +
 	"\x10question_content\x18\v \x01(\tR\x0fquestionContent\x12:\n" +
-	"\bstudents\x18\f \x03(\v2\x1e.seas.v1.StudentQuestionDetailR\bstudents\"\x8d\x01\n" +
+	"\bstudents\x18\f \x03(\v2\x1e.seas.v1.StudentQuestionDetailR\bstudents\"\xe8\x01\n" +
 	"\fRatingConfig\x12/\n" +
 	"\x13excellent_threshold\x18\x01 \x01(\x01R\x12excellentThreshold\x12%\n" +
 	"\x0egood_threshold\x18\x02 \x01(\x01R\rgoodThreshold\x12%\n" +
-	"\x0epass_threshold\x18\x03 \x01(\x01R\rpassThreshold\"\xeb\x01\n" +
+	"\x0epass_threshold\x18\x03 \x01(\x01R\rpassThreshold\x12)\n" +
+	"\x10medium_threshold\x18\x04 \x01(\x01R\x0fmediumThreshold\x12.\n" +
+	"\x13low_score_threshold\x18\x05 \x01(\x01R\x11lowScoreThreshold\"\xc6\x02\n" +
 	"\x1cGetRatingDistributionRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x1d\n" +
@@ -2966,13 +3008,15 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"subject_id\x18\x03 \x01(\tR\tsubjectId\x12/\n" +
 	"\x13excellent_threshold\x18\x04 \x01(\x01R\x12excellentThreshold\x12%\n" +
 	"\x0egood_threshold\x18\x05 \x01(\x01R\rgoodThreshold\x12%\n" +
-	"\x0epass_threshold\x18\x06 \x01(\x01R\rpassThreshold\"B\n" +
+	"\x0epass_threshold\x18\x06 \x01(\x01R\rpassThreshold\x12)\n" +
+	"\x10medium_threshold\x18\a \x01(\x01R\x0fmediumThreshold\x12.\n" +
+	"\x13low_score_threshold\x18\b \x01(\x01R\x11lowScoreThreshold\"B\n" +
 	"\n" +
 	"RatingItem\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x03R\x05count\x12\x1e\n" +
 	"\n" +
 	"percentage\x18\x02 \x01(\x01R\n" +
-	"percentage\"\xc5\x02\n" +
+	"percentage\"\xfb\x02\n" +
 	"\x17ClassRatingDistribution\x12\x19\n" +
 	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1d\n" +
 	"\n" +
@@ -2981,8 +3025,9 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\tavg_score\x18\x04 \x01(\x01R\bavgScore\x121\n" +
 	"\texcellent\x18\x05 \x01(\v2\x13.seas.v1.RatingItemR\texcellent\x12'\n" +
 	"\x04good\x18\x06 \x01(\v2\x13.seas.v1.RatingItemR\x04good\x12'\n" +
-	"\x04pass\x18\a \x01(\v2\x13.seas.v1.RatingItemR\x04pass\x12'\n" +
-	"\x04fail\x18\b \x01(\v2\x13.seas.v1.RatingItemR\x04fail\"\xd4\x02\n" +
+	"\x04pass\x18\a \x01(\v2\x13.seas.v1.RatingItemR\x04pass\x120\n" +
+	"\tlow_score\x18\b \x01(\v2\x13.seas.v1.RatingItemR\blowScore\x12+\n" +
+	"\x06medium\x18\t \x01(\v2\x13.seas.v1.RatingItemR\x06medium\"\xd4\x02\n" +
 	"\x1aGetRatingDistributionReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
 	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x14\n" +
@@ -3077,37 +3122,38 @@ var file_seas_v1_analysis_proto_depIdxs = []int32{
 	29, // 13: seas.v1.ClassRatingDistribution.excellent:type_name -> seas.v1.RatingItem
 	29, // 14: seas.v1.ClassRatingDistribution.good:type_name -> seas.v1.RatingItem
 	29, // 15: seas.v1.ClassRatingDistribution.pass:type_name -> seas.v1.RatingItem
-	29, // 16: seas.v1.ClassRatingDistribution.fail:type_name -> seas.v1.RatingItem
-	27, // 17: seas.v1.GetRatingDistributionReply.config:type_name -> seas.v1.RatingConfig
-	30, // 18: seas.v1.GetRatingDistributionReply.overall_grade:type_name -> seas.v1.ClassRatingDistribution
-	30, // 19: seas.v1.GetRatingDistributionReply.class_details:type_name -> seas.v1.ClassRatingDistribution
-	0,  // 20: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
-	3,  // 21: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
-	6,  // 22: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
-	9,  // 23: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
-	12, // 24: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
-	15, // 25: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
-	17, // 26: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
-	20, // 27: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
-	24, // 28: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
-	28, // 29: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
-	32, // 30: seas.v1.Analysis.DeleteExam:input_type -> seas.v1.DeleteExamRequest
-	2,  // 31: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
-	5,  // 32: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
-	8,  // 33: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
-	11, // 34: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
-	14, // 35: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
-	16, // 36: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
-	19, // 37: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
-	23, // 38: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
-	26, // 39: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
-	31, // 40: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
-	33, // 41: seas.v1.Analysis.DeleteExam:output_type -> seas.v1.DeleteExamReply
-	31, // [31:42] is the sub-list for method output_type
-	20, // [20:31] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	29, // 16: seas.v1.ClassRatingDistribution.low_score:type_name -> seas.v1.RatingItem
+	29, // 17: seas.v1.ClassRatingDistribution.medium:type_name -> seas.v1.RatingItem
+	27, // 18: seas.v1.GetRatingDistributionReply.config:type_name -> seas.v1.RatingConfig
+	30, // 19: seas.v1.GetRatingDistributionReply.overall_grade:type_name -> seas.v1.ClassRatingDistribution
+	30, // 20: seas.v1.GetRatingDistributionReply.class_details:type_name -> seas.v1.ClassRatingDistribution
+	0,  // 21: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
+	3,  // 22: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
+	6,  // 23: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
+	9,  // 24: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
+	12, // 25: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
+	15, // 26: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
+	17, // 27: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
+	20, // 28: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
+	24, // 29: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
+	28, // 30: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
+	32, // 31: seas.v1.Analysis.DeleteExam:input_type -> seas.v1.DeleteExamRequest
+	2,  // 32: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
+	5,  // 33: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
+	8,  // 34: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
+	11, // 35: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
+	14, // 36: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
+	16, // 37: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
+	19, // 38: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
+	23, // 39: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
+	26, // 40: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
+	31, // 41: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
+	33, // 42: seas.v1.Analysis.DeleteExam:output_type -> seas.v1.DeleteExamReply
+	32, // [32:43] is the sub-list for method output_type
+	21, // [21:32] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_seas_v1_analysis_proto_init() }
