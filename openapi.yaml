@@ -133,6 +133,16 @@ paths:
                   schema:
                     type: number
                     format: double
+                - name: mediumThreshold
+                  in: query
+                  schema:
+                    type: number
+                    format: double
+                - name: lowScoreThreshold
+                  in: query
+                  schema:
+                    type: number
+                    format: double
             responses:
                 "200":
                     description: OK
@@ -427,7 +437,9 @@ components:
                     $ref: '#/components/schemas/seas.v1.RatingItem'
                 pass:
                     $ref: '#/components/schemas/seas.v1.RatingItem'
-                fail:
+                lowScore:
+                    $ref: '#/components/schemas/seas.v1.RatingItem'
+                medium:
                     $ref: '#/components/schemas/seas.v1.RatingItem'
         seas.v1.ClassSubjectItem:
             type: object
@@ -777,6 +789,12 @@ components:
                     type: number
                     format: double
                 passThreshold:
+                    type: number
+                    format: double
+                mediumThreshold:
+                    type: number
+                    format: double
+                lowScoreThreshold:
                     type: number
                     format: double
             description: 10. 四率分析
