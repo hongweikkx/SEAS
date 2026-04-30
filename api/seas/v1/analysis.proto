@@ -337,8 +337,8 @@ message GetSingleQuestionDetailReply {
 message RatingConfig {
   double excellent_threshold = 1;  // 优秀得分率%，默认85
   double good_threshold = 2;       // 良好得分率%，默认76
-  double medium_threshold = 3;     // 中等得分率%，默认68
-  double pass_threshold = 4;       // 及格得分率%，默认60
+  double pass_threshold = 3;       // 及格得分率%，默认60
+  double medium_threshold = 4;     // 中等得分率%，默认68
   double low_score_threshold = 5;  // 低分得分率%，默认40
 }
 
@@ -348,8 +348,8 @@ message GetRatingDistributionRequest {
   string subject_id = 3;                 // scope=single_subject时必传
   double excellent_threshold = 4;       // 优秀得分率%，默认85（可选）
   double good_threshold = 5;            // 良好得分率%，默认76（可选）
-  double medium_threshold = 6;          // 中等得分率%，默认68（可选）
-  double pass_threshold = 7;            // 及格得分率%，默认60（可选）
+  double pass_threshold = 6;            // 及格得分率%，默认60（可选）
+  double medium_threshold = 7;          // 中等得分率%，默认68（可选）
   double low_score_threshold = 8;       // 低分得分率%，默认40（可选）
 }
 
@@ -365,9 +365,9 @@ message ClassRatingDistribution {
   double avg_score = 4;
   RatingItem excellent = 5;  // 优秀
   RatingItem good = 6;       // 良好
-  RatingItem medium = 7;     // 中等
-  RatingItem pass = 8;       // 及格
-  RatingItem low_score = 9;  // 低分
+  RatingItem pass = 7;       // 及格
+  RatingItem low_score = 8;  // 低分
+  RatingItem medium = 9;     // 中等
 }
 
 message GetRatingDistributionReply {
