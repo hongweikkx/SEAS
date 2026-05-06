@@ -98,6 +98,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.GetClassSummaryReply'
+    /seas/api/v1/exams/{examId}/analysis/rank-segment:
+        post:
+            tags:
+                - Analysis
+            description: 新增接口:名次段分析
+            operationId: Analysis_GetRankSegment
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/seas.v1.GetRankSegmentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.GetRankSegmentReply'
     /seas/api/v1/exams/{examId}/analysis/rating-distribution:
         get:
             tags:
@@ -442,6 +467,21 @@ components:
                 difficulty:
                     type: number
                     format: double
+        seas.v1.ClassRankSegment:
+            type: object
+            properties:
+                classId:
+                    type: integer
+                    format: int32
+                className:
+                    type: string
+                totalStudents:
+                    type: integer
+                    format: int32
+                segments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.RankSegmentItem'
         seas.v1.ClassRatingDistribution:
             type: object
             properties:
@@ -631,6 +671,41 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/seas.v1.ClassSummaryItem'
+        seas.v1.GetRankSegmentReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                examName:
+                    type: string
+                scope:
+                    type: string
+                totalParticipants:
+                    type: integer
+                    format: int32
+                config:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.RankSegmentConfig'
+                overallGrade:
+                    $ref: '#/components/schemas/seas.v1.ClassRankSegment'
+                classDetails:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.ClassRankSegment'
+        seas.v1.GetRankSegmentRequest:
+            type: object
+            properties:
+                examId:
+                    type: string
+                scope:
+                    type: string
+                subjectId:
+                    type: string
+                segments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.RankSegmentConfig'
         seas.v1.GetRatingDistributionReply:
             type: object
             properties:
@@ -854,6 +929,29 @@ components:
                 avgScore:
                     type: number
                     format: double
+        seas.v1.RankSegmentConfig:
+            type: object
+            properties:
+                start:
+                    type: integer
+                    format: int32
+                end:
+                    type: integer
+                    format: int32
+            description: 13. 名次段分析
+        seas.v1.RankSegmentItem:
+            type: object
+            properties:
+                label:
+                    type: string
+                start:
+                    type: integer
+                    format: int32
+                end:
+                    type: integer
+                    format: int32
+                count:
+                    type: string
         seas.v1.RatingConfig:
             type: object
             properties:
