@@ -821,22 +821,31 @@ func (r *scoreRepo) GetScoreSegment(ctx context.Context, examID, subjectID int64
 	}
 
 	// 构建动态 CASE WHEN 列
-	var caseColumns []string
-	for i, rg := range ranges {
-		if rg.isLast {
-			// 最后一个区间包含右边界
-			caseColumns = append(caseColumns, fmt.Sprintf(
-				"SUM(CASE WHEN score >= %v AND score <= %v THEN 1 ELSE 0 END) AS seg_%d",
-				rg.min, rg.max, i,
-			))
-		} else {
-			caseColumns = append(caseColumns, fmt.Sprintf(
-				"SUM(CASE WHEN score >= %v AND score < %v THEN 1 ELSE 0 END) AS seg_%d",
-				rg.min, rg.max, i,
-			))
+	buildCaseSQL := func(scoreColumn string) string {
+		var caseColumns []string
+		for i, rg := range ranges {
+			if rg.isLast {
+				// 最后一个区间包含右边界
+				caseColumns = append(caseColumns, fmt.Sprintf(
+					"SUM(CASE WHEN %s >= %v AND %s <= %v THEN 1 ELSE 0 END) AS seg_%d",
+					scoreColumn, rg.min, scoreColumn, rg.max, i,
+				))
+			} else {
+				caseColumns = append(caseColumns, fmt.Sprintf(
+					"SUM(CASE WHEN %s >= %v AND %s < %v THEN 1 ELSE 0 END) AS seg_%d",
+					scoreColumn, rg.min, scoreColumn, rg.max, i,
+				))
+			}
 		}
+		return strings.Join(caseColumns, ",\n\t\t\t")
 	}
-	caseSQL := strings.Join(caseColumns, ",\n			")
+
+	var caseSQL string
+	if subjectID > 0 {
+		caseSQL = buildCaseSQL("sc.total_score")
+	} else {
+		caseSQL = buildCaseSQL("s.score")
+	}
 
 	// 获取总参考人数
 	var totalParticipants int64
