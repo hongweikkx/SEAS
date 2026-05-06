@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"seas/internal/biz"
 
@@ -950,6 +951,11 @@ func (r *scoreRepo) GetScoreSegment(ctx context.Context, examID, subjectID int64
 				count = int64(v)
 			} else if v, ok := row[colName].(float64); ok {
 				count = int64(v)
+			} else if v, ok := row[colName].(string); ok {
+				// MySQL SUM() 返回 DECIMAL，GORM 扫描为 string
+				if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+					count = n
+				}
 			}
 			classSegments[j] = &biz.ScoreSegmentItem{
 				Label: rg.label,
