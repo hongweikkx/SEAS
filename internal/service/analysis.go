@@ -576,6 +576,80 @@ func (s *AnalysisService) GetSingleQuestionDetail(ctx context.Context, req *pb.G
 	return reply, nil
 }
 
+// GetScoreSegment 获取分数段分布统计
+func (s *AnalysisService) GetScoreSegment(ctx context.Context, req *pb.GetScoreSegmentRequest) (*pb.GetScoreSegmentReply, error) {
+	log.Context(ctx).Infof("Received GetScoreSegmentRequest: %v", req)
+
+	// 转换分数段配置
+	segments := make([]*biz.SegmentConfig, len(req.GetSegments()))
+	for i, seg := range req.GetSegments() {
+		segments[i] = &biz.SegmentConfig{
+			Start: seg.GetStart(),
+			End:   seg.GetEnd(),
+			Step:  seg.GetStep(),
+		}
+	}
+
+	stats, err := s.examAnalysisUC.GetScoreSegment(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()), segments)
+	if err != nil {
+		return nil, err
+	}
+
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
+	if err != nil {
+		log.Context(ctx).Errorf("GetExamName failed: %v", err)
+		examName = "未知考试"
+	}
+
+	reply := &pb.GetScoreSegmentReply{
+		ExamId:            req.GetExamId(),
+		ExamName:          examName,
+		Scope:             req.GetScope(),
+		TotalParticipants: int32(stats.TotalParticipants),
+	}
+
+	// 转换 config
+	reply.Config = make([]*pb.SegmentConfig, len(stats.Config))
+	for i, cfg := range stats.Config {
+		reply.Config[i] = &pb.SegmentConfig{
+			Start: cfg.Start,
+			End:   cfg.End,
+			Step:  cfg.Step,
+		}
+	}
+
+	// 转换全年级统计
+	if stats.OverallGrade != nil {
+		reply.OverallGrade = convertClassScoreSegmentToPB(stats.OverallGrade)
+	}
+
+	// 转换班级明细
+	reply.ClassDetails = make([]*pb.ClassScoreSegment, len(stats.ClassDetails))
+	for i, class := range stats.ClassDetails {
+		reply.ClassDetails[i] = convertClassScoreSegmentToPB(class)
+	}
+
+	return reply, nil
+}
+
+func convertClassScoreSegmentToPB(class *biz.ClassScoreSegment) *pb.ClassScoreSegment {
+	segments := make([]*pb.ScoreSegmentItem, len(class.Segments))
+	for i, seg := range class.Segments {
+		segments[i] = &pb.ScoreSegmentItem{
+			Label: seg.Label,
+			Min:   seg.Min,
+			Max:   seg.Max,
+			Count: seg.Count,
+		}
+	}
+	return &pb.ClassScoreSegment{
+		ClassId:       int32(class.ClassID),
+		ClassName:     class.ClassName,
+		TotalStudents: int32(class.TotalStudents),
+		Segments:      segments,
+	}
+}
+
 // DeleteExam 删除考试（级联删除关联数据）
 func (s *AnalysisService) DeleteExam(ctx context.Context, req *pb.DeleteExamRequest) (*pb.DeleteExamReply, error) {
 	log.Context(ctx).Infof("Received DeleteExamRequest: %v", req)
