@@ -3,8 +3,10 @@ package data
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"seas/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -762,6 +764,220 @@ func (r *scoreRepo) GetClassSubjectSummary(ctx context.Context, examID, classID 
 	summary.Overall.Discrimination = calculateDiscrimination(overallScores, summary.Overall.FullScore)
 
 	return &summary, nil
+}
+
+// segmentRange 展开后的分数段区间
+type segmentRange struct {
+	min    float64
+	max    float64
+	label  string
+	isLast bool
+}
+
+// expandSegments 将 SegmentConfig 列表展开为具体的区间列表
+func expandSegments(segments []*biz.SegmentConfig) []segmentRange {
+	var ranges []segmentRange
+	for segIdx, seg := range segments {
+		// 处理浮点数精度问题，使用整数步长计算
+		steps := int(math.Round((seg.End - seg.Start) / seg.Step))
+		if steps <= 0 {
+			steps = 1
+		}
+		for i := 0; i < steps; i++ {
+			min := seg.Start + float64(i)*seg.Step
+			max := min + seg.Step
+			if max > seg.End || i == steps-1 {
+				max = seg.End
+			}
+			isLast := (segIdx == len(segments)-1 && i == steps-1)
+			ranges = append(ranges, segmentRange{
+				min:    min,
+				max:    max,
+				label:  formatSegmentLabel(min, max),
+				isLast: isLast,
+			})
+		}
+	}
+	return ranges
+}
+
+// formatSegmentLabel 格式化分数段标签
+func formatSegmentLabel(min, max float64) string {
+	// 若都是整数则显示整数，否则保留一位小数
+	if min == math.Trunc(min) && max == math.Trunc(max) {
+		return fmt.Sprintf("%.0f-%.0f", min, max)
+	}
+	return fmt.Sprintf("%.1f-%.1f", min, max)
+}
+
+// GetScoreSegment 获取分数段分布统计
+func (r *scoreRepo) GetScoreSegment(ctx context.Context, examID, subjectID int64, segments []*biz.SegmentConfig) (*biz.ScoreSegmentStats, error) {
+	var stats biz.ScoreSegmentStats
+
+	// 展开分数段区间
+	ranges := expandSegments(segments)
+	if len(ranges) == 0 {
+		return &stats, nil
+	}
+
+	// 构建动态 CASE WHEN 列
+	var caseColumns []string
+	for i, rg := range ranges {
+		if rg.isLast {
+			// 最后一个区间包含右边界
+			caseColumns = append(caseColumns, fmt.Sprintf(
+				"SUM(CASE WHEN score >= %v AND score <= %v THEN 1 ELSE 0 END) AS seg_%d",
+				rg.min, rg.max, i,
+			))
+		} else {
+			caseColumns = append(caseColumns, fmt.Sprintf(
+				"SUM(CASE WHEN score >= %v AND score < %v THEN 1 ELSE 0 END) AS seg_%d",
+				rg.min, rg.max, i,
+			))
+		}
+	}
+	caseSQL := strings.Join(caseColumns, ",\n			")
+
+	// 获取总参考人数
+	var totalParticipants int64
+	if subjectID > 0 {
+		query := r.data.db.WithContext(ctx).Model(&biz.Score{}).Where("exam_id = ? AND subject_id = ?", examID, subjectID)
+		if err := query.Count(&totalParticipants).Error; err != nil {
+			log.Context(ctx).Errorf("GetScoreSegment count participants err: %+v", err)
+			return nil, err
+		}
+	} else {
+		if err := r.data.db.WithContext(ctx).Raw(`
+			SELECT COUNT(DISTINCT student_id) FROM scores WHERE exam_id = ?
+		`, examID).Scan(&totalParticipants).Error; err != nil {
+			log.Context(ctx).Errorf("GetScoreSegment count participants err: %+v", err)
+			return nil, err
+		}
+	}
+	stats.TotalParticipants = totalParticipants
+
+	// 使用 map 扫描动态列（GORM 的 Scan 到 struct 不支持动态列，改用 map）
+	var rawRows []map[string]interface{}
+	var err error
+	if subjectID > 0 {
+		err = r.data.db.WithContext(ctx).Raw(fmt.Sprintf(`
+			SELECT
+				c.id as class_id,
+				c.name as class_name,
+				COUNT(DISTINCT sc.student_id) as total_students,
+				%s
+			FROM classes c
+			JOIN students st ON st.class_id = c.id
+			JOIN scores sc ON sc.student_id = st.id AND sc.exam_id = ? AND sc.subject_id = ?
+			GROUP BY c.id, c.name
+			HAVING COUNT(sc.student_id) > 0
+			ORDER BY c.id
+		`, caseSQL), examID, subjectID).Scan(&rawRows).Error
+	} else {
+		err = r.data.db.WithContext(ctx).Raw(fmt.Sprintf(`
+			SELECT
+				c.id as class_id,
+				c.name as class_name,
+				COUNT(DISTINCT st.id) as total_students,
+				%s
+			FROM classes c
+			JOIN students st ON st.class_id = c.id
+			JOIN (
+				SELECT student_id, SUM(total_score) as score
+				FROM scores
+				WHERE exam_id = ?
+				GROUP BY student_id
+			) s ON s.student_id = st.id
+			GROUP BY c.id, c.name
+			HAVING COUNT(st.id) > 0
+			ORDER BY c.id
+		`, caseSQL), examID).Scan(&rawRows).Error
+	}
+
+	if err != nil {
+		log.Context(ctx).Errorf("GetScoreSegment raw class stats err: %+v", err)
+		return nil, err
+	}
+
+	// 构建班级明细
+	stats.ClassDetails = make([]*biz.ClassScoreSegment, len(rawRows))
+	overallSegments := make([]*biz.ScoreSegmentItem, len(ranges))
+	for i, rg := range ranges {
+		overallSegments[i] = &biz.ScoreSegmentItem{
+			Label: rg.label,
+			Min:   rg.min,
+			Max:   rg.max,
+			Count: 0,
+		}
+	}
+
+	for i, row := range rawRows {
+		classID, _ := row["class_id"].(int64)
+		if classID == 0 {
+			// 某些驱动可能返回其他数值类型
+			if v, ok := row["class_id"].(int32); ok {
+				classID = int64(v)
+			} else if v, ok := row["class_id"].(float64); ok {
+				classID = int64(v)
+			}
+		}
+		className, _ := row["class_name"].(string)
+		totalStudents := int64(0)
+		if v, ok := row["total_students"].(int64); ok {
+			totalStudents = v
+		} else if v, ok := row["total_students"].(int32); ok {
+			totalStudents = int64(v)
+		} else if v, ok := row["total_students"].(float64); ok {
+			totalStudents = int64(v)
+		}
+
+		classSegments := make([]*biz.ScoreSegmentItem, len(ranges))
+		for j, rg := range ranges {
+			count := int64(0)
+			colName := fmt.Sprintf("seg_%d", j)
+			if v, ok := row[colName].(int64); ok {
+				count = v
+			} else if v, ok := row[colName].(int32); ok {
+				count = int64(v)
+			} else if v, ok := row[colName].(float64); ok {
+				count = int64(v)
+			}
+			classSegments[j] = &biz.ScoreSegmentItem{
+				Label: rg.label,
+				Min:   rg.min,
+				Max:   rg.max,
+				Count: count,
+			}
+			overallSegments[j].Count += count
+		}
+
+		stats.ClassDetails[i] = &biz.ClassScoreSegment{
+			ClassID:       classID,
+			ClassName:     className,
+			TotalStudents: totalStudents,
+			Segments:      classSegments,
+		}
+	}
+
+	// 构建全年级统计
+	stats.OverallGrade = &biz.ClassScoreSegment{
+		ClassID:       0,
+		ClassName:     "全年级",
+		TotalStudents: totalParticipants,
+		Segments:      overallSegments,
+	}
+
+	// 转换 config
+	stats.Config = make([]*biz.SegmentConfig, len(segments))
+	for i, seg := range segments {
+		stats.Config[i] = &biz.SegmentConfig{
+			Start: seg.Start,
+			End:   seg.End,
+			Step:  seg.Step,
+		}
+	}
+
+	return &stats, nil
 }
 
 // BatchCreate 批量创建成绩记录
