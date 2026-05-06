@@ -80,6 +80,13 @@ service Analysis {
     };
   }
 
+  // 新增接口：分数段分析
+  rpc GetScoreSegment (GetScoreSegmentRequest) returns (GetScoreSegmentReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/analysis/score-segment"
+    };
+  }
+
   // 新增接口：删除考试（级联删除关联数据）
   rpc DeleteExam (DeleteExamRequest) returns (DeleteExamReply) {
     option (google.api.http) = {
@@ -388,4 +395,42 @@ message DeleteExamRequest {
 message DeleteExamReply {
   bool success = 1;
   string message = 2;
+}
+
+// 12. 分数段分析
+message SegmentConfig {
+  double start = 1;
+  double end = 2;
+  double step = 3;
+}
+
+message GetScoreSegmentRequest {
+  string exam_id = 1;
+  string scope = 2;
+  string subject_id = 3;
+  repeated SegmentConfig segments = 4;
+}
+
+message ScoreSegmentItem {
+  string label = 1;
+  double min = 2;
+  double max = 3;
+  int64 count = 4;
+}
+
+message ClassScoreSegment {
+  int32 class_id = 1;
+  string class_name = 2;
+  int32 total_students = 3;
+  repeated ScoreSegmentItem segments = 4;
+}
+
+message GetScoreSegmentReply {
+  string exam_id = 1;
+  string exam_name = 2;
+  string scope = 3;
+  int32 total_participants = 4;
+  repeated SegmentConfig config = 5;
+  ClassScoreSegment overall_grade = 6;
+  repeated ClassScoreSegment class_details = 7;
 }
