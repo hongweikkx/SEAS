@@ -265,6 +265,11 @@ func (uc *ExamAnalysisUseCase) GetExamStudentCounts(ctx context.Context, examIDs
 	return uc.examRepo.GetExamStudentCounts(ctx, examIDs)
 }
 
+// GetScoreSegment 获取分数段分布统计
+func (uc *ExamAnalysisUseCase) GetScoreSegment(ctx context.Context, examID, subjectID int64, segments []*SegmentConfig) (*ScoreSegmentStats, error) {
+	return uc.scoreRepo.GetScoreSegment(ctx, examID, subjectID, segments)
+}
+
 // DeleteExam 删除考试及其关联数据
 func (uc *ExamAnalysisUseCase) DeleteExam(ctx context.Context, examID int64) error {
 	return uc.examRepo.Delete(ctx, examID)

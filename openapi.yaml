@@ -150,6 +150,33 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.GetRatingDistributionReply'
+    /seas/api/v1/exams/{examId}/analysis/score-segment:
+        get:
+            tags:
+                - Analysis
+            description: 新增接口：分数段分析
+            operationId: Analysis_GetScoreSegment
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: scope
+                  in: query
+                  schema:
+                    type: string
+                - name: subjectId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.GetScoreSegmentReply'
     /seas/api/v1/exams/{examId}/analysis/subject-summary:
         get:
             tags:
@@ -441,6 +468,21 @@ components:
                     $ref: '#/components/schemas/seas.v1.RatingItem'
                 medium:
                     $ref: '#/components/schemas/seas.v1.RatingItem'
+        seas.v1.ClassScoreSegment:
+            type: object
+            properties:
+                classId:
+                    type: integer
+                    format: int32
+                className:
+                    type: string
+                totalStudents:
+                    type: integer
+                    format: int32
+                segments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.ScoreSegmentItem'
         seas.v1.ClassSubjectItem:
             type: object
             properties:
@@ -611,6 +653,28 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/seas.v1.ClassRatingDistribution'
+        seas.v1.GetScoreSegmentReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                examName:
+                    type: string
+                scope:
+                    type: string
+                totalParticipants:
+                    type: integer
+                    format: int32
+                config:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.SegmentConfig'
+                overallGrade:
+                    $ref: '#/components/schemas/seas.v1.ClassScoreSegment'
+                classDetails:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.ClassScoreSegment'
         seas.v1.GetSingleClassQuestionsReply:
             type: object
             properties:
@@ -806,6 +870,32 @@ components:
                 percentage:
                     type: number
                     format: double
+        seas.v1.ScoreSegmentItem:
+            type: object
+            properties:
+                label:
+                    type: string
+                min:
+                    type: number
+                    format: double
+                max:
+                    type: number
+                    format: double
+                count:
+                    type: string
+        seas.v1.SegmentConfig:
+            type: object
+            properties:
+                start:
+                    type: number
+                    format: double
+                end:
+                    type: number
+                    format: double
+                step:
+                    type: number
+                    format: double
+            description: 12. 分数段分析
         seas.v1.SingleQuestionSummaryItem:
             type: object
             properties:
