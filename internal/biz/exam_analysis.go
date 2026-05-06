@@ -270,6 +270,15 @@ func (uc *ExamAnalysisUseCase) GetScoreSegment(ctx context.Context, examID, subj
 	return uc.scoreRepo.GetScoreSegment(ctx, examID, subjectID, segments)
 }
 
+// GetRankSegment 获取名次段分析
+func (uc *ExamAnalysisUseCase) GetRankSegment(ctx context.Context, examID, subjectID int64, segments []*RankSegmentConfig) (*RankSegmentStats, error) {
+	stats, err := uc.scoreRepo.GetRankSegment(ctx, examID, subjectID, segments)
+	if err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
 // DeleteExam 删除考试及其关联数据
 func (uc *ExamAnalysisUseCase) DeleteExam(ctx context.Context, examID int64) error {
 	return uc.examRepo.Delete(ctx, examID)

@@ -34,6 +34,8 @@ type ScoreRepo interface {
 	GetSingleClassSummary(ctx context.Context, examID, subjectID int64) (*SingleClassSummaryStats, error)
 	// GetScoreSegment 获取分数段分布统计
 	GetScoreSegment(ctx context.Context, examID, subjectID int64, segments []*SegmentConfig) (*ScoreSegmentStats, error)
+	// GetRankSegment 获取名次段分布统计
+	GetRankSegment(ctx context.Context, examID, subjectID int64, segments []*RankSegmentConfig) (*RankSegmentStats, error)
 	// BatchCreate 批量创建成绩记录
 	BatchCreate(ctx context.Context, scores []*Score) error
 }
@@ -116,6 +118,33 @@ type ClassScoreSegment struct {
 	ClassName     string
 	TotalStudents int64
 	Segments      []*ScoreSegmentItem
+}
+
+// RankSegmentStats 名次段分布统计数据
+type RankSegmentStats struct {
+	TotalParticipants int64
+	Config            []*RankSegmentConfig
+	OverallGrade      *ClassRankSegment
+	ClassDetails      []*ClassRankSegment
+}
+
+type RankSegmentConfig struct {
+	Start int32
+	End   int32
+}
+
+type RankSegmentItem struct {
+	Label string
+	Start int32
+	End   int32
+	Count int64
+}
+
+type ClassRankSegment struct {
+	ClassID       int64
+	ClassName     string
+	TotalStudents int64
+	Segments      []*RankSegmentItem
 }
 
 // RatingConfigStats 四率配置
