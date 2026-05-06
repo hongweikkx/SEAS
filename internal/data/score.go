@@ -995,6 +995,168 @@ func (r *scoreRepo) GetScoreSegment(ctx context.Context, examID, subjectID int64
 	return &stats, nil
 }
 
+// GetRankSegment 获取名次段分布统计
+// 全科模式 (subjectID == 0): 按学生总分排名
+// 单科模式 (subjectID > 0): 按该学科分数排名
+// 段语义: r BETWEEN start+1 AND end
+//   - start=0 表示「前 end 名」(即 r BETWEEN 1 AND end)
+//   - start>0 表示「第 start+1 ~ end 名」
+func (r *scoreRepo) GetRankSegment(ctx context.Context, examID, subjectID int64, segments []*biz.RankSegmentConfig) (*biz.RankSegmentStats, error) {
+	stats := &biz.RankSegmentStats{Config: segments}
+	if len(segments) == 0 {
+		return stats, nil
+	}
+
+	// 标签生成与前端一致
+	labelOf := func(start, end int32) string {
+		if start == 0 {
+			return fmt.Sprintf("前%d名", end)
+		}
+		return fmt.Sprintf("第%d-%d名", start+1, end)
+	}
+
+	// 构造排名子查询: 全科按总分,单科按本科分数
+	var rankedSubquery string
+	args := []interface{}{examID}
+	if subjectID > 0 {
+		rankedSubquery = `
+			SELECT student_id, RANK() OVER (ORDER BY total_score DESC) AS r
+			FROM scores
+			WHERE exam_id = ? AND subject_id = ?
+		`
+		args = append(args, subjectID)
+	} else {
+		rankedSubquery = `
+			SELECT student_id, RANK() OVER (ORDER BY total_score_sum DESC) AS r FROM (
+				SELECT student_id, SUM(total_score) AS total_score_sum
+				FROM scores WHERE exam_id = ? GROUP BY student_id
+			) m
+		`
+	}
+
+	// 拼接每段的 CASE WHEN
+	caseClauses := make([]string, len(segments))
+	for i, seg := range segments {
+		caseClauses[i] = fmt.Sprintf(
+			"SUM(CASE WHEN ranked.r BETWEEN %d AND %d THEN 1 ELSE 0 END) AS seg_%d",
+			seg.Start+1, seg.End, i,
+		)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			c.id   AS class_id,
+			c.name AS class_name,
+			COUNT(DISTINCT st.id) AS total_students,
+			%s
+		FROM classes c
+		JOIN students st ON st.class_id = c.id
+		JOIN (%s) ranked ON ranked.student_id = st.id
+		GROUP BY c.id, c.name
+		HAVING COUNT(DISTINCT st.id) > 0
+		ORDER BY c.id
+	`, strings.Join(caseClauses, ", "), rankedSubquery)
+
+	var rows []map[string]interface{}
+	if err := r.data.db.WithContext(ctx).Raw(query, args...).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	// 解析每班结果
+	for _, row := range rows {
+		classID, _ := row["class_id"].(int64)
+		if classID == 0 {
+			if v, ok := row["class_id"].(int32); ok {
+				classID = int64(v)
+			} else if v, ok := row["class_id"].(float64); ok {
+				classID = int64(v)
+			}
+		}
+		className, _ := row["class_name"].(string)
+		totalStudents := int64(0)
+		if v, ok := row["total_students"].(int64); ok {
+			totalStudents = v
+		} else if v, ok := row["total_students"].(int32); ok {
+			totalStudents = int64(v)
+		} else if v, ok := row["total_students"].(float64); ok {
+			totalStudents = int64(v)
+		}
+
+		cls := &biz.ClassRankSegment{
+			ClassID:       classID,
+			ClassName:     className,
+			TotalStudents: totalStudents,
+			Segments:      make([]*biz.RankSegmentItem, len(segments)),
+		}
+		for i, seg := range segments {
+			key := fmt.Sprintf("seg_%d", i)
+			count := int64(0)
+			if v, ok := row[key]; ok && v != nil {
+				if iv, ok := v.(int64); ok {
+					count = iv
+				} else if iv, ok := v.(int32); ok {
+					count = int64(iv)
+				} else if iv, ok := v.(float64); ok {
+					count = int64(iv)
+				} else if sv, ok := v.(string); ok {
+					if n, err := strconv.ParseInt(sv, 10, 64); err == nil {
+						count = n
+					}
+				}
+			}
+			cls.Segments[i] = &biz.RankSegmentItem{
+				Label: labelOf(seg.Start, seg.End),
+				Start: seg.Start,
+				End:   seg.End,
+				Count: count,
+			}
+		}
+		stats.ClassDetails = append(stats.ClassDetails, cls)
+	}
+
+	// 全年级总参考人数
+	var totalParticipants int64
+	if subjectID > 0 {
+		if err := r.data.db.WithContext(ctx).Raw(
+			"SELECT COUNT(DISTINCT student_id) FROM scores WHERE exam_id = ? AND subject_id = ?",
+			examID, subjectID,
+		).Scan(&totalParticipants).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		if err := r.data.db.WithContext(ctx).Raw(
+			"SELECT COUNT(DISTINCT student_id) FROM scores WHERE exam_id = ?",
+			examID,
+		).Scan(&totalParticipants).Error; err != nil {
+			return nil, err
+		}
+	}
+	stats.TotalParticipants = totalParticipants
+
+	// 计算全年级各段汇总(各班相加)
+	overall := &biz.ClassRankSegment{
+		ClassID:       0,
+		ClassName:     "全年级",
+		TotalStudents: totalParticipants,
+		Segments:      make([]*biz.RankSegmentItem, len(segments)),
+	}
+	for i, seg := range segments {
+		var sum int64
+		for _, cls := range stats.ClassDetails {
+			sum += cls.Segments[i].Count
+		}
+		overall.Segments[i] = &biz.RankSegmentItem{
+			Label: labelOf(seg.Start, seg.End),
+			Start: seg.Start,
+			End:   seg.End,
+			Count: sum,
+		}
+	}
+	stats.OverallGrade = overall
+
+	return stats, nil
+}
+
 // BatchCreate 批量创建成绩记录
 func (r *scoreRepo) BatchCreate(ctx context.Context, scores []*biz.Score) error {
 	if len(scores) == 0 {
