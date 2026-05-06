@@ -151,7 +151,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.GetRatingDistributionReply'
     /seas/api/v1/exams/{examId}/analysis/score-segment:
-        get:
+        post:
             tags:
                 - Analysis
             description: 新增接口：分数段分析
@@ -162,14 +162,12 @@ paths:
                   required: true
                   schema:
                     type: string
-                - name: scope
-                  in: query
-                  schema:
-                    type: string
-                - name: subjectId
-                  in: query
-                  schema:
-                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/seas.v1.GetScoreSegmentRequest'
+                required: true
             responses:
                 "200":
                     description: OK
@@ -675,6 +673,19 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/seas.v1.ClassScoreSegment'
+        seas.v1.GetScoreSegmentRequest:
+            type: object
+            properties:
+                examId:
+                    type: string
+                scope:
+                    type: string
+                subjectId:
+                    type: string
+                segments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.SegmentConfig'
         seas.v1.GetSingleClassQuestionsReply:
             type: object
             properties:

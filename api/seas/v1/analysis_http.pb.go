@@ -71,7 +71,7 @@ func RegisterAnalysisHTTPServer(s *http.Server, srv AnalysisHTTPServer) {
 	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions", _Analysis_GetSingleQuestionSummary0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}", _Analysis_GetSingleQuestionDetail0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/analysis/rating-distribution", _Analysis_GetRatingDistribution0_HTTP_Handler(srv))
-	r.GET("/seas/api/v1/exams/{exam_id}/analysis/score-segment", _Analysis_GetScoreSegment0_HTTP_Handler(srv))
+	r.POST("/seas/api/v1/exams/{exam_id}/analysis/score-segment", _Analysis_GetScoreSegment0_HTTP_Handler(srv))
 	r.DELETE("/seas/api/v1/exams/{exam_id}", _Analysis_DeleteExam0_HTTP_Handler(srv))
 }
 
@@ -295,6 +295,9 @@ func _Analysis_GetRatingDistribution0_HTTP_Handler(srv AnalysisHTTPServer) func(
 func _Analysis_GetScoreSegment0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in GetScoreSegmentRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
@@ -414,10 +417,10 @@ func (c *AnalysisHTTPClientImpl) GetRatingDistribution(ctx context.Context, in *
 func (c *AnalysisHTTPClientImpl) GetScoreSegment(ctx context.Context, in *GetScoreSegmentRequest, opts ...http.CallOption) (*GetScoreSegmentReply, error) {
 	var out GetScoreSegmentReply
 	pattern := "/seas/api/v1/exams/{exam_id}/analysis/score-segment"
-	path := binding.EncodeURL(pattern, in, true)
+	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAnalysisGetScoreSegment))
 	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

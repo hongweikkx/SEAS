@@ -3426,7 +3426,7 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x12total_participants\x18\x04 \x01(\x05R\x11totalParticipants\x12.\n" +
 	"\x06config\x18\x05 \x03(\v2\x16.seas.v1.SegmentConfigR\x06config\x12?\n" +
 	"\roverall_grade\x18\x06 \x01(\v2\x1a.seas.v1.ClassScoreSegmentR\foverallGrade\x12?\n" +
-	"\rclass_details\x18\a \x03(\v2\x1a.seas.v1.ClassScoreSegmentR\fclassDetails2\xe3\x0e\n" +
+	"\rclass_details\x18\a \x03(\v2\x1a.seas.v1.ClassScoreSegmentR\fclassDetails2\xe6\x0e\n" +
 	"\bAnalysis\x12[\n" +
 	"\tListExams\x12\x19.seas.v1.ListExamsRequest\x1a\x17.seas.v1.ListExamsReply\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/seas/api/v1/exams\x12\x89\x01\n" +
 	"\x12ListSubjectsByExam\x12\".seas.v1.ListSubjectsByExamRequest\x1a .seas.v1.ListSubjectsByExamReply\"-\x82\xd3\xe4\x93\x02'\x12%/seas/api/v1/exams/{exam_id}/subjects\x12\x96\x01\n" +
@@ -3437,8 +3437,8 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x17GetSingleClassQuestions\x12'.seas.v1.GetSingleClassQuestionsRequest\x1a%.seas.v1.GetSingleClassQuestionsReply\"W\x82\xd3\xe4\x93\x02Q\x12O/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions\x12\xb2\x01\n" +
 	"\x18GetSingleQuestionSummary\x12(.seas.v1.GetSingleQuestionSummaryRequest\x1a&.seas.v1.GetSingleQuestionSummaryReply\"D\x82\xd3\xe4\x93\x02>\x12</seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions\x12\xd0\x01\n" +
 	"\x17GetSingleQuestionDetail\x12'.seas.v1.GetSingleQuestionDetailRequest\x1a%.seas.v1.GetSingleQuestionDetailReply\"e\x82\xd3\xe4\x93\x02_\x12]/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}\x12\xa6\x01\n" +
-	"\x15GetRatingDistribution\x12%.seas.v1.GetRatingDistributionRequest\x1a#.seas.v1.GetRatingDistributionReply\"A\x82\xd3\xe4\x93\x02;\x129/seas/api/v1/exams/{exam_id}/analysis/rating-distribution\x12\x8e\x01\n" +
-	"\x0fGetScoreSegment\x12\x1f.seas.v1.GetScoreSegmentRequest\x1a\x1d.seas.v1.GetScoreSegmentReply\";\x82\xd3\xe4\x93\x025\x123/seas/api/v1/exams/{exam_id}/analysis/score-segment\x12h\n" +
+	"\x15GetRatingDistribution\x12%.seas.v1.GetRatingDistributionRequest\x1a#.seas.v1.GetRatingDistributionReply\"A\x82\xd3\xe4\x93\x02;\x129/seas/api/v1/exams/{exam_id}/analysis/rating-distribution\x12\x91\x01\n" +
+	"\x0fGetScoreSegment\x12\x1f.seas.v1.GetScoreSegmentRequest\x1a\x1d.seas.v1.GetScoreSegmentReply\">\x82\xd3\xe4\x93\x028:\x01*\"3/seas/api/v1/exams/{exam_id}/analysis/score-segment\x12h\n" +
 	"\n" +
 	"DeleteExam\x12\x1a.seas.v1.DeleteExamRequest\x1a\x18.seas.v1.DeleteExamReply\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/seas/api/v1/exams/{exam_id}B7\n" +
 	"\x16dev.kratos.api.seas.v1B\vseasProtoV1P\x01Z\x0eapi/seas/v1;v1b\x06proto3"
