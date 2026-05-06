@@ -2753,6 +2753,363 @@ func (x *DeleteExamReply) GetMessage() string {
 	return ""
 }
 
+// 12. 分数段分析
+type SegmentConfig struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Start         float64                `protobuf:"fixed64,1,opt,name=start,proto3" json:"start,omitempty"`
+	End           float64                `protobuf:"fixed64,2,opt,name=end,proto3" json:"end,omitempty"`
+	Step          float64                `protobuf:"fixed64,3,opt,name=step,proto3" json:"step,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SegmentConfig) Reset() {
+	*x = SegmentConfig{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SegmentConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SegmentConfig) ProtoMessage() {}
+
+func (x *SegmentConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SegmentConfig.ProtoReflect.Descriptor instead.
+func (*SegmentConfig) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *SegmentConfig) GetStart() float64 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *SegmentConfig) GetEnd() float64 {
+	if x != nil {
+		return x.End
+	}
+	return 0
+}
+
+func (x *SegmentConfig) GetStep() float64 {
+	if x != nil {
+		return x.Step
+	}
+	return 0
+}
+
+type GetScoreSegmentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamId        string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	Scope         string                 `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	SubjectId     string                 `protobuf:"bytes,3,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	Segments      []*SegmentConfig       `protobuf:"bytes,4,rep,name=segments,proto3" json:"segments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetScoreSegmentRequest) Reset() {
+	*x = GetScoreSegmentRequest{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetScoreSegmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetScoreSegmentRequest) ProtoMessage() {}
+
+func (x *GetScoreSegmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetScoreSegmentRequest.ProtoReflect.Descriptor instead.
+func (*GetScoreSegmentRequest) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *GetScoreSegmentRequest) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *GetScoreSegmentRequest) GetScope() string {
+	if x != nil {
+		return x.Scope
+	}
+	return ""
+}
+
+func (x *GetScoreSegmentRequest) GetSubjectId() string {
+	if x != nil {
+		return x.SubjectId
+	}
+	return ""
+}
+
+func (x *GetScoreSegmentRequest) GetSegments() []*SegmentConfig {
+	if x != nil {
+		return x.Segments
+	}
+	return nil
+}
+
+type ScoreSegmentItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Min           float64                `protobuf:"fixed64,2,opt,name=min,proto3" json:"min,omitempty"`
+	Max           float64                `protobuf:"fixed64,3,opt,name=max,proto3" json:"max,omitempty"`
+	Count         int64                  `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScoreSegmentItem) Reset() {
+	*x = ScoreSegmentItem{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScoreSegmentItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScoreSegmentItem) ProtoMessage() {}
+
+func (x *ScoreSegmentItem) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScoreSegmentItem.ProtoReflect.Descriptor instead.
+func (*ScoreSegmentItem) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *ScoreSegmentItem) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *ScoreSegmentItem) GetMin() float64 {
+	if x != nil {
+		return x.Min
+	}
+	return 0
+}
+
+func (x *ScoreSegmentItem) GetMax() float64 {
+	if x != nil {
+		return x.Max
+	}
+	return 0
+}
+
+func (x *ScoreSegmentItem) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type ClassScoreSegment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClassId       int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	ClassName     string                 `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"`
+	TotalStudents int32                  `protobuf:"varint,3,opt,name=total_students,json=totalStudents,proto3" json:"total_students,omitempty"`
+	Segments      []*ScoreSegmentItem    `protobuf:"bytes,4,rep,name=segments,proto3" json:"segments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClassScoreSegment) Reset() {
+	*x = ClassScoreSegment{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClassScoreSegment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClassScoreSegment) ProtoMessage() {}
+
+func (x *ClassScoreSegment) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClassScoreSegment.ProtoReflect.Descriptor instead.
+func (*ClassScoreSegment) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *ClassScoreSegment) GetClassId() int32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *ClassScoreSegment) GetClassName() string {
+	if x != nil {
+		return x.ClassName
+	}
+	return ""
+}
+
+func (x *ClassScoreSegment) GetTotalStudents() int32 {
+	if x != nil {
+		return x.TotalStudents
+	}
+	return 0
+}
+
+func (x *ClassScoreSegment) GetSegments() []*ScoreSegmentItem {
+	if x != nil {
+		return x.Segments
+	}
+	return nil
+}
+
+type GetScoreSegmentReply struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ExamId            string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamName          string                 `protobuf:"bytes,2,opt,name=exam_name,json=examName,proto3" json:"exam_name,omitempty"`
+	Scope             string                 `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
+	TotalParticipants int32                  `protobuf:"varint,4,opt,name=total_participants,json=totalParticipants,proto3" json:"total_participants,omitempty"`
+	Config            []*SegmentConfig       `protobuf:"bytes,5,rep,name=config,proto3" json:"config,omitempty"`
+	OverallGrade      *ClassScoreSegment     `protobuf:"bytes,6,opt,name=overall_grade,json=overallGrade,proto3" json:"overall_grade,omitempty"`
+	ClassDetails      []*ClassScoreSegment   `protobuf:"bytes,7,rep,name=class_details,json=classDetails,proto3" json:"class_details,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GetScoreSegmentReply) Reset() {
+	*x = GetScoreSegmentReply{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetScoreSegmentReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetScoreSegmentReply) ProtoMessage() {}
+
+func (x *GetScoreSegmentReply) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetScoreSegmentReply.ProtoReflect.Descriptor instead.
+func (*GetScoreSegmentReply) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *GetScoreSegmentReply) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *GetScoreSegmentReply) GetExamName() string {
+	if x != nil {
+		return x.ExamName
+	}
+	return ""
+}
+
+func (x *GetScoreSegmentReply) GetScope() string {
+	if x != nil {
+		return x.Scope
+	}
+	return ""
+}
+
+func (x *GetScoreSegmentReply) GetTotalParticipants() int32 {
+	if x != nil {
+		return x.TotalParticipants
+	}
+	return 0
+}
+
+func (x *GetScoreSegmentReply) GetConfig() []*SegmentConfig {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
+func (x *GetScoreSegmentReply) GetOverallGrade() *ClassScoreSegment {
+	if x != nil {
+		return x.OverallGrade
+	}
+	return nil
+}
+
+func (x *GetScoreSegmentReply) GetClassDetails() []*ClassScoreSegment {
+	if x != nil {
+		return x.ClassDetails
+	}
+	return nil
+}
+
 var File_seas_v1_analysis_proto protoreflect.FileDescriptor
 
 const file_seas_v1_analysis_proto_rawDesc = "" +
@@ -3040,7 +3397,36 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\"E\n" +
 	"\x0fDeleteExamReply\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xd2\r\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"K\n" +
+	"\rSegmentConfig\x12\x14\n" +
+	"\x05start\x18\x01 \x01(\x01R\x05start\x12\x10\n" +
+	"\x03end\x18\x02 \x01(\x01R\x03end\x12\x12\n" +
+	"\x04step\x18\x03 \x01(\x01R\x04step\"\x9a\x01\n" +
+	"\x16GetScoreSegmentRequest\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x14\n" +
+	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\x03 \x01(\tR\tsubjectId\x122\n" +
+	"\bsegments\x18\x04 \x03(\v2\x16.seas.v1.SegmentConfigR\bsegments\"b\n" +
+	"\x10ScoreSegmentItem\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\x12\x10\n" +
+	"\x03min\x18\x02 \x01(\x01R\x03min\x12\x10\n" +
+	"\x03max\x18\x03 \x01(\x01R\x03max\x12\x14\n" +
+	"\x05count\x18\x04 \x01(\x03R\x05count\"\xab\x01\n" +
+	"\x11ClassScoreSegment\x12\x19\n" +
+	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1d\n" +
+	"\n" +
+	"class_name\x18\x02 \x01(\tR\tclassName\x12%\n" +
+	"\x0etotal_students\x18\x03 \x01(\x05R\rtotalStudents\x125\n" +
+	"\bsegments\x18\x04 \x03(\v2\x19.seas.v1.ScoreSegmentItemR\bsegments\"\xc3\x02\n" +
+	"\x14GetScoreSegmentReply\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
+	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x14\n" +
+	"\x05scope\x18\x03 \x01(\tR\x05scope\x12-\n" +
+	"\x12total_participants\x18\x04 \x01(\x05R\x11totalParticipants\x12.\n" +
+	"\x06config\x18\x05 \x03(\v2\x16.seas.v1.SegmentConfigR\x06config\x12?\n" +
+	"\roverall_grade\x18\x06 \x01(\v2\x1a.seas.v1.ClassScoreSegmentR\foverallGrade\x12?\n" +
+	"\rclass_details\x18\a \x03(\v2\x1a.seas.v1.ClassScoreSegmentR\fclassDetails2\xe3\x0e\n" +
 	"\bAnalysis\x12[\n" +
 	"\tListExams\x12\x19.seas.v1.ListExamsRequest\x1a\x17.seas.v1.ListExamsReply\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/seas/api/v1/exams\x12\x89\x01\n" +
 	"\x12ListSubjectsByExam\x12\".seas.v1.ListSubjectsByExamRequest\x1a .seas.v1.ListSubjectsByExamReply\"-\x82\xd3\xe4\x93\x02'\x12%/seas/api/v1/exams/{exam_id}/subjects\x12\x96\x01\n" +
@@ -3051,7 +3437,8 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x17GetSingleClassQuestions\x12'.seas.v1.GetSingleClassQuestionsRequest\x1a%.seas.v1.GetSingleClassQuestionsReply\"W\x82\xd3\xe4\x93\x02Q\x12O/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions\x12\xb2\x01\n" +
 	"\x18GetSingleQuestionSummary\x12(.seas.v1.GetSingleQuestionSummaryRequest\x1a&.seas.v1.GetSingleQuestionSummaryReply\"D\x82\xd3\xe4\x93\x02>\x12</seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions\x12\xd0\x01\n" +
 	"\x17GetSingleQuestionDetail\x12'.seas.v1.GetSingleQuestionDetailRequest\x1a%.seas.v1.GetSingleQuestionDetailReply\"e\x82\xd3\xe4\x93\x02_\x12]/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}\x12\xa6\x01\n" +
-	"\x15GetRatingDistribution\x12%.seas.v1.GetRatingDistributionRequest\x1a#.seas.v1.GetRatingDistributionReply\"A\x82\xd3\xe4\x93\x02;\x129/seas/api/v1/exams/{exam_id}/analysis/rating-distribution\x12h\n" +
+	"\x15GetRatingDistribution\x12%.seas.v1.GetRatingDistributionRequest\x1a#.seas.v1.GetRatingDistributionReply\"A\x82\xd3\xe4\x93\x02;\x129/seas/api/v1/exams/{exam_id}/analysis/rating-distribution\x12\x8e\x01\n" +
+	"\x0fGetScoreSegment\x12\x1f.seas.v1.GetScoreSegmentRequest\x1a\x1d.seas.v1.GetScoreSegmentReply\";\x82\xd3\xe4\x93\x025\x123/seas/api/v1/exams/{exam_id}/analysis/score-segment\x12h\n" +
 	"\n" +
 	"DeleteExam\x12\x1a.seas.v1.DeleteExamRequest\x1a\x18.seas.v1.DeleteExamReply\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/seas/api/v1/exams/{exam_id}B7\n" +
 	"\x16dev.kratos.api.seas.v1B\vseasProtoV1P\x01Z\x0eapi/seas/v1;v1b\x06proto3"
@@ -3068,7 +3455,7 @@ func file_seas_v1_analysis_proto_rawDescGZIP() []byte {
 	return file_seas_v1_analysis_proto_rawDescData
 }
 
-var file_seas_v1_analysis_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_seas_v1_analysis_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_seas_v1_analysis_proto_goTypes = []any{
 	(*ListExamsRequest)(nil),                // 0: seas.v1.ListExamsRequest
 	(*ExamInfo)(nil),                        // 1: seas.v1.ExamInfo
@@ -3104,6 +3491,11 @@ var file_seas_v1_analysis_proto_goTypes = []any{
 	(*GetRatingDistributionReply)(nil),      // 31: seas.v1.GetRatingDistributionReply
 	(*DeleteExamRequest)(nil),               // 32: seas.v1.DeleteExamRequest
 	(*DeleteExamReply)(nil),                 // 33: seas.v1.DeleteExamReply
+	(*SegmentConfig)(nil),                   // 34: seas.v1.SegmentConfig
+	(*GetScoreSegmentRequest)(nil),          // 35: seas.v1.GetScoreSegmentRequest
+	(*ScoreSegmentItem)(nil),                // 36: seas.v1.ScoreSegmentItem
+	(*ClassScoreSegment)(nil),               // 37: seas.v1.ClassScoreSegment
+	(*GetScoreSegmentReply)(nil),            // 38: seas.v1.GetScoreSegmentReply
 }
 var file_seas_v1_analysis_proto_depIdxs = []int32{
 	1,  // 0: seas.v1.ListExamsReply.exams:type_name -> seas.v1.ExamInfo
@@ -3127,33 +3519,40 @@ var file_seas_v1_analysis_proto_depIdxs = []int32{
 	27, // 18: seas.v1.GetRatingDistributionReply.config:type_name -> seas.v1.RatingConfig
 	30, // 19: seas.v1.GetRatingDistributionReply.overall_grade:type_name -> seas.v1.ClassRatingDistribution
 	30, // 20: seas.v1.GetRatingDistributionReply.class_details:type_name -> seas.v1.ClassRatingDistribution
-	0,  // 21: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
-	3,  // 22: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
-	6,  // 23: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
-	9,  // 24: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
-	12, // 25: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
-	15, // 26: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
-	17, // 27: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
-	20, // 28: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
-	24, // 29: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
-	28, // 30: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
-	32, // 31: seas.v1.Analysis.DeleteExam:input_type -> seas.v1.DeleteExamRequest
-	2,  // 32: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
-	5,  // 33: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
-	8,  // 34: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
-	11, // 35: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
-	14, // 36: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
-	16, // 37: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
-	19, // 38: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
-	23, // 39: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
-	26, // 40: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
-	31, // 41: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
-	33, // 42: seas.v1.Analysis.DeleteExam:output_type -> seas.v1.DeleteExamReply
-	32, // [32:43] is the sub-list for method output_type
-	21, // [21:32] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	34, // 21: seas.v1.GetScoreSegmentRequest.segments:type_name -> seas.v1.SegmentConfig
+	36, // 22: seas.v1.ClassScoreSegment.segments:type_name -> seas.v1.ScoreSegmentItem
+	34, // 23: seas.v1.GetScoreSegmentReply.config:type_name -> seas.v1.SegmentConfig
+	37, // 24: seas.v1.GetScoreSegmentReply.overall_grade:type_name -> seas.v1.ClassScoreSegment
+	37, // 25: seas.v1.GetScoreSegmentReply.class_details:type_name -> seas.v1.ClassScoreSegment
+	0,  // 26: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
+	3,  // 27: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
+	6,  // 28: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
+	9,  // 29: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
+	12, // 30: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
+	15, // 31: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
+	17, // 32: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
+	20, // 33: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
+	24, // 34: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
+	28, // 35: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
+	35, // 36: seas.v1.Analysis.GetScoreSegment:input_type -> seas.v1.GetScoreSegmentRequest
+	32, // 37: seas.v1.Analysis.DeleteExam:input_type -> seas.v1.DeleteExamRequest
+	2,  // 38: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
+	5,  // 39: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
+	8,  // 40: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
+	11, // 41: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
+	14, // 42: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
+	16, // 43: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
+	19, // 44: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
+	23, // 45: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
+	26, // 46: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
+	31, // 47: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
+	38, // 48: seas.v1.Analysis.GetScoreSegment:output_type -> seas.v1.GetScoreSegmentReply
+	33, // 49: seas.v1.Analysis.DeleteExam:output_type -> seas.v1.DeleteExamReply
+	38, // [38:50] is the sub-list for method output_type
+	26, // [26:38] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_seas_v1_analysis_proto_init() }
@@ -3167,7 +3566,7 @@ func file_seas_v1_analysis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_seas_v1_analysis_proto_rawDesc), len(file_seas_v1_analysis_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   34,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

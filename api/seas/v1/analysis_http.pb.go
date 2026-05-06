@@ -23,6 +23,7 @@ const OperationAnalysisDeleteExam = "/seas.v1.Analysis/DeleteExam"
 const OperationAnalysisGetClassSubjectSummary = "/seas.v1.Analysis/GetClassSubjectSummary"
 const OperationAnalysisGetClassSummary = "/seas.v1.Analysis/GetClassSummary"
 const OperationAnalysisGetRatingDistribution = "/seas.v1.Analysis/GetRatingDistribution"
+const OperationAnalysisGetScoreSegment = "/seas.v1.Analysis/GetScoreSegment"
 const OperationAnalysisGetSingleClassQuestions = "/seas.v1.Analysis/GetSingleClassQuestions"
 const OperationAnalysisGetSingleClassSummary = "/seas.v1.Analysis/GetSingleClassSummary"
 const OperationAnalysisGetSingleQuestionDetail = "/seas.v1.Analysis/GetSingleQuestionDetail"
@@ -40,6 +41,8 @@ type AnalysisHTTPServer interface {
 	GetClassSummary(context.Context, *GetClassSummaryRequest) (*GetClassSummaryReply, error)
 	// GetRatingDistribution 新增接口：四率分析
 	GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error)
+	// GetScoreSegment 新增接口：分数段分析
+	GetScoreSegment(context.Context, *GetScoreSegmentRequest) (*GetScoreSegmentReply, error)
 	// GetSingleClassQuestions 新增接口：单科班级题目汇总
 	GetSingleClassQuestions(context.Context, *GetSingleClassQuestionsRequest) (*GetSingleClassQuestionsReply, error)
 	// GetSingleClassSummary 新增接口：单科班级汇总
@@ -68,6 +71,7 @@ func RegisterAnalysisHTTPServer(s *http.Server, srv AnalysisHTTPServer) {
 	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions", _Analysis_GetSingleQuestionSummary0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}", _Analysis_GetSingleQuestionDetail0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/analysis/rating-distribution", _Analysis_GetRatingDistribution0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/analysis/score-segment", _Analysis_GetScoreSegment0_HTTP_Handler(srv))
 	r.DELETE("/seas/api/v1/exams/{exam_id}", _Analysis_DeleteExam0_HTTP_Handler(srv))
 }
 
@@ -288,6 +292,28 @@ func _Analysis_GetRatingDistribution0_HTTP_Handler(srv AnalysisHTTPServer) func(
 	}
 }
 
+func _Analysis_GetScoreSegment0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetScoreSegmentRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetScoreSegment)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetScoreSegment(ctx, req.(*GetScoreSegmentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetScoreSegmentReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _Analysis_DeleteExam0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in DeleteExamRequest
@@ -315,6 +341,7 @@ type AnalysisHTTPClient interface {
 	GetClassSubjectSummary(ctx context.Context, req *GetClassSubjectSummaryRequest, opts ...http.CallOption) (rsp *GetClassSubjectSummaryReply, err error)
 	GetClassSummary(ctx context.Context, req *GetClassSummaryRequest, opts ...http.CallOption) (rsp *GetClassSummaryReply, err error)
 	GetRatingDistribution(ctx context.Context, req *GetRatingDistributionRequest, opts ...http.CallOption) (rsp *GetRatingDistributionReply, err error)
+	GetScoreSegment(ctx context.Context, req *GetScoreSegmentRequest, opts ...http.CallOption) (rsp *GetScoreSegmentReply, err error)
 	GetSingleClassQuestions(ctx context.Context, req *GetSingleClassQuestionsRequest, opts ...http.CallOption) (rsp *GetSingleClassQuestionsReply, err error)
 	GetSingleClassSummary(ctx context.Context, req *GetSingleClassSummaryRequest, opts ...http.CallOption) (rsp *GetSingleClassSummaryReply, err error)
 	GetSingleQuestionDetail(ctx context.Context, req *GetSingleQuestionDetailRequest, opts ...http.CallOption) (rsp *GetSingleQuestionDetailReply, err error)
@@ -376,6 +403,19 @@ func (c *AnalysisHTTPClientImpl) GetRatingDistribution(ctx context.Context, in *
 	pattern := "/seas/api/v1/exams/{exam_id}/analysis/rating-distribution"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAnalysisGetRatingDistribution))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AnalysisHTTPClientImpl) GetScoreSegment(ctx context.Context, in *GetScoreSegmentRequest, opts ...http.CallOption) (*GetScoreSegmentReply, error) {
+	var out GetScoreSegmentReply
+	pattern := "/seas/api/v1/exams/{exam_id}/analysis/score-segment"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetScoreSegment))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

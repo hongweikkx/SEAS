@@ -29,6 +29,7 @@ const (
 	Analysis_GetSingleQuestionSummary_FullMethodName = "/seas.v1.Analysis/GetSingleQuestionSummary"
 	Analysis_GetSingleQuestionDetail_FullMethodName  = "/seas.v1.Analysis/GetSingleQuestionDetail"
 	Analysis_GetRatingDistribution_FullMethodName    = "/seas.v1.Analysis/GetRatingDistribution"
+	Analysis_GetScoreSegment_FullMethodName          = "/seas.v1.Analysis/GetScoreSegment"
 	Analysis_DeleteExam_FullMethodName               = "/seas.v1.Analysis/DeleteExam"
 )
 
@@ -56,6 +57,8 @@ type AnalysisClient interface {
 	GetSingleQuestionDetail(ctx context.Context, in *GetSingleQuestionDetailRequest, opts ...grpc.CallOption) (*GetSingleQuestionDetailReply, error)
 	// 新增接口：四率分析
 	GetRatingDistribution(ctx context.Context, in *GetRatingDistributionRequest, opts ...grpc.CallOption) (*GetRatingDistributionReply, error)
+	// 新增接口：分数段分析
+	GetScoreSegment(ctx context.Context, in *GetScoreSegmentRequest, opts ...grpc.CallOption) (*GetScoreSegmentReply, error)
 	// 新增接口：删除考试（级联删除关联数据）
 	DeleteExam(ctx context.Context, in *DeleteExamRequest, opts ...grpc.CallOption) (*DeleteExamReply, error)
 }
@@ -168,6 +171,16 @@ func (c *analysisClient) GetRatingDistribution(ctx context.Context, in *GetRatin
 	return out, nil
 }
 
+func (c *analysisClient) GetScoreSegment(ctx context.Context, in *GetScoreSegmentRequest, opts ...grpc.CallOption) (*GetScoreSegmentReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetScoreSegmentReply)
+	err := c.cc.Invoke(ctx, Analysis_GetScoreSegment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *analysisClient) DeleteExam(ctx context.Context, in *DeleteExamRequest, opts ...grpc.CallOption) (*DeleteExamReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteExamReply)
@@ -202,6 +215,8 @@ type AnalysisServer interface {
 	GetSingleQuestionDetail(context.Context, *GetSingleQuestionDetailRequest) (*GetSingleQuestionDetailReply, error)
 	// 新增接口：四率分析
 	GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error)
+	// 新增接口：分数段分析
+	GetScoreSegment(context.Context, *GetScoreSegmentRequest) (*GetScoreSegmentReply, error)
 	// 新增接口：删除考试（级联删除关联数据）
 	DeleteExam(context.Context, *DeleteExamRequest) (*DeleteExamReply, error)
 	mustEmbedUnimplementedAnalysisServer()
@@ -243,6 +258,9 @@ func (UnimplementedAnalysisServer) GetSingleQuestionDetail(context.Context, *Get
 }
 func (UnimplementedAnalysisServer) GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRatingDistribution not implemented")
+}
+func (UnimplementedAnalysisServer) GetScoreSegment(context.Context, *GetScoreSegmentRequest) (*GetScoreSegmentReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetScoreSegment not implemented")
 }
 func (UnimplementedAnalysisServer) DeleteExam(context.Context, *DeleteExamRequest) (*DeleteExamReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteExam not implemented")
@@ -448,6 +466,24 @@ func _Analysis_GetRatingDistribution_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Analysis_GetScoreSegment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetScoreSegmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysisServer).GetScoreSegment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Analysis_GetScoreSegment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysisServer).GetScoreSegment(ctx, req.(*GetScoreSegmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Analysis_DeleteExam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteExamRequest)
 	if err := dec(in); err != nil {
@@ -512,6 +548,10 @@ var Analysis_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRatingDistribution",
 			Handler:    _Analysis_GetRatingDistribution_Handler,
+		},
+		{
+			MethodName: "GetScoreSegment",
+			Handler:    _Analysis_GetScoreSegment_Handler,
 		},
 		{
 			MethodName: "DeleteExam",
