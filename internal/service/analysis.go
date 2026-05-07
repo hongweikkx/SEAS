@@ -515,13 +515,20 @@ func (s *AnalysisService) GetSingleQuestionSummary(ctx context.Context, req *pb.
 			GradeAvgScore:  q.GradeAvgScore,
 			ScoreRate:      q.ScoreRate,
 			Difficulty:     q.Difficulty,
+			Participants:   int32(q.Participants),
+			HighestScore:   q.HighestScore,
+			LowestScore:    q.LowestScore,
+			StdDev:         q.StdDev,
+			Discrimination: q.Discrimination,
 		}
 		item.ClassBreakdown = make([]*pb.QuestionClassBreakdown, len(q.ClassBreakdown))
 		for j, cb := range q.ClassBreakdown {
 			item.ClassBreakdown[j] = &pb.QuestionClassBreakdown{
-				ClassId:   int32(cb.ClassID),
-				ClassName: cb.ClassName,
-				AvgScore:  cb.AvgScore,
+				ClassId:      int32(cb.ClassID),
+				ClassName:    cb.ClassName,
+				AvgScore:     cb.AvgScore,
+				Participants: int32(cb.Participants),
+				StdDev:       cb.StdDev,
 			}
 		}
 		reply.Questions[i] = item
@@ -570,6 +577,67 @@ func (s *AnalysisService) GetSingleQuestionDetail(ctx context.Context, req *pb.G
 			ClassRank:     st.ClassRank,
 			GradeRank:     st.GradeRank,
 			AnswerContent: st.AnswerContent,
+		}
+	}
+
+	return reply, nil
+}
+
+// GetSingleQuestionClassCompare 获取试题班级对比
+func (s *AnalysisService) GetSingleQuestionClassCompare(ctx context.Context, req *pb.GetSingleQuestionClassCompareRequest) (*pb.GetSingleQuestionClassCompareReply, error) {
+	log.Context(ctx).Infof("Received GetSingleQuestionClassCompareRequest: %v", req)
+
+	stats, err := s.examAnalysisUC.GetSingleQuestionClassCompare(ctx, parseInt64(req.GetExamId()), parseInt64(req.GetSubjectId()), req.GetQuestionId())
+	if err != nil {
+		return nil, err
+	}
+
+	examName, err := s.examAnalysisUC.GetExamName(ctx, parseInt64(req.GetExamId()))
+	if err != nil {
+		log.Context(ctx).Errorf("GetExamName failed: %v", err)
+		examName = "未知考试"
+	}
+
+	reply := &pb.GetSingleQuestionClassCompareReply{
+		ExamId:         req.GetExamId(),
+		ExamName:       examName,
+		SubjectId:      req.GetSubjectId(),
+		SubjectName:    stats.SubjectName,
+		QuestionId:     stats.QuestionID,
+		QuestionNumber: stats.QuestionNumber,
+		QuestionType:   stats.QuestionType,
+		FullScore:      stats.FullScore,
+		QuestionContent: stats.QuestionContent,
+	}
+
+	reply.Overall = &pb.SingleQuestionClassCompareItem{
+		ClassId:      int32(stats.Overall.ClassID),
+		ClassName:    stats.Overall.ClassName,
+		Participants: int32(stats.Overall.Participants),
+		AvgScore:     stats.Overall.AvgScore,
+		ScoreRate:    stats.Overall.ScoreRate,
+		ScoreDiff:    stats.Overall.ScoreDiff,
+		ClassRank:    stats.Overall.ClassRank,
+		TotalClasses: stats.Overall.TotalClasses,
+		HighestScore: stats.Overall.HighestScore,
+		LowestScore:  stats.Overall.LowestScore,
+		StdDev:       stats.Overall.StdDev,
+	}
+
+	reply.Classes = make([]*pb.SingleQuestionClassCompareItem, len(stats.Classes))
+	for i, item := range stats.Classes {
+		reply.Classes[i] = &pb.SingleQuestionClassCompareItem{
+			ClassId:      int32(item.ClassID),
+			ClassName:    item.ClassName,
+			Participants: int32(item.Participants),
+			AvgScore:     item.AvgScore,
+			ScoreRate:    item.ScoreRate,
+			ScoreDiff:    item.ScoreDiff,
+			ClassRank:    item.ClassRank,
+			TotalClasses: item.TotalClasses,
+			HighestScore: item.HighestScore,
+			LowestScore:  item.LowestScore,
+			StdDev:       item.StdDev,
 		}
 	}
 

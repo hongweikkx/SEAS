@@ -181,6 +181,9 @@ func (uc *ExamAnalysisUseCase) GetSingleQuestionDetail(ctx context.Context, exam
 	}
 
 	stats.QuestionID = normalizeQuestionID(stats.QuestionID, stats.QuestionNumber)
+	if classID == 0 {
+		stats.ClassName = "全年级"
+	}
 	sort.SliceStable(stats.Students, func(i, j int) bool {
 		if stats.Students[i].Score == stats.Students[j].Score {
 			return stats.Students[i].StudentID < stats.Students[j].StudentID
@@ -202,6 +205,20 @@ func (uc *ExamAnalysisUseCase) GetSingleQuestionDetail(ctx context.Context, exam
 	assignSequentialRanks(gradeOrdered, func(item *StudentQuestionDetailStats, rank int32) {
 		item.GradeRank = rank
 	})
+
+	return stats, nil
+}
+
+// GetSingleQuestionClassCompare 获取试题班级对比
+func (uc *ExamAnalysisUseCase) GetSingleQuestionClassCompare(ctx context.Context, examID, subjectID int64, questionID string) (*SingleQuestionClassCompareStats, error) {
+	if err := uc.requireScoreItemRepo(); err != nil {
+		return nil, err
+	}
+
+	stats, err := uc.scoreItemRepo.GetSingleQuestionClassCompare(ctx, examID, subjectID, questionID)
+	if err != nil {
+		return nil, err
+	}
 
 	return stats, nil
 }
