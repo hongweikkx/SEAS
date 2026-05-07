@@ -231,12 +231,49 @@ type SingleQuestionSummaryItemStats struct {
 	GradeAvgScore  float64
 	ClassBreakdown []*QuestionClassBreakdownStats
 	ScoreRate      float64
-	Difficulty     float64 // 改为 float64
+	Difficulty     float64
+	Participants   int
+	HighestScore   float64
+	LowestScore    float64
+	StdDev         float64
+	Discrimination float64
 }
 
 // QuestionClassBreakdownStats 题目按班级拆分
 type QuestionClassBreakdownStats struct {
-	ClassID   int64
-	ClassName string
-	AvgScore  float64
+	ClassID      int64
+	ClassName    string
+	AvgScore     float64
+	Participants int
+	StdDev       float64
+}
+
+// SingleQuestionClassCompareStats 试题班级对比
+type SingleQuestionClassCompareStats struct {
+	ExamID          int64
+	ExamName        string
+	SubjectID       int64
+	SubjectName     string
+	QuestionID      string
+	QuestionNumber  string
+	QuestionType    string
+	FullScore       float64
+	QuestionContent string
+	Overall         *SingleQuestionClassCompareItemStats
+	Classes         []*SingleQuestionClassCompareItemStats
+}
+
+// SingleQuestionClassCompareItemStats 试题班级对比项
+type SingleQuestionClassCompareItemStats struct {
+	ClassID      int64
+	ClassName    string
+	Participants int
+	AvgScore     float64
+	ScoreRate    float64
+	ScoreDiff    float64
+	ClassRank    int32
+	TotalClasses int32
+	HighestScore float64
+	LowestScore  float64
+	StdDev       float64
 }

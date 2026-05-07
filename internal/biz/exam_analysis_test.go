@@ -127,10 +127,11 @@ func TestGetSingleQuestionDetailAssignsClassRankAfterSorting(t *testing.T) {
 }
 
 type stubScoreItemRepo struct {
-	singleClassQuestions  *SingleClassQuestionStats
-	singleQuestionSummary *SingleQuestionSummaryStats
-	singleQuestionDetail  *SingleQuestionDetailStats
-	err                   error
+	singleClassQuestions       *SingleClassQuestionStats
+	singleQuestionSummary      *SingleQuestionSummaryStats
+	singleQuestionDetail       *SingleQuestionDetailStats
+	singleQuestionClassCompare *SingleQuestionClassCompareStats
+	err                        error
 }
 
 func (s *stubScoreItemRepo) ListByScoreID(context.Context, int64) ([]*ScoreItem, error) {
@@ -153,6 +154,10 @@ func (s *stubScoreItemRepo) GetSingleQuestionDetail(context.Context, int64, int6
 		return nil, errors.New("missing detail stats")
 	}
 	return s.singleQuestionDetail, nil
+}
+
+func (s *stubScoreItemRepo) GetSingleQuestionClassCompare(context.Context, int64, int64, string) (*SingleQuestionClassCompareStats, error) {
+	return s.singleQuestionClassCompare, s.err
 }
 
 func (s *stubScoreItemRepo) BatchCreate(context.Context, []*ScoreItem) error {
