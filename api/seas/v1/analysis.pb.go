@@ -1695,6 +1695,8 @@ type QuestionClassBreakdown struct {
 	ClassId       int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
 	ClassName     string                 `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"`
 	AvgScore      float64                `protobuf:"fixed64,3,opt,name=avg_score,json=avgScore,proto3" json:"avg_score,omitempty"`
+	Participants  int32                  `protobuf:"varint,4,opt,name=participants,proto3" json:"participants,omitempty"`
+	StdDev        float64                `protobuf:"fixed64,5,opt,name=std_dev,json=stdDev,proto3" json:"std_dev,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1750,6 +1752,20 @@ func (x *QuestionClassBreakdown) GetAvgScore() float64 {
 	return 0
 }
 
+func (x *QuestionClassBreakdown) GetParticipants() int32 {
+	if x != nil {
+		return x.Participants
+	}
+	return 0
+}
+
+func (x *QuestionClassBreakdown) GetStdDev() float64 {
+	if x != nil {
+		return x.StdDev
+	}
+	return 0
+}
+
 type SingleQuestionSummaryItem struct {
 	state          protoimpl.MessageState    `protogen:"open.v1"`
 	QuestionId     string                    `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
@@ -1760,6 +1776,11 @@ type SingleQuestionSummaryItem struct {
 	ClassBreakdown []*QuestionClassBreakdown `protobuf:"bytes,6,rep,name=class_breakdown,json=classBreakdown,proto3" json:"class_breakdown,omitempty"`
 	ScoreRate      float64                   `protobuf:"fixed64,7,opt,name=score_rate,json=scoreRate,proto3" json:"score_rate,omitempty"`
 	Difficulty     float64                   `protobuf:"fixed64,8,opt,name=difficulty,proto3" json:"difficulty,omitempty"`
+	Participants   int32                     `protobuf:"varint,9,opt,name=participants,proto3" json:"participants,omitempty"`
+	HighestScore   float64                   `protobuf:"fixed64,10,opt,name=highest_score,json=highestScore,proto3" json:"highest_score,omitempty"`
+	LowestScore    float64                   `protobuf:"fixed64,11,opt,name=lowest_score,json=lowestScore,proto3" json:"lowest_score,omitempty"`
+	StdDev         float64                   `protobuf:"fixed64,12,opt,name=std_dev,json=stdDev,proto3" json:"std_dev,omitempty"`
+	Discrimination float64                   `protobuf:"fixed64,13,opt,name=discrimination,proto3" json:"discrimination,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1846,6 +1867,41 @@ func (x *SingleQuestionSummaryItem) GetScoreRate() float64 {
 func (x *SingleQuestionSummaryItem) GetDifficulty() float64 {
 	if x != nil {
 		return x.Difficulty
+	}
+	return 0
+}
+
+func (x *SingleQuestionSummaryItem) GetParticipants() int32 {
+	if x != nil {
+		return x.Participants
+	}
+	return 0
+}
+
+func (x *SingleQuestionSummaryItem) GetHighestScore() float64 {
+	if x != nil {
+		return x.HighestScore
+	}
+	return 0
+}
+
+func (x *SingleQuestionSummaryItem) GetLowestScore() float64 {
+	if x != nil {
+		return x.LowestScore
+	}
+	return 0
+}
+
+func (x *SingleQuestionSummaryItem) GetStdDev() float64 {
+	if x != nil {
+		return x.StdDev
+	}
+	return 0
+}
+
+func (x *SingleQuestionSummaryItem) GetDiscrimination() float64 {
+	if x != nil {
+		return x.Discrimination
 	}
 	return 0
 }
@@ -3459,6 +3515,315 @@ func (x *GetRankSegmentReply) GetClassDetails() []*ClassRankSegment {
 	return nil
 }
 
+// 11. 试题班级对比
+type GetSingleQuestionClassCompareRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamId        string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	SubjectId     string                 `protobuf:"bytes,2,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	QuestionId    string                 `protobuf:"bytes,3,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSingleQuestionClassCompareRequest) Reset() {
+	*x = GetSingleQuestionClassCompareRequest{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSingleQuestionClassCompareRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSingleQuestionClassCompareRequest) ProtoMessage() {}
+
+func (x *GetSingleQuestionClassCompareRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSingleQuestionClassCompareRequest.ProtoReflect.Descriptor instead.
+func (*GetSingleQuestionClassCompareRequest) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *GetSingleQuestionClassCompareRequest) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareRequest) GetSubjectId() string {
+	if x != nil {
+		return x.SubjectId
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareRequest) GetQuestionId() string {
+	if x != nil {
+		return x.QuestionId
+	}
+	return ""
+}
+
+type SingleQuestionClassCompareItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClassId       int32                  `protobuf:"varint,1,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`      // 0 表示「全年级」聚合行
+	ClassName     string                 `protobuf:"bytes,2,opt,name=class_name,json=className,proto3" json:"class_name,omitempty"` // "全年级" / "X班"
+	Participants  int32                  `protobuf:"varint,3,opt,name=participants,proto3" json:"participants,omitempty"`
+	AvgScore      float64                `protobuf:"fixed64,4,opt,name=avg_score,json=avgScore,proto3" json:"avg_score,omitempty"`
+	ScoreRate     float64                `protobuf:"fixed64,5,opt,name=score_rate,json=scoreRate,proto3" json:"score_rate,omitempty"` // 百分比 0-100
+	ScoreDiff     float64                `protobuf:"fixed64,6,opt,name=score_diff,json=scoreDiff,proto3" json:"score_diff,omitempty"` // avg_score - grade_avg;全年级行 = 0
+	ClassRank     int32                  `protobuf:"varint,7,opt,name=class_rank,json=classRank,proto3" json:"class_rank,omitempty"`  // 1-based;全年级行 = 0(前端显示 "—")
+	TotalClasses  int32                  `protobuf:"varint,8,opt,name=total_classes,json=totalClasses,proto3" json:"total_classes,omitempty"`
+	HighestScore  float64                `protobuf:"fixed64,9,opt,name=highest_score,json=highestScore,proto3" json:"highest_score,omitempty"`
+	LowestScore   float64                `protobuf:"fixed64,10,opt,name=lowest_score,json=lowestScore,proto3" json:"lowest_score,omitempty"`
+	StdDev        float64                `protobuf:"fixed64,11,opt,name=std_dev,json=stdDev,proto3" json:"std_dev,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SingleQuestionClassCompareItem) Reset() {
+	*x = SingleQuestionClassCompareItem{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SingleQuestionClassCompareItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SingleQuestionClassCompareItem) ProtoMessage() {}
+
+func (x *SingleQuestionClassCompareItem) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SingleQuestionClassCompareItem.ProtoReflect.Descriptor instead.
+func (*SingleQuestionClassCompareItem) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *SingleQuestionClassCompareItem) GetClassId() int32 {
+	if x != nil {
+		return x.ClassId
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetClassName() string {
+	if x != nil {
+		return x.ClassName
+	}
+	return ""
+}
+
+func (x *SingleQuestionClassCompareItem) GetParticipants() int32 {
+	if x != nil {
+		return x.Participants
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetAvgScore() float64 {
+	if x != nil {
+		return x.AvgScore
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetScoreRate() float64 {
+	if x != nil {
+		return x.ScoreRate
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetScoreDiff() float64 {
+	if x != nil {
+		return x.ScoreDiff
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetClassRank() int32 {
+	if x != nil {
+		return x.ClassRank
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetTotalClasses() int32 {
+	if x != nil {
+		return x.TotalClasses
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetHighestScore() float64 {
+	if x != nil {
+		return x.HighestScore
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetLowestScore() float64 {
+	if x != nil {
+		return x.LowestScore
+	}
+	return 0
+}
+
+func (x *SingleQuestionClassCompareItem) GetStdDev() float64 {
+	if x != nil {
+		return x.StdDev
+	}
+	return 0
+}
+
+type GetSingleQuestionClassCompareReply struct {
+	state           protoimpl.MessageState            `protogen:"open.v1"`
+	ExamId          string                            `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ExamName        string                            `protobuf:"bytes,2,opt,name=exam_name,json=examName,proto3" json:"exam_name,omitempty"`
+	SubjectId       string                            `protobuf:"bytes,3,opt,name=subject_id,json=subjectId,proto3" json:"subject_id,omitempty"`
+	SubjectName     string                            `protobuf:"bytes,4,opt,name=subject_name,json=subjectName,proto3" json:"subject_name,omitempty"`
+	QuestionId      string                            `protobuf:"bytes,5,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionNumber  string                            `protobuf:"bytes,6,opt,name=question_number,json=questionNumber,proto3" json:"question_number,omitempty"`
+	QuestionType    string                            `protobuf:"bytes,7,opt,name=question_type,json=questionType,proto3" json:"question_type,omitempty"`
+	FullScore       float64                           `protobuf:"fixed64,8,opt,name=full_score,json=fullScore,proto3" json:"full_score,omitempty"`
+	QuestionContent string                            `protobuf:"bytes,9,opt,name=question_content,json=questionContent,proto3" json:"question_content,omitempty"`
+	Overall         *SingleQuestionClassCompareItem   `protobuf:"bytes,10,opt,name=overall,proto3" json:"overall,omitempty"`
+	Classes         []*SingleQuestionClassCompareItem `protobuf:"bytes,11,rep,name=classes,proto3" json:"classes,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetSingleQuestionClassCompareReply) Reset() {
+	*x = GetSingleQuestionClassCompareReply{}
+	mi := &file_seas_v1_analysis_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSingleQuestionClassCompareReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSingleQuestionClassCompareReply) ProtoMessage() {}
+
+func (x *GetSingleQuestionClassCompareReply) ProtoReflect() protoreflect.Message {
+	mi := &file_seas_v1_analysis_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSingleQuestionClassCompareReply.ProtoReflect.Descriptor instead.
+func (*GetSingleQuestionClassCompareReply) Descriptor() ([]byte, []int) {
+	return file_seas_v1_analysis_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetExamName() string {
+	if x != nil {
+		return x.ExamName
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetSubjectId() string {
+	if x != nil {
+		return x.SubjectId
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetSubjectName() string {
+	if x != nil {
+		return x.SubjectName
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetQuestionId() string {
+	if x != nil {
+		return x.QuestionId
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetQuestionNumber() string {
+	if x != nil {
+		return x.QuestionNumber
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetQuestionType() string {
+	if x != nil {
+		return x.QuestionType
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetFullScore() float64 {
+	if x != nil {
+		return x.FullScore
+	}
+	return 0
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetQuestionContent() string {
+	if x != nil {
+		return x.QuestionContent
+	}
+	return ""
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetOverall() *SingleQuestionClassCompareItem {
+	if x != nil {
+		return x.Overall
+	}
+	return nil
+}
+
+func (x *GetSingleQuestionClassCompareReply) GetClasses() []*SingleQuestionClassCompareItem {
+	if x != nil {
+		return x.Classes
+	}
+	return nil
+}
+
 var File_seas_v1_analysis_proto protoreflect.FileDescriptor
 
 const file_seas_v1_analysis_proto_rawDesc = "" +
@@ -3635,12 +4000,14 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x1fGetSingleQuestionSummaryRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1d\n" +
 	"\n" +
-	"subject_id\x18\x02 \x01(\tR\tsubjectId\"o\n" +
+	"subject_id\x18\x02 \x01(\tR\tsubjectId\"\xac\x01\n" +
 	"\x16QuestionClassBreakdown\x12\x19\n" +
 	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1d\n" +
 	"\n" +
 	"class_name\x18\x02 \x01(\tR\tclassName\x12\x1b\n" +
-	"\tavg_score\x18\x03 \x01(\x01R\bavgScore\"\xda\x02\n" +
+	"\tavg_score\x18\x03 \x01(\x01R\bavgScore\x12\"\n" +
+	"\fparticipants\x18\x04 \x01(\x05R\fparticipants\x12\x17\n" +
+	"\astd_dev\x18\x05 \x01(\x01R\x06stdDev\"\x87\x04\n" +
 	"\x19SingleQuestionSummaryItem\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\tR\n" +
 	"questionId\x12'\n" +
@@ -3654,7 +4021,13 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"score_rate\x18\a \x01(\x01R\tscoreRate\x12\x1e\n" +
 	"\n" +
 	"difficulty\x18\b \x01(\x01R\n" +
-	"difficulty\"\xd9\x01\n" +
+	"difficulty\x12\"\n" +
+	"\fparticipants\x18\t \x01(\x05R\fparticipants\x12#\n" +
+	"\rhighest_score\x18\n" +
+	" \x01(\x01R\fhighestScore\x12!\n" +
+	"\flowest_score\x18\v \x01(\x01R\vlowestScore\x12\x17\n" +
+	"\astd_dev\x18\f \x01(\x01R\x06stdDev\x12&\n" +
+	"\x0ediscrimination\x18\r \x01(\x01R\x0ediscrimination\"\xd9\x01\n" +
 	"\x1dGetSingleQuestionSummaryReply\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
 	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x1d\n" +
@@ -3803,7 +4176,46 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x12total_participants\x18\x04 \x01(\x05R\x11totalParticipants\x122\n" +
 	"\x06config\x18\x05 \x03(\v2\x1a.seas.v1.RankSegmentConfigR\x06config\x12>\n" +
 	"\roverall_grade\x18\x06 \x01(\v2\x19.seas.v1.ClassRankSegmentR\foverallGrade\x12>\n" +
-	"\rclass_details\x18\a \x03(\v2\x19.seas.v1.ClassRankSegmentR\fclassDetails2\xf6\x0f\n" +
+	"\rclass_details\x18\a \x03(\v2\x19.seas.v1.ClassRankSegmentR\fclassDetails\"\x7f\n" +
+	"$GetSingleQuestionClassCompareRequest\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\x02 \x01(\tR\tsubjectId\x12\x1f\n" +
+	"\vquestion_id\x18\x03 \x01(\tR\n" +
+	"questionId\"\xfe\x02\n" +
+	"\x1eSingleQuestionClassCompareItem\x12\x19\n" +
+	"\bclass_id\x18\x01 \x01(\x05R\aclassId\x12\x1d\n" +
+	"\n" +
+	"class_name\x18\x02 \x01(\tR\tclassName\x12\"\n" +
+	"\fparticipants\x18\x03 \x01(\x05R\fparticipants\x12\x1b\n" +
+	"\tavg_score\x18\x04 \x01(\x01R\bavgScore\x12\x1d\n" +
+	"\n" +
+	"score_rate\x18\x05 \x01(\x01R\tscoreRate\x12\x1d\n" +
+	"\n" +
+	"score_diff\x18\x06 \x01(\x01R\tscoreDiff\x12\x1d\n" +
+	"\n" +
+	"class_rank\x18\a \x01(\x05R\tclassRank\x12#\n" +
+	"\rtotal_classes\x18\b \x01(\x05R\ftotalClasses\x12#\n" +
+	"\rhighest_score\x18\t \x01(\x01R\fhighestScore\x12!\n" +
+	"\flowest_score\x18\n" +
+	" \x01(\x01R\vlowestScore\x12\x17\n" +
+	"\astd_dev\x18\v \x01(\x01R\x06stdDev\"\xdb\x03\n" +
+	"\"GetSingleQuestionClassCompareReply\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12\x1b\n" +
+	"\texam_name\x18\x02 \x01(\tR\bexamName\x12\x1d\n" +
+	"\n" +
+	"subject_id\x18\x03 \x01(\tR\tsubjectId\x12!\n" +
+	"\fsubject_name\x18\x04 \x01(\tR\vsubjectName\x12\x1f\n" +
+	"\vquestion_id\x18\x05 \x01(\tR\n" +
+	"questionId\x12'\n" +
+	"\x0fquestion_number\x18\x06 \x01(\tR\x0equestionNumber\x12#\n" +
+	"\rquestion_type\x18\a \x01(\tR\fquestionType\x12\x1d\n" +
+	"\n" +
+	"full_score\x18\b \x01(\x01R\tfullScore\x12)\n" +
+	"\x10question_content\x18\t \x01(\tR\x0fquestionContent\x12A\n" +
+	"\aoverall\x18\n" +
+	" \x01(\v2'.seas.v1.SingleQuestionClassCompareItemR\aoverall\x12A\n" +
+	"\aclasses\x18\v \x03(\v2'.seas.v1.SingleQuestionClassCompareItemR\aclasses2\xd6\x11\n" +
 	"\bAnalysis\x12[\n" +
 	"\tListExams\x12\x19.seas.v1.ListExamsRequest\x1a\x17.seas.v1.ListExamsReply\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/seas/api/v1/exams\x12\x89\x01\n" +
 	"\x12ListSubjectsByExam\x12\".seas.v1.ListSubjectsByExamRequest\x1a .seas.v1.ListSubjectsByExamReply\"-\x82\xd3\xe4\x93\x02'\x12%/seas/api/v1/exams/{exam_id}/subjects\x12\x96\x01\n" +
@@ -3813,7 +4225,8 @@ const file_seas_v1_analysis_proto_rawDesc = "" +
 	"\x15GetSingleClassSummary\x12%.seas.v1.GetSingleClassSummaryRequest\x1a#.seas.v1.GetSingleClassSummaryReply\"B\x82\xd3\xe4\x93\x02<\x12:/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes\x12\xc2\x01\n" +
 	"\x17GetSingleClassQuestions\x12'.seas.v1.GetSingleClassQuestionsRequest\x1a%.seas.v1.GetSingleClassQuestionsReply\"W\x82\xd3\xe4\x93\x02Q\x12O/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions\x12\xb2\x01\n" +
 	"\x18GetSingleQuestionSummary\x12(.seas.v1.GetSingleQuestionSummaryRequest\x1a&.seas.v1.GetSingleQuestionSummaryReply\"D\x82\xd3\xe4\x93\x02>\x12</seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions\x12\xd0\x01\n" +
-	"\x17GetSingleQuestionDetail\x12'.seas.v1.GetSingleQuestionDetailRequest\x1a%.seas.v1.GetSingleQuestionDetailReply\"e\x82\xd3\xe4\x93\x02_\x12]/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}\x12\xa6\x01\n" +
+	"\x17GetSingleQuestionDetail\x12'.seas.v1.GetSingleQuestionDetailRequest\x1a%.seas.v1.GetSingleQuestionDetailReply\"e\x82\xd3\xe4\x93\x02_\x12]/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}\x12\xdd\x01\n" +
+	"\x1dGetSingleQuestionClassCompare\x12-.seas.v1.GetSingleQuestionClassCompareRequest\x1a+.seas.v1.GetSingleQuestionClassCompareReply\"`\x82\xd3\xe4\x93\x02Z\x12X/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions/{question_id}/class-compare\x12\xa6\x01\n" +
 	"\x15GetRatingDistribution\x12%.seas.v1.GetRatingDistributionRequest\x1a#.seas.v1.GetRatingDistributionReply\"A\x82\xd3\xe4\x93\x02;\x129/seas/api/v1/exams/{exam_id}/analysis/rating-distribution\x12\x91\x01\n" +
 	"\x0fGetScoreSegment\x12\x1f.seas.v1.GetScoreSegmentRequest\x1a\x1d.seas.v1.GetScoreSegmentReply\">\x82\xd3\xe4\x93\x028:\x01*\"3/seas/api/v1/exams/{exam_id}/analysis/score-segment\x12\x8d\x01\n" +
 	"\x0eGetRankSegment\x12\x1e.seas.v1.GetRankSegmentRequest\x1a\x1c.seas.v1.GetRankSegmentReply\"=\x82\xd3\xe4\x93\x027:\x01*\"2/seas/api/v1/exams/{exam_id}/analysis/rank-segment\x12h\n" +
@@ -3833,52 +4246,55 @@ func file_seas_v1_analysis_proto_rawDescGZIP() []byte {
 	return file_seas_v1_analysis_proto_rawDescData
 }
 
-var file_seas_v1_analysis_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
+var file_seas_v1_analysis_proto_msgTypes = make([]protoimpl.MessageInfo, 47)
 var file_seas_v1_analysis_proto_goTypes = []any{
-	(*ListExamsRequest)(nil),                // 0: seas.v1.ListExamsRequest
-	(*ExamInfo)(nil),                        // 1: seas.v1.ExamInfo
-	(*ListExamsReply)(nil),                  // 2: seas.v1.ListExamsReply
-	(*ListSubjectsByExamRequest)(nil),       // 3: seas.v1.ListSubjectsByExamRequest
-	(*SubjectBasicInfo)(nil),                // 4: seas.v1.SubjectBasicInfo
-	(*ListSubjectsByExamReply)(nil),         // 5: seas.v1.ListSubjectsByExamReply
-	(*GetSubjectSummaryRequest)(nil),        // 6: seas.v1.GetSubjectSummaryRequest
-	(*SubjectSummaryItem)(nil),              // 7: seas.v1.SubjectSummaryItem
-	(*GetSubjectSummaryReply)(nil),          // 8: seas.v1.GetSubjectSummaryReply
-	(*GetClassSummaryRequest)(nil),          // 9: seas.v1.GetClassSummaryRequest
-	(*ClassSummaryItem)(nil),                // 10: seas.v1.ClassSummaryItem
-	(*GetClassSummaryReply)(nil),            // 11: seas.v1.GetClassSummaryReply
-	(*GetClassSubjectSummaryRequest)(nil),   // 12: seas.v1.GetClassSubjectSummaryRequest
-	(*ClassSubjectItem)(nil),                // 13: seas.v1.ClassSubjectItem
-	(*GetClassSubjectSummaryReply)(nil),     // 14: seas.v1.GetClassSubjectSummaryReply
-	(*GetSingleClassSummaryRequest)(nil),    // 15: seas.v1.GetSingleClassSummaryRequest
-	(*GetSingleClassSummaryReply)(nil),      // 16: seas.v1.GetSingleClassSummaryReply
-	(*GetSingleClassQuestionsRequest)(nil),  // 17: seas.v1.GetSingleClassQuestionsRequest
-	(*ClassQuestionItem)(nil),               // 18: seas.v1.ClassQuestionItem
-	(*GetSingleClassQuestionsReply)(nil),    // 19: seas.v1.GetSingleClassQuestionsReply
-	(*GetSingleQuestionSummaryRequest)(nil), // 20: seas.v1.GetSingleQuestionSummaryRequest
-	(*QuestionClassBreakdown)(nil),          // 21: seas.v1.QuestionClassBreakdown
-	(*SingleQuestionSummaryItem)(nil),       // 22: seas.v1.SingleQuestionSummaryItem
-	(*GetSingleQuestionSummaryReply)(nil),   // 23: seas.v1.GetSingleQuestionSummaryReply
-	(*GetSingleQuestionDetailRequest)(nil),  // 24: seas.v1.GetSingleQuestionDetailRequest
-	(*StudentQuestionDetail)(nil),           // 25: seas.v1.StudentQuestionDetail
-	(*GetSingleQuestionDetailReply)(nil),    // 26: seas.v1.GetSingleQuestionDetailReply
-	(*RatingConfig)(nil),                    // 27: seas.v1.RatingConfig
-	(*GetRatingDistributionRequest)(nil),    // 28: seas.v1.GetRatingDistributionRequest
-	(*RatingItem)(nil),                      // 29: seas.v1.RatingItem
-	(*ClassRatingDistribution)(nil),         // 30: seas.v1.ClassRatingDistribution
-	(*GetRatingDistributionReply)(nil),      // 31: seas.v1.GetRatingDistributionReply
-	(*DeleteExamRequest)(nil),               // 32: seas.v1.DeleteExamRequest
-	(*DeleteExamReply)(nil),                 // 33: seas.v1.DeleteExamReply
-	(*SegmentConfig)(nil),                   // 34: seas.v1.SegmentConfig
-	(*GetScoreSegmentRequest)(nil),          // 35: seas.v1.GetScoreSegmentRequest
-	(*ScoreSegmentItem)(nil),                // 36: seas.v1.ScoreSegmentItem
-	(*ClassScoreSegment)(nil),               // 37: seas.v1.ClassScoreSegment
-	(*GetScoreSegmentReply)(nil),            // 38: seas.v1.GetScoreSegmentReply
-	(*RankSegmentConfig)(nil),               // 39: seas.v1.RankSegmentConfig
-	(*GetRankSegmentRequest)(nil),           // 40: seas.v1.GetRankSegmentRequest
-	(*RankSegmentItem)(nil),                 // 41: seas.v1.RankSegmentItem
-	(*ClassRankSegment)(nil),                // 42: seas.v1.ClassRankSegment
-	(*GetRankSegmentReply)(nil),             // 43: seas.v1.GetRankSegmentReply
+	(*ListExamsRequest)(nil),                     // 0: seas.v1.ListExamsRequest
+	(*ExamInfo)(nil),                             // 1: seas.v1.ExamInfo
+	(*ListExamsReply)(nil),                       // 2: seas.v1.ListExamsReply
+	(*ListSubjectsByExamRequest)(nil),            // 3: seas.v1.ListSubjectsByExamRequest
+	(*SubjectBasicInfo)(nil),                     // 4: seas.v1.SubjectBasicInfo
+	(*ListSubjectsByExamReply)(nil),              // 5: seas.v1.ListSubjectsByExamReply
+	(*GetSubjectSummaryRequest)(nil),             // 6: seas.v1.GetSubjectSummaryRequest
+	(*SubjectSummaryItem)(nil),                   // 7: seas.v1.SubjectSummaryItem
+	(*GetSubjectSummaryReply)(nil),               // 8: seas.v1.GetSubjectSummaryReply
+	(*GetClassSummaryRequest)(nil),               // 9: seas.v1.GetClassSummaryRequest
+	(*ClassSummaryItem)(nil),                     // 10: seas.v1.ClassSummaryItem
+	(*GetClassSummaryReply)(nil),                 // 11: seas.v1.GetClassSummaryReply
+	(*GetClassSubjectSummaryRequest)(nil),        // 12: seas.v1.GetClassSubjectSummaryRequest
+	(*ClassSubjectItem)(nil),                     // 13: seas.v1.ClassSubjectItem
+	(*GetClassSubjectSummaryReply)(nil),          // 14: seas.v1.GetClassSubjectSummaryReply
+	(*GetSingleClassSummaryRequest)(nil),         // 15: seas.v1.GetSingleClassSummaryRequest
+	(*GetSingleClassSummaryReply)(nil),           // 16: seas.v1.GetSingleClassSummaryReply
+	(*GetSingleClassQuestionsRequest)(nil),       // 17: seas.v1.GetSingleClassQuestionsRequest
+	(*ClassQuestionItem)(nil),                    // 18: seas.v1.ClassQuestionItem
+	(*GetSingleClassQuestionsReply)(nil),         // 19: seas.v1.GetSingleClassQuestionsReply
+	(*GetSingleQuestionSummaryRequest)(nil),      // 20: seas.v1.GetSingleQuestionSummaryRequest
+	(*QuestionClassBreakdown)(nil),               // 21: seas.v1.QuestionClassBreakdown
+	(*SingleQuestionSummaryItem)(nil),            // 22: seas.v1.SingleQuestionSummaryItem
+	(*GetSingleQuestionSummaryReply)(nil),        // 23: seas.v1.GetSingleQuestionSummaryReply
+	(*GetSingleQuestionDetailRequest)(nil),       // 24: seas.v1.GetSingleQuestionDetailRequest
+	(*StudentQuestionDetail)(nil),                // 25: seas.v1.StudentQuestionDetail
+	(*GetSingleQuestionDetailReply)(nil),         // 26: seas.v1.GetSingleQuestionDetailReply
+	(*RatingConfig)(nil),                         // 27: seas.v1.RatingConfig
+	(*GetRatingDistributionRequest)(nil),         // 28: seas.v1.GetRatingDistributionRequest
+	(*RatingItem)(nil),                           // 29: seas.v1.RatingItem
+	(*ClassRatingDistribution)(nil),              // 30: seas.v1.ClassRatingDistribution
+	(*GetRatingDistributionReply)(nil),           // 31: seas.v1.GetRatingDistributionReply
+	(*DeleteExamRequest)(nil),                    // 32: seas.v1.DeleteExamRequest
+	(*DeleteExamReply)(nil),                      // 33: seas.v1.DeleteExamReply
+	(*SegmentConfig)(nil),                        // 34: seas.v1.SegmentConfig
+	(*GetScoreSegmentRequest)(nil),               // 35: seas.v1.GetScoreSegmentRequest
+	(*ScoreSegmentItem)(nil),                     // 36: seas.v1.ScoreSegmentItem
+	(*ClassScoreSegment)(nil),                    // 37: seas.v1.ClassScoreSegment
+	(*GetScoreSegmentReply)(nil),                 // 38: seas.v1.GetScoreSegmentReply
+	(*RankSegmentConfig)(nil),                    // 39: seas.v1.RankSegmentConfig
+	(*GetRankSegmentRequest)(nil),                // 40: seas.v1.GetRankSegmentRequest
+	(*RankSegmentItem)(nil),                      // 41: seas.v1.RankSegmentItem
+	(*ClassRankSegment)(nil),                     // 42: seas.v1.ClassRankSegment
+	(*GetRankSegmentReply)(nil),                  // 43: seas.v1.GetRankSegmentReply
+	(*GetSingleQuestionClassCompareRequest)(nil), // 44: seas.v1.GetSingleQuestionClassCompareRequest
+	(*SingleQuestionClassCompareItem)(nil),       // 45: seas.v1.SingleQuestionClassCompareItem
+	(*GetSingleQuestionClassCompareReply)(nil),   // 46: seas.v1.GetSingleQuestionClassCompareReply
 }
 var file_seas_v1_analysis_proto_depIdxs = []int32{
 	1,  // 0: seas.v1.ListExamsReply.exams:type_name -> seas.v1.ExamInfo
@@ -3912,37 +4328,41 @@ var file_seas_v1_analysis_proto_depIdxs = []int32{
 	39, // 28: seas.v1.GetRankSegmentReply.config:type_name -> seas.v1.RankSegmentConfig
 	42, // 29: seas.v1.GetRankSegmentReply.overall_grade:type_name -> seas.v1.ClassRankSegment
 	42, // 30: seas.v1.GetRankSegmentReply.class_details:type_name -> seas.v1.ClassRankSegment
-	0,  // 31: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
-	3,  // 32: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
-	6,  // 33: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
-	9,  // 34: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
-	12, // 35: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
-	15, // 36: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
-	17, // 37: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
-	20, // 38: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
-	24, // 39: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
-	28, // 40: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
-	35, // 41: seas.v1.Analysis.GetScoreSegment:input_type -> seas.v1.GetScoreSegmentRequest
-	40, // 42: seas.v1.Analysis.GetRankSegment:input_type -> seas.v1.GetRankSegmentRequest
-	32, // 43: seas.v1.Analysis.DeleteExam:input_type -> seas.v1.DeleteExamRequest
-	2,  // 44: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
-	5,  // 45: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
-	8,  // 46: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
-	11, // 47: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
-	14, // 48: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
-	16, // 49: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
-	19, // 50: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
-	23, // 51: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
-	26, // 52: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
-	31, // 53: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
-	38, // 54: seas.v1.Analysis.GetScoreSegment:output_type -> seas.v1.GetScoreSegmentReply
-	43, // 55: seas.v1.Analysis.GetRankSegment:output_type -> seas.v1.GetRankSegmentReply
-	33, // 56: seas.v1.Analysis.DeleteExam:output_type -> seas.v1.DeleteExamReply
-	44, // [44:57] is the sub-list for method output_type
-	31, // [31:44] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	45, // 31: seas.v1.GetSingleQuestionClassCompareReply.overall:type_name -> seas.v1.SingleQuestionClassCompareItem
+	45, // 32: seas.v1.GetSingleQuestionClassCompareReply.classes:type_name -> seas.v1.SingleQuestionClassCompareItem
+	0,  // 33: seas.v1.Analysis.ListExams:input_type -> seas.v1.ListExamsRequest
+	3,  // 34: seas.v1.Analysis.ListSubjectsByExam:input_type -> seas.v1.ListSubjectsByExamRequest
+	6,  // 35: seas.v1.Analysis.GetSubjectSummary:input_type -> seas.v1.GetSubjectSummaryRequest
+	9,  // 36: seas.v1.Analysis.GetClassSummary:input_type -> seas.v1.GetClassSummaryRequest
+	12, // 37: seas.v1.Analysis.GetClassSubjectSummary:input_type -> seas.v1.GetClassSubjectSummaryRequest
+	15, // 38: seas.v1.Analysis.GetSingleClassSummary:input_type -> seas.v1.GetSingleClassSummaryRequest
+	17, // 39: seas.v1.Analysis.GetSingleClassQuestions:input_type -> seas.v1.GetSingleClassQuestionsRequest
+	20, // 40: seas.v1.Analysis.GetSingleQuestionSummary:input_type -> seas.v1.GetSingleQuestionSummaryRequest
+	24, // 41: seas.v1.Analysis.GetSingleQuestionDetail:input_type -> seas.v1.GetSingleQuestionDetailRequest
+	44, // 42: seas.v1.Analysis.GetSingleQuestionClassCompare:input_type -> seas.v1.GetSingleQuestionClassCompareRequest
+	28, // 43: seas.v1.Analysis.GetRatingDistribution:input_type -> seas.v1.GetRatingDistributionRequest
+	35, // 44: seas.v1.Analysis.GetScoreSegment:input_type -> seas.v1.GetScoreSegmentRequest
+	40, // 45: seas.v1.Analysis.GetRankSegment:input_type -> seas.v1.GetRankSegmentRequest
+	32, // 46: seas.v1.Analysis.DeleteExam:input_type -> seas.v1.DeleteExamRequest
+	2,  // 47: seas.v1.Analysis.ListExams:output_type -> seas.v1.ListExamsReply
+	5,  // 48: seas.v1.Analysis.ListSubjectsByExam:output_type -> seas.v1.ListSubjectsByExamReply
+	8,  // 49: seas.v1.Analysis.GetSubjectSummary:output_type -> seas.v1.GetSubjectSummaryReply
+	11, // 50: seas.v1.Analysis.GetClassSummary:output_type -> seas.v1.GetClassSummaryReply
+	14, // 51: seas.v1.Analysis.GetClassSubjectSummary:output_type -> seas.v1.GetClassSubjectSummaryReply
+	16, // 52: seas.v1.Analysis.GetSingleClassSummary:output_type -> seas.v1.GetSingleClassSummaryReply
+	19, // 53: seas.v1.Analysis.GetSingleClassQuestions:output_type -> seas.v1.GetSingleClassQuestionsReply
+	23, // 54: seas.v1.Analysis.GetSingleQuestionSummary:output_type -> seas.v1.GetSingleQuestionSummaryReply
+	26, // 55: seas.v1.Analysis.GetSingleQuestionDetail:output_type -> seas.v1.GetSingleQuestionDetailReply
+	46, // 56: seas.v1.Analysis.GetSingleQuestionClassCompare:output_type -> seas.v1.GetSingleQuestionClassCompareReply
+	31, // 57: seas.v1.Analysis.GetRatingDistribution:output_type -> seas.v1.GetRatingDistributionReply
+	38, // 58: seas.v1.Analysis.GetScoreSegment:output_type -> seas.v1.GetScoreSegmentReply
+	43, // 59: seas.v1.Analysis.GetRankSegment:output_type -> seas.v1.GetRankSegmentReply
+	33, // 60: seas.v1.Analysis.DeleteExam:output_type -> seas.v1.DeleteExamReply
+	47, // [47:61] is the sub-list for method output_type
+	33, // [33:47] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_seas_v1_analysis_proto_init() }
@@ -3956,7 +4376,7 @@ func file_seas_v1_analysis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_seas_v1_analysis_proto_rawDesc), len(file_seas_v1_analysis_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   44,
+			NumMessages:   47,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -19,19 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Analysis_ListExams_FullMethodName                = "/seas.v1.Analysis/ListExams"
-	Analysis_ListSubjectsByExam_FullMethodName       = "/seas.v1.Analysis/ListSubjectsByExam"
-	Analysis_GetSubjectSummary_FullMethodName        = "/seas.v1.Analysis/GetSubjectSummary"
-	Analysis_GetClassSummary_FullMethodName          = "/seas.v1.Analysis/GetClassSummary"
-	Analysis_GetClassSubjectSummary_FullMethodName   = "/seas.v1.Analysis/GetClassSubjectSummary"
-	Analysis_GetSingleClassSummary_FullMethodName    = "/seas.v1.Analysis/GetSingleClassSummary"
-	Analysis_GetSingleClassQuestions_FullMethodName  = "/seas.v1.Analysis/GetSingleClassQuestions"
-	Analysis_GetSingleQuestionSummary_FullMethodName = "/seas.v1.Analysis/GetSingleQuestionSummary"
-	Analysis_GetSingleQuestionDetail_FullMethodName  = "/seas.v1.Analysis/GetSingleQuestionDetail"
-	Analysis_GetRatingDistribution_FullMethodName    = "/seas.v1.Analysis/GetRatingDistribution"
-	Analysis_GetScoreSegment_FullMethodName          = "/seas.v1.Analysis/GetScoreSegment"
-	Analysis_GetRankSegment_FullMethodName           = "/seas.v1.Analysis/GetRankSegment"
-	Analysis_DeleteExam_FullMethodName               = "/seas.v1.Analysis/DeleteExam"
+	Analysis_ListExams_FullMethodName                     = "/seas.v1.Analysis/ListExams"
+	Analysis_ListSubjectsByExam_FullMethodName            = "/seas.v1.Analysis/ListSubjectsByExam"
+	Analysis_GetSubjectSummary_FullMethodName             = "/seas.v1.Analysis/GetSubjectSummary"
+	Analysis_GetClassSummary_FullMethodName               = "/seas.v1.Analysis/GetClassSummary"
+	Analysis_GetClassSubjectSummary_FullMethodName        = "/seas.v1.Analysis/GetClassSubjectSummary"
+	Analysis_GetSingleClassSummary_FullMethodName         = "/seas.v1.Analysis/GetSingleClassSummary"
+	Analysis_GetSingleClassQuestions_FullMethodName       = "/seas.v1.Analysis/GetSingleClassQuestions"
+	Analysis_GetSingleQuestionSummary_FullMethodName      = "/seas.v1.Analysis/GetSingleQuestionSummary"
+	Analysis_GetSingleQuestionDetail_FullMethodName       = "/seas.v1.Analysis/GetSingleQuestionDetail"
+	Analysis_GetSingleQuestionClassCompare_FullMethodName = "/seas.v1.Analysis/GetSingleQuestionClassCompare"
+	Analysis_GetRatingDistribution_FullMethodName         = "/seas.v1.Analysis/GetRatingDistribution"
+	Analysis_GetScoreSegment_FullMethodName               = "/seas.v1.Analysis/GetScoreSegment"
+	Analysis_GetRankSegment_FullMethodName                = "/seas.v1.Analysis/GetRankSegment"
+	Analysis_DeleteExam_FullMethodName                    = "/seas.v1.Analysis/DeleteExam"
 )
 
 // AnalysisClient is the client API for Analysis service.
@@ -56,6 +57,8 @@ type AnalysisClient interface {
 	GetSingleQuestionSummary(ctx context.Context, in *GetSingleQuestionSummaryRequest, opts ...grpc.CallOption) (*GetSingleQuestionSummaryReply, error)
 	// 新增接口：单科班级题目详情
 	GetSingleQuestionDetail(ctx context.Context, in *GetSingleQuestionDetailRequest, opts ...grpc.CallOption) (*GetSingleQuestionDetailReply, error)
+	// 新增接口：试题班级对比
+	GetSingleQuestionClassCompare(ctx context.Context, in *GetSingleQuestionClassCompareRequest, opts ...grpc.CallOption) (*GetSingleQuestionClassCompareReply, error)
 	// 新增接口：四率分析
 	GetRatingDistribution(ctx context.Context, in *GetRatingDistributionRequest, opts ...grpc.CallOption) (*GetRatingDistributionReply, error)
 	// 新增接口：分数段分析
@@ -164,6 +167,16 @@ func (c *analysisClient) GetSingleQuestionDetail(ctx context.Context, in *GetSin
 	return out, nil
 }
 
+func (c *analysisClient) GetSingleQuestionClassCompare(ctx context.Context, in *GetSingleQuestionClassCompareRequest, opts ...grpc.CallOption) (*GetSingleQuestionClassCompareReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSingleQuestionClassCompareReply)
+	err := c.cc.Invoke(ctx, Analysis_GetSingleQuestionClassCompare_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *analysisClient) GetRatingDistribution(ctx context.Context, in *GetRatingDistributionRequest, opts ...grpc.CallOption) (*GetRatingDistributionReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRatingDistributionReply)
@@ -226,6 +239,8 @@ type AnalysisServer interface {
 	GetSingleQuestionSummary(context.Context, *GetSingleQuestionSummaryRequest) (*GetSingleQuestionSummaryReply, error)
 	// 新增接口：单科班级题目详情
 	GetSingleQuestionDetail(context.Context, *GetSingleQuestionDetailRequest) (*GetSingleQuestionDetailReply, error)
+	// 新增接口：试题班级对比
+	GetSingleQuestionClassCompare(context.Context, *GetSingleQuestionClassCompareRequest) (*GetSingleQuestionClassCompareReply, error)
 	// 新增接口：四率分析
 	GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error)
 	// 新增接口：分数段分析
@@ -270,6 +285,9 @@ func (UnimplementedAnalysisServer) GetSingleQuestionSummary(context.Context, *Ge
 }
 func (UnimplementedAnalysisServer) GetSingleQuestionDetail(context.Context, *GetSingleQuestionDetailRequest) (*GetSingleQuestionDetailReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSingleQuestionDetail not implemented")
+}
+func (UnimplementedAnalysisServer) GetSingleQuestionClassCompare(context.Context, *GetSingleQuestionClassCompareRequest) (*GetSingleQuestionClassCompareReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSingleQuestionClassCompare not implemented")
 }
 func (UnimplementedAnalysisServer) GetRatingDistribution(context.Context, *GetRatingDistributionRequest) (*GetRatingDistributionReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRatingDistribution not implemented")
@@ -466,6 +484,24 @@ func _Analysis_GetSingleQuestionDetail_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Analysis_GetSingleQuestionClassCompare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSingleQuestionClassCompareRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalysisServer).GetSingleQuestionClassCompare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Analysis_GetSingleQuestionClassCompare_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalysisServer).GetSingleQuestionClassCompare(ctx, req.(*GetSingleQuestionClassCompareRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Analysis_GetRatingDistribution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRatingDistributionRequest)
 	if err := dec(in); err != nil {
@@ -580,6 +616,10 @@ var Analysis_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSingleQuestionDetail",
 			Handler:    _Analysis_GetSingleQuestionDetail_Handler,
+		},
+		{
+			MethodName: "GetSingleQuestionClassCompare",
+			Handler:    _Analysis_GetSingleQuestionClassCompare_Handler,
 		},
 		{
 			MethodName: "GetRatingDistribution",

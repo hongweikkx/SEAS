@@ -73,6 +73,13 @@ service Analysis {
     };
   }
 
+  // 新增接口：试题班级对比
+  rpc GetSingleQuestionClassCompare (GetSingleQuestionClassCompareRequest) returns (GetSingleQuestionClassCompareReply) {
+    option (google.api.http) = {
+      get: "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions/{question_id}/class-compare"
+    };
+  }
+
   // 新增接口：四率分析
   rpc GetRatingDistribution (GetRatingDistributionRequest) returns (GetRatingDistributionReply) {
     option (google.api.http) = {
@@ -294,6 +301,8 @@ message QuestionClassBreakdown {
   int32 class_id = 1;
   string class_name = 2;
   double avg_score = 3;
+  int32 participants = 4;
+  double std_dev = 5;
 }
 
 message SingleQuestionSummaryItem {
@@ -305,6 +314,11 @@ message SingleQuestionSummaryItem {
   repeated QuestionClassBreakdown class_breakdown = 6;
   double score_rate = 7;
   double difficulty = 8;
+  int32 participants = 9;
+  double highest_score = 10;
+  double lowest_score = 11;
+  double std_dev = 12;
+  double discrimination = 13;
 }
 
 message GetSingleQuestionSummaryReply {
@@ -479,4 +493,39 @@ message GetRankSegmentReply {
   repeated RankSegmentConfig config = 5;
   ClassRankSegment overall_grade = 6;
   repeated ClassRankSegment class_details = 7;
+}
+
+// 11. 试题班级对比
+message GetSingleQuestionClassCompareRequest {
+  string exam_id = 1;
+  string subject_id = 2;
+  string question_id = 3;
+}
+
+message SingleQuestionClassCompareItem {
+  int32 class_id = 1;          // 0 表示「全年级」聚合行
+  string class_name = 2;       // "全年级" / "X班"
+  int32 participants = 3;
+  double avg_score = 4;
+  double score_rate = 5;       // 百分比 0-100
+  double score_diff = 6;       // avg_score - grade_avg;全年级行 = 0
+  int32 class_rank = 7;        // 1-based;全年级行 = 0(前端显示 "—")
+  int32 total_classes = 8;
+  double highest_score = 9;
+  double lowest_score = 10;
+  double std_dev = 11;
+}
+
+message GetSingleQuestionClassCompareReply {
+  string exam_id = 1;
+  string exam_name = 2;
+  string subject_id = 3;
+  string subject_name = 4;
+  string question_id = 5;
+  string question_number = 6;
+  string question_type = 7;
+  double full_score = 8;
+  string question_content = 9;
+  SingleQuestionClassCompareItem overall = 10;
+  repeated SingleQuestionClassCompareItem classes = 11;
 }

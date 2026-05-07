@@ -27,6 +27,7 @@ const OperationAnalysisGetRatingDistribution = "/seas.v1.Analysis/GetRatingDistr
 const OperationAnalysisGetScoreSegment = "/seas.v1.Analysis/GetScoreSegment"
 const OperationAnalysisGetSingleClassQuestions = "/seas.v1.Analysis/GetSingleClassQuestions"
 const OperationAnalysisGetSingleClassSummary = "/seas.v1.Analysis/GetSingleClassSummary"
+const OperationAnalysisGetSingleQuestionClassCompare = "/seas.v1.Analysis/GetSingleQuestionClassCompare"
 const OperationAnalysisGetSingleQuestionDetail = "/seas.v1.Analysis/GetSingleQuestionDetail"
 const OperationAnalysisGetSingleQuestionSummary = "/seas.v1.Analysis/GetSingleQuestionSummary"
 const OperationAnalysisGetSubjectSummary = "/seas.v1.Analysis/GetSubjectSummary"
@@ -50,6 +51,8 @@ type AnalysisHTTPServer interface {
 	GetSingleClassQuestions(context.Context, *GetSingleClassQuestionsRequest) (*GetSingleClassQuestionsReply, error)
 	// GetSingleClassSummary 新增接口：单科班级汇总
 	GetSingleClassSummary(context.Context, *GetSingleClassSummaryRequest) (*GetSingleClassSummaryReply, error)
+	// GetSingleQuestionClassCompare 新增接口：试题班级对比
+	GetSingleQuestionClassCompare(context.Context, *GetSingleQuestionClassCompareRequest) (*GetSingleQuestionClassCompareReply, error)
 	// GetSingleQuestionDetail 新增接口：单科班级题目详情
 	GetSingleQuestionDetail(context.Context, *GetSingleQuestionDetailRequest) (*GetSingleQuestionDetailReply, error)
 	// GetSingleQuestionSummary 新增接口：单科题目汇总
@@ -73,6 +76,7 @@ func RegisterAnalysisHTTPServer(s *http.Server, srv AnalysisHTTPServer) {
 	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions", _Analysis_GetSingleClassQuestions0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions", _Analysis_GetSingleQuestionSummary0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes/{class_id}/questions/{question_id}", _Analysis_GetSingleQuestionDetail0_HTTP_Handler(srv))
+	r.GET("/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions/{question_id}/class-compare", _Analysis_GetSingleQuestionClassCompare0_HTTP_Handler(srv))
 	r.GET("/seas/api/v1/exams/{exam_id}/analysis/rating-distribution", _Analysis_GetRatingDistribution0_HTTP_Handler(srv))
 	r.POST("/seas/api/v1/exams/{exam_id}/analysis/score-segment", _Analysis_GetScoreSegment0_HTTP_Handler(srv))
 	r.POST("/seas/api/v1/exams/{exam_id}/analysis/rank-segment", _Analysis_GetRankSegment0_HTTP_Handler(srv))
@@ -274,6 +278,28 @@ func _Analysis_GetSingleQuestionDetail0_HTTP_Handler(srv AnalysisHTTPServer) fun
 	}
 }
 
+func _Analysis_GetSingleQuestionClassCompare0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSingleQuestionClassCompareRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAnalysisGetSingleQuestionClassCompare)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSingleQuestionClassCompare(ctx, req.(*GetSingleQuestionClassCompareRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetSingleQuestionClassCompareReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _Analysis_GetRatingDistribution0_HTTP_Handler(srv AnalysisHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in GetRatingDistributionRequest
@@ -377,6 +403,7 @@ type AnalysisHTTPClient interface {
 	GetScoreSegment(ctx context.Context, req *GetScoreSegmentRequest, opts ...http.CallOption) (rsp *GetScoreSegmentReply, err error)
 	GetSingleClassQuestions(ctx context.Context, req *GetSingleClassQuestionsRequest, opts ...http.CallOption) (rsp *GetSingleClassQuestionsReply, err error)
 	GetSingleClassSummary(ctx context.Context, req *GetSingleClassSummaryRequest, opts ...http.CallOption) (rsp *GetSingleClassSummaryReply, err error)
+	GetSingleQuestionClassCompare(ctx context.Context, req *GetSingleQuestionClassCompareRequest, opts ...http.CallOption) (rsp *GetSingleQuestionClassCompareReply, err error)
 	GetSingleQuestionDetail(ctx context.Context, req *GetSingleQuestionDetailRequest, opts ...http.CallOption) (rsp *GetSingleQuestionDetailReply, err error)
 	GetSingleQuestionSummary(ctx context.Context, req *GetSingleQuestionSummaryRequest, opts ...http.CallOption) (rsp *GetSingleQuestionSummaryReply, err error)
 	GetSubjectSummary(ctx context.Context, req *GetSubjectSummaryRequest, opts ...http.CallOption) (rsp *GetSubjectSummaryReply, err error)
@@ -488,6 +515,19 @@ func (c *AnalysisHTTPClientImpl) GetSingleClassSummary(ctx context.Context, in *
 	pattern := "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/classes"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAnalysisGetSingleClassSummary))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AnalysisHTTPClientImpl) GetSingleQuestionClassCompare(ctx context.Context, in *GetSingleQuestionClassCompareRequest, opts ...http.CallOption) (*GetSingleQuestionClassCompareReply, error) {
+	var out GetSingleQuestionClassCompareReply
+	pattern := "/seas/api/v1/exams/{exam_id}/subjects/{subject_id}/questions/{question_id}/class-compare"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAnalysisGetSingleQuestionClassCompare))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
