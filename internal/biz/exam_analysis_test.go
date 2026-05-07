@@ -156,6 +156,93 @@ func (s *stubScoreItemRepo) GetSingleQuestionDetail(context.Context, int64, int6
 	return s.singleQuestionDetail, nil
 }
 
+func TestGetSingleQuestionClassCompare(t *testing.T) {
+	uc := NewExamAnalysisUseCase(nil, nil, nil)
+	uc.WithScoreItemRepo(&stubScoreItemRepo{
+		singleQuestionClassCompare: &SingleQuestionClassCompareStats{
+			ExamID:     1,
+			SubjectID:  1,
+			QuestionID: "Q1",
+			FullScore:  10,
+			Overall: &SingleQuestionClassCompareItemStats{
+				ClassID:      0,
+				ClassName:    "全年级",
+				Participants: 150,
+				AvgScore:     7.2,
+				ScoreRate:    72,
+				ScoreDiff:    0,
+				ClassRank:    0,
+				TotalClasses: 3,
+				HighestScore: 10,
+				LowestScore:  0,
+				StdDev:       1.45,
+			},
+			Classes: []*SingleQuestionClassCompareItemStats{
+				{ClassID: 1, ClassName: "一班", Participants: 50, AvgScore: 7.5, ScoreRate: 75, ScoreDiff: 0.3, ClassRank: 1, TotalClasses: 3, HighestScore: 10, LowestScore: 2, StdDev: 1.32},
+				{ClassID: 2, ClassName: "二班", Participants: 49, AvgScore: 7.0, ScoreRate: 70, ScoreDiff: -0.2, ClassRank: 2, TotalClasses: 3, HighestScore: 10, LowestScore: 1, StdDev: 1.51},
+				{ClassID: 3, ClassName: "三班", Participants: 51, AvgScore: 5.1, ScoreRate: 51, ScoreDiff: -2.1, ClassRank: 3, TotalClasses: 3, HighestScore: 9, LowestScore: 0, StdDev: 1.78},
+			},
+		},
+	})
+
+	stats, err := uc.GetSingleQuestionClassCompare(context.Background(), 1, 1, "Q1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if stats.Overall.ClassName != "全年级" {
+		t.Errorf("overall class name = %s, want 全年级", stats.Overall.ClassName)
+	}
+	if stats.Overall.ScoreDiff != 0 {
+		t.Errorf("overall score diff = %f, want 0", stats.Overall.ScoreDiff)
+	}
+	if len(stats.Classes) != 3 {
+		t.Fatalf("classes count = %d, want 3", len(stats.Classes))
+	}
+	if stats.Classes[0].ClassRank != 1 || stats.Classes[0].ClassName != "一班" {
+		t.Errorf("first class rank = %d name = %s, want 1/一班", stats.Classes[0].ClassRank, stats.Classes[0].ClassName)
+	}
+	if stats.Classes[2].ClassRank != 3 || stats.Classes[2].ScoreDiff != -2.1 {
+		t.Errorf("last class rank = %d diff = %f, want 3/-2.1", stats.Classes[2].ClassRank, stats.Classes[2].ScoreDiff)
+	}
+}
+
+func TestGetSingleQuestionDetailWithClassIDZero(t *testing.T) {
+	uc := NewExamAnalysisUseCase(nil, nil, nil)
+	uc.WithScoreItemRepo(&stubScoreItemRepo{
+		singleQuestionDetail: &SingleQuestionDetailStats{
+			ExamID:     1,
+			SubjectID:  1,
+			ClassID:    0,
+			QuestionID: "Q1",
+			FullScore:  10,
+			Students: []*StudentQuestionDetailStats{
+				{StudentID: 1, StudentName: "A", Score: 9, FullScore: 10},
+				{StudentID: 2, StudentName: "B", Score: 8, FullScore: 10},
+				{StudentID: 3, StudentName: "C", Score: 7, FullScore: 10},
+			},
+		},
+	})
+
+	stats, err := uc.GetSingleQuestionDetail(context.Background(), 1, 1, 0, "Q1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if stats.ClassName != "全年级" {
+		t.Errorf("class name = %s, want 全年级", stats.ClassName)
+	}
+	if len(stats.Students) != 3 {
+		t.Fatalf("students count = %d, want 3", len(stats.Students))
+	}
+	if stats.Students[0].ClassRank != 1 {
+		t.Errorf("first student class rank = %d, want 1", stats.Students[0].ClassRank)
+	}
+	if stats.Students[0].GradeRank != 1 {
+		t.Errorf("first student grade rank = %d, want 1", stats.Students[0].GradeRank)
+	}
+}
+
 func (s *stubScoreItemRepo) GetSingleQuestionClassCompare(context.Context, int64, int64, string) (*SingleQuestionClassCompareStats, error) {
 	return s.singleQuestionClassCompare, s.err
 }
