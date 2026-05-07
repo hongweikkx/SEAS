@@ -441,6 +441,35 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/seas.v1.GetSingleQuestionSummaryReply'
+    /seas/api/v1/exams/{examId}/subjects/{subjectId}/questions/{questionId}/class-compare:
+        get:
+            tags:
+                - Analysis
+            description: 新增接口：试题班级对比
+            operationId: Analysis_GetSingleQuestionClassCompare
+            parameters:
+                - name: examId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: subjectId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: questionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/seas.v1.GetSingleQuestionClassCompareReply'
 components:
     schemas:
         seas.v1.ClassQuestionItem:
@@ -797,6 +826,34 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/seas.v1.ClassSummaryItem'
+        seas.v1.GetSingleQuestionClassCompareReply:
+            type: object
+            properties:
+                examId:
+                    type: string
+                examName:
+                    type: string
+                subjectId:
+                    type: string
+                subjectName:
+                    type: string
+                questionId:
+                    type: string
+                questionNumber:
+                    type: string
+                questionType:
+                    type: string
+                fullScore:
+                    type: number
+                    format: double
+                questionContent:
+                    type: string
+                overall:
+                    $ref: '#/components/schemas/seas.v1.SingleQuestionClassCompareItem'
+                classes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/seas.v1.SingleQuestionClassCompareItem'
         seas.v1.GetSingleQuestionDetailReply:
             type: object
             properties:
@@ -929,6 +986,12 @@ components:
                 avgScore:
                     type: number
                     format: double
+                participants:
+                    type: integer
+                    format: int32
+                stdDev:
+                    type: number
+                    format: double
         seas.v1.RankSegmentConfig:
             type: object
             properties:
@@ -1005,6 +1068,41 @@ components:
                     type: number
                     format: double
             description: 12. 分数段分析
+        seas.v1.SingleQuestionClassCompareItem:
+            type: object
+            properties:
+                classId:
+                    type: integer
+                    format: int32
+                className:
+                    type: string
+                participants:
+                    type: integer
+                    format: int32
+                avgScore:
+                    type: number
+                    format: double
+                scoreRate:
+                    type: number
+                    format: double
+                scoreDiff:
+                    type: number
+                    format: double
+                classRank:
+                    type: integer
+                    format: int32
+                totalClasses:
+                    type: integer
+                    format: int32
+                highestScore:
+                    type: number
+                    format: double
+                lowestScore:
+                    type: number
+                    format: double
+                stdDev:
+                    type: number
+                    format: double
         seas.v1.SingleQuestionSummaryItem:
             type: object
             properties:
@@ -1028,6 +1126,21 @@ components:
                     type: number
                     format: double
                 difficulty:
+                    type: number
+                    format: double
+                participants:
+                    type: integer
+                    format: int32
+                highestScore:
+                    type: number
+                    format: double
+                lowestScore:
+                    type: number
+                    format: double
+                stdDev:
+                    type: number
+                    format: double
+                discrimination:
                     type: number
                     format: double
         seas.v1.StudentQuestionDetail:
