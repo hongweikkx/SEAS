@@ -21,7 +21,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport *service.ExamImportService, aiAnalysis *AIAnalysisHandler, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
+func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport *service.ExamImportService, auth *service.AuthService, aiAnalysis *AIAnalysisHandler, authHandler *AuthHandler, sseHandler *LoginSSEHandler, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
 	var opts = []httptransport.ServerOption{
 		httptransport.Middleware(
 			recovery.Recovery(),
@@ -86,8 +86,11 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport
 	// 再注册 protobuf 生成的路由（其他接口）
 	v1.RegisterAnalysisHTTPServer(srv, analysis)
 	v1.RegisterExamImportHTTPServer(srv, examImport)
+	v1.RegisterAuthHTTPServer(srv, auth)
 
 	srv.Handle("/seas/api/v1/ai/analysis", aiAnalysis)
+	srv.Handle("/seas/api/v1/auth/wechat/callback", authHandler)
+	srv.Handle("/seas/api/v1/auth/login-sse", sseHandler)
 	srv.Handle("/metrics", promhttp.Handler())
 	return srv
 }

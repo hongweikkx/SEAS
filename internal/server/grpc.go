@@ -6,22 +6,16 @@ import (
 	"seas/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
-	"github.com/go-kratos/kratos/v2/middleware/validate"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"go.opentelemetry.io/otel/trace"
 )
 
 // NewGRPCServer new a gRPC server.
-func NewGRPCServer(c *conf.Server, analysis *service.AnalysisService, examImport *service.ExamImportService, tp trace.TracerProvider, logger log.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, analysis *service.AnalysisService, examImport *service.ExamImportService, auth *service.AuthService, tp trace.TracerProvider, logger log.Logger) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
-			tracing.Server(tracing.WithTracerProvider(tp)),
-			logging.Server(logger),
-			validate.Validator(),
 		),
 	}
 	if c.Grpc.Network != "" {
@@ -36,5 +30,6 @@ func NewGRPCServer(c *conf.Server, analysis *service.AnalysisService, examImport
 	srv := grpc.NewServer(opts...)
 	v1.RegisterAnalysisServer(srv, analysis)
 	v1.RegisterExamImportServer(srv, examImport)
+	v1.RegisterAuthServer(srv, auth)
 	return srv
 }
