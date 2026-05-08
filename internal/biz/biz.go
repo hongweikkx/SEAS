@@ -1,4 +1,3 @@
-// Package biz 
 package biz
 
 import "github.com/google/wire"
@@ -8,6 +7,7 @@ var ProviderSet = wire.NewSet(
 	NewAnalysisUseCase,
 	NewExamAnalysisUseCaseWithScoreItem,
 	NewExamImportUseCase,
+	NewAuthUsecase,
 )
 
 // NewExamAnalysisUseCaseWithScoreItem 创建完整的考试分析用例（包含 scoreItemRepo）
