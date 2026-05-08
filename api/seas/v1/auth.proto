@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package seas.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "api/seas/v1;v1";
+
+service Auth {
+  rpc LoginRequest(LoginRequestRequest) returns (LoginRequestResponse) {
+    option (google.api.http) = {
+      post: "/seas/api/v1/auth/login-request"
+      body: "*"
+    };
+  }
+
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/seas/api/v1/auth/logout"
+      body: "*"
+    };
+  }
+}
+
+message LoginRequestRequest {}
+
+message LoginRequestResponse {
+  string code = 1;
+  string qr_url = 2;
+  int32 expire_seconds = 3;
+}
+
+message LogoutRequest {}
+
+message LogoutResponse {}
