@@ -11,6 +11,14 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 )
 
+// User 用户模型
+type User struct {
+	ID        uint64
+	OpenID    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 // AuthRepo 认证数据访问接口
 type AuthRepo interface {
 	GetByOpenID(ctx context.Context, openid string) (*User, error)
@@ -18,14 +26,6 @@ type AuthRepo interface {
 	SaveLoginCode(ctx context.Context, code string, status string, expiration time.Duration) error
 	GetLoginCode(ctx context.Context, code string) (string, error)
 	UpdateLoginCode(ctx context.Context, code string, status string, expiration time.Duration) error
-}
-
-// User 用户模型
-type User struct {
-	ID        uint64
-	OpenID    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
 // AuthUsecase 认证业务用例
@@ -82,14 +82,11 @@ func (uc *AuthUsecase) GetLoginStatus(ctx context.Context, code string) (*LoginS
 		return &LoginStatus{Status: "expired"}, nil
 	}
 
-	// 如果 status 是 JSON 字符串（包含 token），直接返回解析后的结构
-	// 否则返回 waiting 状态
 	return &LoginStatus{Status: status}, nil
 }
 
 // VerifyLoginCode 验证登录验证码（被微信回调调用）
 func (uc *AuthUsecase) VerifyLoginCode(ctx context.Context, code string, openid string) (*LoginStatus, error) {
-	// 检查验证码是否存在
 	status, err := uc.repo.GetLoginCode(ctx, code)
 	if err != nil {
 		return nil, err
@@ -98,7 +95,6 @@ func (uc *AuthUsecase) VerifyLoginCode(ctx context.Context, code string, openid 
 		return &LoginStatus{Status: "expired"}, nil
 	}
 
-	// 查找或创建用户
 	user, err := uc.repo.GetByOpenID(ctx, openid)
 	if err != nil {
 		return nil, err
@@ -110,13 +106,11 @@ func (uc *AuthUsecase) VerifyLoginCode(ctx context.Context, code string, openid 
 		}
 	}
 
-	// 生成 JWT
 	token, err := jwt.GenerateToken(user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 更新 Redis 状态，保留 5 分钟供 SSE 读取
 	loginStatus := fmt.Sprintf(`{"status":"success","token":"%s","user_id":%d}`, token, user.ID)
 	err = uc.repo.UpdateLoginCode(ctx, code, loginStatus, 5*time.Minute)
 	if err != nil {

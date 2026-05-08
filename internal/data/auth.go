@@ -4,12 +4,14 @@ import (
 	"context"
 	"time"
 
+	"seas/internal/biz"
+
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
 )
 
-// User 用户模型
-type User struct {
+// authUser GORM 用户模型
+type authUser struct {
 	ID        uint64    `gorm:"primaryKey;autoIncrement"`
 	OpenID    string    `gorm:"column:openid;type:varchar(64);uniqueIndex;not null"`
 	CreatedAt time.Time `gorm:"column:created_at"`
@@ -17,17 +19,8 @@ type User struct {
 }
 
 // TableName 指定表名
-func (User) TableName() string {
+func (authUser) TableName() string {
 	return "users"
-}
-
-// AuthRepo 认证数据访问接口
-type AuthRepo interface {
-	GetByOpenID(ctx context.Context, openid string) (*User, error)
-	CreateUser(ctx context.Context, openid string) (*User, error)
-	SaveLoginCode(ctx context.Context, code string, status string, expiration time.Duration) error
-	GetLoginCode(ctx context.Context, code string) (string, error)
-	UpdateLoginCode(ctx context.Context, code string, status string, expiration time.Duration) error
 }
 
 // authRepo 认证数据访问实现
@@ -37,7 +30,7 @@ type authRepo struct {
 }
 
 // NewAuthRepo 创建认证数据访问实例
-func NewAuthRepo(data *Data, logger log.Logger) AuthRepo {
+func NewAuthRepo(data *Data, logger log.Logger) biz.AuthRepo {
 	return &authRepo{
 		data: data,
 		log:  log.NewHelper(logger),
@@ -45,8 +38,8 @@ func NewAuthRepo(data *Data, logger log.Logger) AuthRepo {
 }
 
 // GetByOpenID 根据 OpenID 查询用户
-func (r *authRepo) GetByOpenID(ctx context.Context, openid string) (*User, error) {
-	var user User
+func (r *authRepo) GetByOpenID(ctx context.Context, openid string) (*biz.User, error) {
+	var user authUser
 	err := r.data.db.WithContext(ctx).Where("openid = ?", openid).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -54,17 +47,27 @@ func (r *authRepo) GetByOpenID(ctx context.Context, openid string) (*User, error
 		}
 		return nil, err
 	}
-	return &user, nil
+	return &biz.User{
+		ID:        user.ID,
+		OpenID:    user.OpenID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}, nil
 }
 
 // CreateUser 创建新用户
-func (r *authRepo) CreateUser(ctx context.Context, openid string) (*User, error) {
-	user := &User{OpenID: openid}
+func (r *authRepo) CreateUser(ctx context.Context, openid string) (*biz.User, error) {
+	user := &authUser{OpenID: openid}
 	err := r.data.db.WithContext(ctx).Create(user).Error
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	return &biz.User{
+		ID:        user.ID,
+		OpenID:    user.OpenID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}, nil
 }
 
 // loginCodeKey Redis 键前缀
