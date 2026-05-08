@@ -10,6 +10,11 @@ data:
   database:
     driver: mysql
     source: {username}:{password}@tcp({host}:{port})/{dbname}?parseTime=True&loc=Local
+  redis:
+    addr: localhost:6379
+    pw: ""
+    db: 0
+    warn_limit: 100
 llm:
   provider: ark
   model: doubao-seed-1.6
@@ -19,3 +24,7 @@ llm:
   temperature: 0.2
   max_iterations: 8
   system_prompt: You are a data analysis assistant for school exam reporting.
+auth:
+  jwt_secret: your-jwt-secret-key
+  wechat_token: your-wechat-token
+  wechat_qr_url: https://mp.weixin.qq.com/
