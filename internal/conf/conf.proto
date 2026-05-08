@@ -10,6 +10,7 @@ message Bootstrap {
   Server server = 2;
   Data data = 3;
   LLM llm = 4;
+  Auth auth = 5;
 }
 
 message Server {
@@ -53,4 +54,10 @@ message LLM {
   double temperature = 8;
   int32 max_iterations = 9;
   string system_prompt = 10;
+}
+
+message Auth {
+  string jwt_secret = 1;
+  string wechat_token = 2;
+  string wechat_qr_url = 3;
 }

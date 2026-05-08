@@ -6,23 +6,15 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"time"
 
 	"seas/internal/biz"
+	"seas/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 )
-
-// wechatToken 从环境变量读取微信消息验证 Token
-func wechatToken() string {
-	if t := os.Getenv("WECHAT_TOKEN"); t != "" {
-		return t
-	}
-	return "seas_dev_token"
-}
 
 // ========================================
 // 微信消息结构
@@ -36,8 +28,8 @@ type WechatMsg struct {
 	MsgType      string   `xml:"MsgType"`
 	Content      string   `xml:"Content"`
 	MsgId        int64    `xml:"MsgId"`
-	Event        string   `xml:"Event"`       // subscribe, SCAN
-	EventKey     string   `xml:"EventKey"`    // qrscene_xxx
+	Event        string   `xml:"Event"`    // subscribe, SCAN
+	EventKey     string   `xml:"EventKey"` // qrscene_xxx
 }
 
 type WechatReply struct {
@@ -64,23 +56,33 @@ func verifyWechatSignature(token, signature, timestamp, nonce string) bool {
 }
 
 // ========================================
-// AuthHandler: 微信回调 + SSE
+// AuthHandler: 微信回调
 // ========================================
 
 type AuthHandler struct {
-	uc     *biz.AuthUsecase
-	logger *log.Helper
+	uc       *biz.AuthUsecase
+	authConf *conf.Auth
+	logger   *log.Helper
 }
 
 // NewAuthHandler 创建认证 HTTP Handler
-func NewAuthHandler(uc *biz.AuthUsecase, logger log.Logger) *AuthHandler {
+func NewAuthHandler(uc *biz.AuthUsecase, authConf *conf.Auth, logger log.Logger) *AuthHandler {
 	return &AuthHandler{
-		uc:     uc,
-		logger: log.NewHelper(logger),
+		uc:       uc,
+		authConf: authConf,
+		logger:   log.NewHelper(logger),
 	}
 }
 
-// ServeHTTP 分发微信回调和 SSE 请求
+// wechatToken 从配置读取微信消息验证 Token
+func (h *AuthHandler) wechatToken() string {
+	if h.authConf != nil && h.authConf.WechatToken != "" {
+		return h.authConf.WechatToken
+	}
+	return "seas_dev_token"
+}
+
+// ServeHTTP 分发微信回调请求
 func (h *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -101,7 +103,7 @@ func (h *AuthHandler) handleWechatVerify(w http.ResponseWriter, r *http.Request)
 	nonce := r.URL.Query().Get("nonce")
 	echostr := r.URL.Query().Get("echostr")
 
-	if verifyWechatSignature(wechatToken(), signature, timestamp, nonce) {
+	if verifyWechatSignature(h.wechatToken(), signature, timestamp, nonce) {
 		w.Write([]byte(echostr))
 	} else {
 		w.WriteHeader(http.StatusForbidden)

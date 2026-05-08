@@ -2,17 +2,20 @@ package jwt
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var jwtSecret []byte
+
+// Init 初始化 JWT 密钥
+func Init(secret string) {
+	jwtSecret = []byte(secret)
+}
+
 func secretKey() []byte {
-	if s := os.Getenv("JWT_SECRET"); s != "" {
-		return []byte(s)
-	}
-	return []byte("seas-dev-secret-change-in-production")
+	return jwtSecret
 }
 
 // Claims JWT 声明

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"seas/pkg/jwt"
 	"seas/pkg/zaplog"
 
 	"seas/internal/conf"
@@ -102,7 +103,10 @@ func main() {
 		panic(err)
 	}
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Llm, logger)
+	// 初始化 JWT 密钥
+	jwt.Init(bc.Auth.GetJwtSecret())
+
+	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Llm, bc.Auth, logger)
 	if err != nil {
 		panic(err)
 	}
