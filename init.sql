@@ -97,3 +97,13 @@ CREATE TABLE IF NOT EXISTS score_items (
   INDEX idx_knowledge_point (knowledge_point),
   FOREIGN KEY (score_id) REFERENCES scores(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='学生小题成绩表';
+
+-- ============================================
+-- 8. 用户表（微信扫码登录）
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '用户ID',
+  openid VARCHAR(64) NOT NULL UNIQUE COMMENT '微信OpenID',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户表';
