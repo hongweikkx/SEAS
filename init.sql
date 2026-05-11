@@ -7,7 +7,7 @@ USE seas;
 -- ============================================
 -- 1. 班级表
 -- ============================================
-CREATE TABLE IF NOT EXISTS classesq3rq (
+CREATE TABLE IF NOT EXISTS classes222 (
   id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '班级ID',
   name VARCHAR(100) UNIQUE NOT NULL COMMENT '班级名称',
   grade VARCHAR(50) COMMENT '年级',
