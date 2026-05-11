@@ -6,6 +6,7 @@ require (
 	github.com/cloudwego/eino v0.8.5
 	github.com/cloudwego/eino-ext/components/model/ark v0.1.65
 	github.com/go-kratos/kratos/v2 v2.8.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/wire v0.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/prometheus/client_golang v1.22.0
@@ -46,7 +47,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/eino-contrib/jsonschema v1.0.3 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/goph/emperror v0.17.2 // indirect
 	github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
