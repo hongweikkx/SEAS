@@ -1,5 +1,5 @@
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS seas DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci211111;
+CREATE DATABASE IF NOT EXISTS seas DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci3q324w3;
 
 -- 使用数据库
 USE seas;
@@ -7,7 +7,7 @@ USE seas;
 -- ============================================
 -- 1. 班级表
 -- ============================================
-CREATE TABLE IF NOT EXISTS classes (
+CREATE TABLE IF NOT EXISTS classes222 (
   id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '班级ID',
   name VARCHAR(100) UNIQUE NOT NULL COMMENT '班级名称',
   grade VARCHAR(50) COMMENT '年级',
