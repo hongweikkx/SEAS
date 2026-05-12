@@ -9,6 +9,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/wire v0.6.0
 	github.com/gorilla/handlers v1.5.2
+	github.com/mattn/go-sqlite3 v1.14.44
 	github.com/prometheus/client_golang v1.22.0
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/samber/lo v1.51.0
@@ -25,7 +26,7 @@ require (
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.5.7
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.30.0
 )
 
 replace golang.org/x/arch => golang.org/x/arch v0.15.0
