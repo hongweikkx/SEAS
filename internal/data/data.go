@@ -36,6 +36,11 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		return nil, nil, err
 	}
 
+	if err := AutoMigrate(db, logger); err != nil {
+		closeSQLF()
+		return nil, nil, err
+	}
+
 	rds, closeRdsF, err := redis.Init(c)
 	if err != nil {
 		closeSQLF()
