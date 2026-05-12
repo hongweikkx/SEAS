@@ -13,11 +13,14 @@ import (
 
 // User 用户模型
 type User struct {
-	ID        uint64
-	OpenID    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        uint64    `gorm:"primaryKey;autoIncrement;column:id"`
+	OpenID    string    `gorm:"uniqueIndex;type:varchar(64);not null;column:openid"`
+	CreatedAt time.Time `gorm:"autoCreateTime;column:created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime;column:updated_at"`
 }
+
+// TableName 显式指定表名,与 init.sql 中的 users 表对齐
+func (User) TableName() string { return "users" }
 
 // AuthRepo 认证数据访问接口
 type AuthRepo interface {

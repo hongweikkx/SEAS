@@ -20,7 +20,8 @@ type Student struct {
 	ID            int64     `gorm:"primaryKey;column:id"`
 	StudentNumber string    `gorm:"uniqueIndex;type:varchar(64);column:student_number"`
 	Name          string    `gorm:"type:varchar(100);column:name"`
-	ClassID       int64     `gorm:"column:class_id"`
+	ClassID       int64     `gorm:"index;not null;column:class_id"`
+	Class         Class     `gorm:"foreignKey:ClassID;references:ID;constraint:OnDelete:RESTRICT"`
 	CreatedAt     time.Time `gorm:"autoCreateTime;column:created_at"`
 }
 

@@ -4,12 +4,15 @@ import "context"
 
 type ScoreItem struct {
 	ID             int64   `gorm:"primaryKey;column:id"`
-	ScoreID        int64   `gorm:"index;column:score_id"`                    // 外键关联 score 表
-	QuestionNumber string  `gorm:"type:varchar(20);column:question_number"`  // 小题编号
-	KnowledgePoint string  `gorm:"type:varchar(100);column:knowledge_point"` // 知识点
-	Score          float64 `gorm:"column:score"`                             // 得分
-	FullScore      float64 `gorm:"column:full_score"`                        // 总分
-	IsCorrect      bool    `gorm:"column:is_correct"`                        // 是否正确
+	ScoreID        int64   `gorm:"index;not null;column:score_id"`                   // 外键关联 score 表
+	QuestionNumber string  `gorm:"type:varchar(20);not null;column:question_number"` // 小题编号
+	KnowledgePoint string  `gorm:"index;type:varchar(100);column:knowledge_point"`   // 知识点
+	Score          float64 `gorm:"not null;default:0;column:score"`                  // 得分
+	FullScore      float64 `gorm:"not null;default:0;column:full_score"`             // 总分
+	IsCorrect      bool    `gorm:"not null;default:false;column:is_correct"`         // 是否正确
+	// 关联字段命名为 ParentScore 而非 Score,避免与上面的 Score float64 字段冲突。
+	// 不主动 Preload 时不会触发额外查询。
+	ParentScore Score `gorm:"foreignKey:ScoreID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 func (ScoreItem) TableName() string {

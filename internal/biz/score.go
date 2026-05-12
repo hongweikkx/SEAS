@@ -7,11 +7,14 @@ import (
 
 type Score struct {
 	ID         int64     `gorm:"primaryKey;column:id"`
-	StudentID  int64     `gorm:"column:student_id"`
-	ExamID     int64     `gorm:"column:exam_id"`
-	SubjectID  int64     `gorm:"column:subject_id"`
-	TotalScore float64   `gorm:"column:total_score"`
+	StudentID  int64     `gorm:"uniqueIndex:idx_student_exam_subject;index;not null;column:student_id"`
+	ExamID     int64     `gorm:"uniqueIndex:idx_student_exam_subject;index;not null;column:exam_id"`
+	SubjectID  int64     `gorm:"uniqueIndex:idx_student_exam_subject;index;not null;column:subject_id"`
+	TotalScore float64   `gorm:"not null;column:total_score"`
 	CreatedAt  time.Time `gorm:"autoCreateTime;column:created_at"`
+	Student    Student   `gorm:"foreignKey:StudentID;references:ID;constraint:OnDelete:CASCADE"`
+	Exam       Exam      `gorm:"foreignKey:ExamID;references:ID;constraint:OnDelete:CASCADE"`
+	Subject    Subject   `gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 func (Score) TableName() string {

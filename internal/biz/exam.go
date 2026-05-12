@@ -7,8 +7,8 @@ import (
 
 type Exam struct {
 	ID        int64     `gorm:"primaryKey;column:id"`
-	Name      string    `gorm:"type:varchar(100);column:name"`
-	ExamDate  time.Time `gorm:"column:exam_date"`
+	Name      string    `gorm:"type:varchar(100);not null;column:name"`
+	ExamDate  time.Time `gorm:"index;not null;column:exam_date"`
 	CreatedAt time.Time `gorm:"autoCreateTime;column:created_at"`
 }
 
@@ -18,11 +18,13 @@ func (Exam) TableName() string {
 
 // ExamSubject 考试-学科关联表
 type ExamSubject struct {
-	ID         int64     `gorm:"primaryKey;column:id"`
-	ExamID     int64     `gorm:"column:exam_id"`
-	SubjectID  int64     `gorm:"column:subject_id"`
-	FullScore  float64   `gorm:"column:full_score"`
-	CreatedAt  time.Time `gorm:"autoCreateTime;column:created_at"`
+	ID        int64     `gorm:"primaryKey;column:id"`
+	ExamID    int64     `gorm:"uniqueIndex:idx_exam_subject;not null;column:exam_id"`
+	SubjectID int64     `gorm:"uniqueIndex:idx_exam_subject;not null;column:subject_id"`
+	FullScore float64   `gorm:"column:full_score;default:100"`
+	CreatedAt time.Time `gorm:"autoCreateTime;column:created_at"`
+	Exam      Exam      `gorm:"foreignKey:ExamID;references:ID;constraint:OnDelete:CASCADE"`
+	Subject   Subject   `gorm:"foreignKey:SubjectID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 func (ExamSubject) TableName() string {
