@@ -75,10 +75,10 @@ func (r *examRepo) Create(ctx context.Context, exam *biz.Exam) error {
 func (r *examRepo) Delete(ctx context.Context, id int64) error {
 	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. 删除 score_items（通过 scores 关联）
+		// SQLite 不支持 DELETE ... JOIN,改用子查询。
 		if err := tx.Exec(`
-			DELETE si FROM score_items si
-			JOIN scores sc ON sc.id = si.score_id
-			WHERE sc.exam_id = ?
+			DELETE FROM score_items
+			WHERE score_id IN (SELECT id FROM scores WHERE exam_id = ?)
 		`, id).Error; err != nil {
 			log.Context(ctx).Errorf("examRepo.Delete score_items err: %+v", err)
 			return err
