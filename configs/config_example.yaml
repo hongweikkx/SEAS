@@ -8,8 +8,10 @@ server:
     timeout: 1s
 data:
   database:
-    driver: mysql
-    source: {username}:{password}@tcp({host}:{port})/{dbname}?parseTime=True&loc=Local
+    driver: sqlite
+    # SQLite 本地文件 + WAL 模式 + 启用外键 + 等锁 5s + 同步 NORMAL
+    # 数据库文件由进程在启动时自动创建(目录 ./data 需存在)
+    source: "file:./data/seas.db?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=ON&_synchronous=NORMAL"
   redis:
     addr: localhost:6379
     pw: ""
