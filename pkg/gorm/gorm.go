@@ -5,20 +5,32 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormlog "gorm.io/gorm/logger"
 )
 
+// Init 初始化 SQLite 连接。在 gorm.Open 前先注册自定义聚合函数
+// (STDDEV_POP / STDDEV_SAMP),让 data 层已有 raw SQL 在 SQLite 上可用。
+// 通过 sqlite.Dialector{DriverName: SeasDriverName} 让 GORM 使用本服务
+// 注册的自定义 driver(由 RegisterAggregates 设置)。
 func Init(logger log.Logger, source string) (*gorm.DB, func(), error) {
+	if err := RegisterAggregates(); err != nil {
+		return nil, nil, err
+	}
+
 	gormLogger := NewGormLogger(logger, gormlog.Info)
-	db, err := gorm.Open(mysql.Open(source), &gorm.Config{
+	db, err := gorm.Open(sqlite.Dialector{
+		DriverName: SeasDriverName,
+		DSN:        source,
+	}, &gorm.Config{
 		Logger: gormLogger,
 	})
 	if err != nil {
 		return nil, nil, err
 	}
-	// 设置连接池
+
+	// SQLite 是单写者,连接池保持小;读不会被写阻塞(WAL 模式由 DSN PRAGMA 启用)
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, nil, err
@@ -26,18 +38,20 @@ func Init(logger log.Logger, source string) (*gorm.DB, func(), error) {
 	closeF := func() {
 		_ = sqlDB.Close()
 	}
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetConnMaxLifetime(0) // 本地文件,无连接老化
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
-	err = sqlDB.PingContext(ctx)
-	if err != nil {
+	if err := sqlDB.PingContext(ctx); err != nil {
 		closeF()
 		return nil, nil, err
 	}
-	return db, closeF, err
+	return db, closeF, nil
 }
+
+// 以下 GormLogger 实现不变,只是从原文件保留下来 ------------------------------
 
 type GormLogger struct {
 	logger *log.Helper
