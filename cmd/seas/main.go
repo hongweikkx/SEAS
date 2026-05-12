@@ -5,6 +5,8 @@ import (
 	"flag"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"seas/pkg/jwt"
 	"seas/pkg/zaplog"
@@ -101,6 +103,31 @@ func main() {
 	var bc conf.Bootstrap
 	if err := c.Scan(&bc); err != nil {
 		panic(err)
+	}
+
+	// 将 SQLite 相对路径转为绝对路径，避免 kratos run 时 CWD 变化导致找不到数据库
+	if bc.Data != nil && bc.Data.Database != nil {
+		source := bc.Data.Database.Source
+		if strings.HasPrefix(source, "file:") && strings.Contains(source, "./") {
+			absConf, err := filepath.Abs(flagConf)
+			if err == nil {
+				rootDir := filepath.Dir(filepath.Dir(absConf)) // configs/config.yaml → 项目根目录
+				// 提取 file: 后的路径部分（去掉查询参数）
+				pathPart := strings.TrimPrefix(source, "file:")
+				qIdx := strings.Index(pathPart, "?")
+				var query string
+				if qIdx >= 0 {
+					query = pathPart[qIdx:]
+					pathPart = pathPart[:qIdx]
+				}
+				if filepath.IsAbs(pathPart) {
+					// 已经是绝对路径，无需处理
+				} else {
+					absPath := filepath.Join(rootDir, pathPart)
+					bc.Data.Database.Source = "file:" + absPath + query
+				}
+			}
+		}
 	}
 
 	// 初始化 JWT 密钥
