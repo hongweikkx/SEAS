@@ -38,7 +38,7 @@ func (r *scoreItemRepo) GetSingleClassQuestions(ctx context.Context, examID, sub
 	err := r.data.db.WithContext(ctx).Raw(`
 		SELECT
 			si.question_number,
-			GREATEST(MAX(si.full_score), MAX(si.score)) AS full_score,
+			CASE WHEN MAX(si.full_score) > MAX(si.score) THEN MAX(si.full_score) ELSE MAX(si.score) END AS full_score,
 			ROUND(AVG(CASE WHEN st.class_id = ? THEN si.score END), 2) AS class_avg_score,
 			ROUND(AVG(si.score), 2) AS grade_avg_score
 		FROM score_items si
@@ -105,7 +105,7 @@ func (r *scoreItemRepo) GetSingleQuestionSummary(ctx context.Context, examID, su
 	err := r.data.db.WithContext(ctx).Raw(`
 		SELECT
 			si.question_number,
-			GREATEST(MAX(si.full_score), MAX(si.score)) AS full_score,
+			CASE WHEN MAX(si.full_score) > MAX(si.score) THEN MAX(si.full_score) ELSE MAX(si.score) END AS full_score,
 			ROUND(AVG(si.score), 2) AS grade_avg_score,
 			COUNT(*) AS participants,
 			MAX(si.score) AS highest_score,
@@ -176,7 +176,10 @@ func (r *scoreItemRepo) GetSingleQuestionSummary(ctx context.Context, examID, su
 			GROUP BY sc.student_id
 		),
 		cutoff AS (
-			SELECT CEIL(COUNT(*) * 0.27) as k FROM student_total
+			-- SQLite 无 CEIL,对非负数等价改写: ceil(x) = cast(x as int) + (1 if 有小数部分 else 0)
+			SELECT CAST(COUNT(*) * 0.27 AS INTEGER) +
+				CASE WHEN COUNT(*) * 0.27 > CAST(COUNT(*) * 0.27 AS INTEGER) THEN 1 ELSE 0 END as k
+			FROM student_total
 		),
 		student_rank AS (
 			SELECT student_id,
