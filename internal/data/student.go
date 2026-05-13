@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"errors"
-	"fmt"
 	"seas/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -52,10 +51,9 @@ func (r *studentRepo) FindOrCreateByNameClass(ctx context.Context, name string, 
 		r.log.Errorf("studentRepo.FindOrCreateByNameClass find err: %+v", err)
 		return nil, err
 	}
-	// 不存在则创建，自动生成学号
-	sn := fmt.Sprintf("TEMP_%d_%s", classID, name)
+	// 不存在则创建，student_number 使用学生名字
 	student = biz.Student{
-		StudentNumber: sn,
+		StudentNumber: name,
 		Name:          name,
 		ClassID:       classID,
 	}
