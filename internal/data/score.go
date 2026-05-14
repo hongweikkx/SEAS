@@ -14,6 +14,37 @@ import (
 	"gorm.io/gorm"
 )
 
+// getInt64 从 map[string]interface{} 中安全提取 int64 值。
+// GORM Raw().Scan() 到 map 时，SQLite 驱动可能返回指针类型 (*int64) 而非值类型 (int64)。
+func getInt64(row map[string]interface{}, key string) int64 {
+	v, ok := row[key]
+	if !ok || v == nil {
+		return 0
+	}
+	switch t := v.(type) {
+	case int64:
+		return t
+	case *int64:
+		return *t
+	case *interface{}:
+		// GORM 某些版本将聚合结果包装为 *interface{}
+		return getInt64(map[string]interface{}{key: *t}, key)
+	case int32:
+		return int64(t)
+	case *int32:
+		return int64(*t)
+	case float64:
+		return int64(t)
+	case *float64:
+		return int64(*t)
+	case string:
+		n, _ := strconv.ParseInt(t, 10, 64)
+		return n
+	default:
+		return 0
+	}
+}
+
 type classRankRow struct {
 	ClassID  int64
 	AvgScore float64
@@ -922,41 +953,13 @@ func (r *scoreRepo) GetScoreSegment(ctx context.Context, examID, subjectID int64
 	}
 
 	for i, row := range rawRows {
-		classID, _ := row["class_id"].(int64)
-		if classID == 0 {
-			// 某些驱动可能返回其他数值类型
-			if v, ok := row["class_id"].(int32); ok {
-				classID = int64(v)
-			} else if v, ok := row["class_id"].(float64); ok {
-				classID = int64(v)
-			}
-		}
+		classID := getInt64(row, "class_id")
 		className, _ := row["class_name"].(string)
-		totalStudents := int64(0)
-		if v, ok := row["total_students"].(int64); ok {
-			totalStudents = v
-		} else if v, ok := row["total_students"].(int32); ok {
-			totalStudents = int64(v)
-		} else if v, ok := row["total_students"].(float64); ok {
-			totalStudents = int64(v)
-		}
+		totalStudents := getInt64(row, "total_students")
 
 		classSegments := make([]*biz.ScoreSegmentItem, len(ranges))
 		for j, rg := range ranges {
-			count := int64(0)
-			colName := fmt.Sprintf("seg_%d", j)
-			if v, ok := row[colName].(int64); ok {
-				count = v
-			} else if v, ok := row[colName].(int32); ok {
-				count = int64(v)
-			} else if v, ok := row[colName].(float64); ok {
-				count = int64(v)
-			} else if v, ok := row[colName].(string); ok {
-				// MySQL SUM() 返回 DECIMAL，GORM 扫描为 string
-				if n, err := strconv.ParseInt(v, 10, 64); err == nil {
-					count = n
-				}
-			}
+			count := getInt64(row, fmt.Sprintf("seg_%d", j))
 			classSegments[j] = &biz.ScoreSegmentItem{
 				Label: rg.label,
 				Min:   rg.min,
@@ -1064,23 +1067,9 @@ func (r *scoreRepo) GetRankSegment(ctx context.Context, examID, subjectID int64,
 
 	// 解析每班结果
 	for _, row := range rows {
-		classID, _ := row["class_id"].(int64)
-		if classID == 0 {
-			if v, ok := row["class_id"].(int32); ok {
-				classID = int64(v)
-			} else if v, ok := row["class_id"].(float64); ok {
-				classID = int64(v)
-			}
-		}
+		classID := getInt64(row, "class_id")
 		className, _ := row["class_name"].(string)
-		totalStudents := int64(0)
-		if v, ok := row["total_students"].(int64); ok {
-			totalStudents = v
-		} else if v, ok := row["total_students"].(int32); ok {
-			totalStudents = int64(v)
-		} else if v, ok := row["total_students"].(float64); ok {
-			totalStudents = int64(v)
-		}
+		totalStudents := getInt64(row, "total_students")
 
 		cls := &biz.ClassRankSegment{
 			ClassID:       classID,
@@ -1089,21 +1078,7 @@ func (r *scoreRepo) GetRankSegment(ctx context.Context, examID, subjectID int64,
 			Segments:      make([]*biz.RankSegmentItem, len(segments)),
 		}
 		for i, seg := range segments {
-			key := fmt.Sprintf("seg_%d", i)
-			count := int64(0)
-			if v, ok := row[key]; ok && v != nil {
-				if iv, ok := v.(int64); ok {
-					count = iv
-				} else if iv, ok := v.(int32); ok {
-					count = int64(iv)
-				} else if iv, ok := v.(float64); ok {
-					count = int64(iv)
-				} else if sv, ok := v.(string); ok {
-					if n, err := strconv.ParseInt(sv, 10, 64); err == nil {
-						count = n
-					}
-				}
-			}
+			count := getInt64(row, fmt.Sprintf("seg_%d", i))
 			cls.Segments[i] = &biz.RankSegmentItem{
 				Label: labelOf(seg.Start, seg.End),
 				Start: seg.Start,
