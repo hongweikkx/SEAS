@@ -20,3 +20,4 @@
 # playwright mcp temp files
 .playwright-mcp/
 .playwright-cli/
+mise.toml
