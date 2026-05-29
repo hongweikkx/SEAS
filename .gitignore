@@ -21,3 +21,5 @@
 .playwright-mcp/
 .playwright-cli/
 mise.toml
+nohup.out
+dump.rdb

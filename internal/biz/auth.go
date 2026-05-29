@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"time"
@@ -77,15 +78,23 @@ func (uc *AuthUsecase) GenerateLoginCode(ctx context.Context, qrURL string) (*Lo
 
 // GetLoginStatus 查询登录状态
 func (uc *AuthUsecase) GetLoginStatus(ctx context.Context, code string) (*LoginStatus, error) {
-	status, err := uc.repo.GetLoginCode(ctx, code)
+	raw, err := uc.repo.GetLoginCode(ctx, code)
 	if err != nil {
 		return nil, err
 	}
-	if status == "" {
+	if raw == "" {
 		return &LoginStatus{Status: "expired"}, nil
 	}
 
-	return &LoginStatus{Status: status}, nil
+	// Redis 中存储的是 JSON 字符串（如 {"status":"waiting"}），需要解析提取 status
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(raw), &data); err == nil {
+		s, _ := data["status"].(string)
+		token, _ := data["token"].(string)
+		return &LoginStatus{Status: s, Token: token}, nil
+	}
+
+	return &LoginStatus{Status: raw}, nil
 }
 
 // VerifyLoginCode 验证登录验证码（被微信回调调用）
