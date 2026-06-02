@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+
+# 构建产物
+/bin
+seas
+*.exe
+*.dll
+*.so
+
+# 日志
+/logs
+*.log
+nohup.out
+
+# 测试和文档（README、LICENSE 等文档，运行时不需）
+/docs
+*.md
+
+# CI
+.github
+
+# 本地配置（生产配置由 config.docker.yaml 提供）
+/configs/config.yaml
+
+# 本地数据库和 Redis dump（由 volume 挂载）
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm
+/data/*.db-journal
+dump.rdb
+
+# 工作区和临时文件
+.worktrees/
+.superpowers/
+.env*
+*.tmp
+*~
+*.swp
+.playwright-mcp/
+.playwright-cli/
+mise.toml
+
+Makefile
