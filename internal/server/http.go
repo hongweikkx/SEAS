@@ -3,6 +3,7 @@ package server
 import (
 	v1 "seas/api/seas/v1"
 	"seas/internal/conf"
+	"seas/internal/server/middleware"
 	"seas/internal/service"
 	prometheusmetrics "seas/pkg/prometheus"
 
@@ -32,6 +33,7 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport
 				metrics.WithSeconds(prometheusmetrics.MetricSeconds),
 				metrics.WithRequests(prometheusmetrics.MetricRequests),
 			),
+			middleware.Auth(),
 		),
 		httptransport.Filter(gorilla.CORS(
 			gorilla.AllowedOrigins([]string{"*"}),
