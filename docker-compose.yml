@@ -27,6 +27,8 @@ services:
       - "8000:8000"
     volumes:
       - seas_data:/app/data    # SQLite 数据库持久化
+    env_file:
+      - .env   # 从 .env 文件加载环境变量（敏感信息）
     depends_on:
       - redis
     networks:

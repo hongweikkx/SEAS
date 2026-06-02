@@ -77,24 +77,24 @@ docker-build:
 		-t seas:latest .
 
 .PHONY: docker-run
-# docker run single container (no redis, for quick verification only)
+# docker run single container (no redis, no data persistence, quick verification only)
 docker-run:
 	docker run --rm -p 8000:8000 seas:latest
 
 .PHONY: docker-compose-up
 # docker compose up (full environment with redis)
 docker-compose-up:
-	docker-compose up -d --build
+	docker compose up -d --build
 
 .PHONY: docker-compose-down
 # docker compose down
 docker-compose-down:
-	docker-compose down
+	docker compose down
 
 .PHONY: docker-clean
 # docker clean images and volumes
 docker-clean:
-	docker-compose down -v --remove-orphans
+	docker compose down -v --remove-orphans
 	docker rmi seas:latest 2>/dev/null || true
 
 # show help
