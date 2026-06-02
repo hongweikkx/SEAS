@@ -27,7 +27,11 @@ func NewExamAnalysisUseCase(examRepo ExamRepo, subjectRepo SubjectRepo, scoreRep
 
 // ListExams 获取考试列表
 func (uc *ExamAnalysisUseCase) ListExams(ctx context.Context, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error) {
-	return uc.examRepo.ListAll(ctx, pageIndex, pageSize, keyword)
+	userID, err := GetCurrentUserID(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return uc.examRepo.ListByUserID(ctx, userID, pageIndex, pageSize, keyword)
 }
 
 // ListSubjectsByExam 获取考试关联的学科列表
@@ -42,11 +46,17 @@ func (uc *ExamAnalysisUseCase) GetSubjectFullScore(ctx context.Context, examID, 
 
 // GetSubjectSummary 获取学科情况汇总
 func (uc *ExamAnalysisUseCase) GetSubjectSummary(ctx context.Context, examID, subjectID int64) (*SubjectSummaryStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	return uc.scoreRepo.GetSubjectSummary(ctx, examID, subjectID)
 }
 
 // GetClassSummary 获取班级情况汇总
 func (uc *ExamAnalysisUseCase) GetClassSummary(ctx context.Context, examID, subjectID int64) (*ClassSummaryStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	stats, err := uc.scoreRepo.GetClassSummary(ctx, examID, subjectID)
 	if err != nil {
 		return nil, err
@@ -67,6 +77,9 @@ func (uc *ExamAnalysisUseCase) GetClassSummary(ctx context.Context, examID, subj
 
 // GetRatingDistribution 获取四率分析
 func (uc *ExamAnalysisUseCase) GetRatingDistribution(ctx context.Context, examID, subjectID int64, excellentThreshold, goodThreshold, mediumThreshold, passThreshold, lowScoreThreshold float64) (*RatingDistributionStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	// 使用默认值如果参数为0
 	if excellentThreshold == 0 {
 		excellentThreshold = 85
@@ -117,16 +130,25 @@ func (uc *ExamAnalysisUseCase) WithScoreItemRepo(scoreItemRepo ScoreItemRepo) *E
 
 // GetClassSubjectSummary 获取班级学科下钻汇总
 func (uc *ExamAnalysisUseCase) GetClassSubjectSummary(ctx context.Context, examID, classID int64) (*ClassSubjectSummaryStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	return uc.scoreRepo.GetClassSubjectSummary(ctx, examID, classID)
 }
 
 // GetSingleClassSummary 获取单科班级汇总
 func (uc *ExamAnalysisUseCase) GetSingleClassSummary(ctx context.Context, examID, subjectID int64) (*SingleClassSummaryStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	return uc.scoreRepo.GetSingleClassSummary(ctx, examID, subjectID)
 }
 
 // GetSingleClassQuestions 获取单科班级题目汇总
 func (uc *ExamAnalysisUseCase) GetSingleClassQuestions(ctx context.Context, examID, subjectID, classID int64) (*SingleClassQuestionStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	if err := uc.requireScoreItemRepo(); err != nil {
 		return nil, err
 	}
@@ -149,6 +171,9 @@ func (uc *ExamAnalysisUseCase) GetSingleClassQuestions(ctx context.Context, exam
 
 // GetSingleQuestionSummary 获取单科题目汇总
 func (uc *ExamAnalysisUseCase) GetSingleQuestionSummary(ctx context.Context, examID, subjectID int64) (*SingleQuestionSummaryStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	if err := uc.requireScoreItemRepo(); err != nil {
 		return nil, err
 	}
@@ -171,6 +196,9 @@ func (uc *ExamAnalysisUseCase) GetSingleQuestionSummary(ctx context.Context, exa
 
 // GetSingleQuestionDetail 获取单科班级题目详情
 func (uc *ExamAnalysisUseCase) GetSingleQuestionDetail(ctx context.Context, examID, subjectID, classID int64, questionID string) (*SingleQuestionDetailStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	if err := uc.requireScoreItemRepo(); err != nil {
 		return nil, err
 	}
@@ -211,6 +239,9 @@ func (uc *ExamAnalysisUseCase) GetSingleQuestionDetail(ctx context.Context, exam
 
 // GetSingleQuestionClassCompare 获取试题班级对比
 func (uc *ExamAnalysisUseCase) GetSingleQuestionClassCompare(ctx context.Context, examID, subjectID int64, questionID string) (*SingleQuestionClassCompareStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	if err := uc.requireScoreItemRepo(); err != nil {
 		return nil, err
 	}
@@ -284,11 +315,17 @@ func (uc *ExamAnalysisUseCase) GetExamStudentCounts(ctx context.Context, examIDs
 
 // GetScoreSegment 获取分数段分布统计
 func (uc *ExamAnalysisUseCase) GetScoreSegment(ctx context.Context, examID, subjectID int64, segments []*SegmentConfig) (*ScoreSegmentStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	return uc.scoreRepo.GetScoreSegment(ctx, examID, subjectID, segments)
 }
 
 // GetRankSegment 获取名次段分析
 func (uc *ExamAnalysisUseCase) GetRankSegment(ctx context.Context, examID, subjectID int64, segments []*RankSegmentConfig) (*RankSegmentStats, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	stats, err := uc.scoreRepo.GetRankSegment(ctx, examID, subjectID, segments)
 	if err != nil {
 		return nil, err
@@ -298,5 +335,8 @@ func (uc *ExamAnalysisUseCase) GetRankSegment(ctx context.Context, examID, subje
 
 // DeleteExam 删除考试及其关联数据
 func (uc *ExamAnalysisUseCase) DeleteExam(ctx context.Context, examID int64) error {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return err
+	}
 	return uc.examRepo.Delete(ctx, examID)
 }
