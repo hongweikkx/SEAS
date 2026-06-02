@@ -53,9 +53,14 @@ func NewExamImportUseCase(
 
 // CreateExam 创建考试
 func (uc *ExamImportUseCase) CreateExam(ctx context.Context, name string, examDate time.Time) (int64, error) {
+	userID, err := GetCurrentUserID(ctx)
+	if err != nil {
+		return 0, err
+	}
 	exam := &Exam{
 		Name:     name,
 		ExamDate: examDate,
+		UserID:   userID,
 	}
 	if err := uc.examRepo.Create(ctx, exam); err != nil {
 		return 0, err
@@ -65,6 +70,9 @@ func (uc *ExamImportUseCase) CreateExam(ctx context.Context, name string, examDa
 
 // UpdateSubjectFullScores 更新考试各学科满分
 func (uc *ExamImportUseCase) UpdateSubjectFullScores(ctx context.Context, examID int64, fullScores map[string]float64) error {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return err
+	}
 	for subjName, score := range fullScores {
 		subj, err := uc.subjectRepo.FindOrCreateByName(ctx, subjName)
 		if err != nil {
@@ -80,6 +88,9 @@ func (uc *ExamImportUseCase) UpdateSubjectFullScores(ctx context.Context, examID
 
 // ImportScoresFromExcel 从 Excel 导入成绩
 func (uc *ExamImportUseCase) ImportScoresFromExcel(ctx context.Context, examID int64, filePath string) (*ImportResult, error) {
+	if err := CheckExamOwnership(ctx, uc.examRepo, examID); err != nil {
+		return nil, err
+	}
 	f, err := excelize.OpenFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("open excel failed: %w", err)
