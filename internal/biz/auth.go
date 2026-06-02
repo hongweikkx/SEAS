@@ -3,10 +3,12 @@ package biz
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
 
+	"seas/internal/server/middleware"
 	"seas/pkg/jwt"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -130,4 +132,29 @@ func (uc *AuthUsecase) VerifyLoginCode(ctx context.Context, code string, openid 
 	}
 
 	return &LoginStatus{Status: "success", Token: token}, nil
+}
+
+// GetCurrentUserID 从 context 读取当前用户 ID
+func GetCurrentUserID(ctx context.Context) (uint64, error) {
+	userID := middleware.GetUserID(ctx)
+	if userID == 0 {
+		return 0, errors.New("未登录或 token 无效")
+	}
+	return userID, nil
+}
+
+// CheckExamOwnership 校验当前用户是否有权访问该考试
+func CheckExamOwnership(ctx context.Context, examRepo ExamRepo, examID int64) error {
+	userID, err := GetCurrentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	ownerID, err := examRepo.GetUserIDByExamID(ctx, examID)
+	if err != nil {
+		return err
+	}
+	if ownerID != userID {
+		return errors.New("无权访问该考试数据")
+	}
+	return nil
 }
