@@ -9,6 +9,7 @@ type Exam struct {
 	ID        int64     `gorm:"primaryKey;column:id"`
 	Name      string    `gorm:"type:varchar(100);not null;column:name"`
 	ExamDate  time.Time `gorm:"index;not null;column:exam_date"`
+	UserID    uint64    `gorm:"index;column:user_id"`
 	CreatedAt time.Time `gorm:"autoCreateTime;column:created_at"`
 }
 
@@ -35,6 +36,8 @@ type ExamRepo interface {
 	GetByID(ctx context.Context, id int64) (*Exam, error)
 	// ListAll 获取所有考试，支持分页和关键词搜索
 	ListAll(ctx context.Context, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error)
+	// ListByUserID 按用户 ID 查询考试列表
+	ListByUserID(ctx context.Context, userID uint64, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error)
 	// GetExamName 获取考试名称
 	GetExamName(ctx context.Context, id int64) (string, error)
 	// Create 创建考试记录
@@ -43,4 +46,6 @@ type ExamRepo interface {
 	GetExamStudentCounts(ctx context.Context, examIDs []int64) (map[int64]int64, error)
 	// Delete 删除考试及其关联数据
 	Delete(ctx context.Context, id int64) error
+	// GetUserIDByExamID 获取考试的创建者 user_id
+	GetUserIDByExamID(ctx context.Context, examID int64) (uint64, error)
 }

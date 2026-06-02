@@ -55,6 +55,45 @@ func (r *examRepo) ListAll(ctx context.Context, pageIndex, pageSize int32, keywo
 	return exams, total, nil
 }
 
+// ListByUserID 按用户 ID 查询考试列表
+func (r *examRepo) ListByUserID(ctx context.Context, userID uint64, pageIndex, pageSize int32, keyword string) ([]*biz.Exam, int64, error) {
+	var exams []*biz.Exam
+	var total int64
+
+	query := r.data.db.WithContext(ctx).Model(&biz.Exam{}).Where("user_id = ?", userID)
+
+	if keyword != "" {
+		query = query.Where("name LIKE ?", "%"+keyword+"%")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		log.Context(ctx).Errorf("examRepo.ListByUserID count err: %+v", err)
+		return nil, 0, err
+	}
+
+	offset := int((pageIndex - 1) * pageSize)
+	if err := query.Order("exam_date DESC").Offset(offset).Limit(int(pageSize)).Find(&exams).Error; err != nil {
+		log.Context(ctx).Errorf("examRepo.ListByUserID find err: %+v", err)
+		return nil, 0, err
+	}
+
+	return exams, total, nil
+}
+
+// GetUserIDByExamID 获取考试的创建者 user_id
+func (r *examRepo) GetUserIDByExamID(ctx context.Context, examID int64) (uint64, error) {
+	var exam biz.Exam
+	err := r.data.db.WithContext(ctx).Select("user_id").First(&exam, examID).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, errors.New("考试不存在")
+		}
+		log.Context(ctx).Errorf("examRepo.GetUserIDByExamID err: %+v", err)
+		return 0, err
+	}
+	return exam.UserID, nil
+}
+
 // GetExamName 获取考试名称
 func (r *examRepo) GetExamName(ctx context.Context, id int64) (string, error) {
 	var exam biz.Exam
