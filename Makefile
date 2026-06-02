@@ -67,6 +67,36 @@ all:
 	make config;
 	make generate;
 
+.PHONY: docker-build
+# docker build image (pass LLM_API_KEY, JWT_SECRET, WECHAT_TOKEN as env vars)
+docker-build:
+	docker build \
+		--build-arg LLM_API_KEY=$(LLM_API_KEY) \
+		--build-arg JWT_SECRET=$(JWT_SECRET) \
+		--build-arg WECHAT_TOKEN=$(WECHAT_TOKEN) \
+		-t seas:latest .
+
+.PHONY: docker-run
+# docker run single container (no redis, for quick verification only)
+docker-run:
+	docker run --rm -p 8000:8000 seas:latest
+
+.PHONY: docker-compose-up
+# docker compose up (full environment with redis)
+docker-compose-up:
+	docker-compose up -d --build
+
+.PHONY: docker-compose-down
+# docker compose down
+docker-compose-down:
+	docker-compose down
+
+.PHONY: docker-clean
+# docker clean images and volumes
+docker-clean:
+	docker-compose down -v --remove-orphans
+	docker rmi seas:latest 2>/dev/null || true
+
 # show help
 help:
 	@echo ''
