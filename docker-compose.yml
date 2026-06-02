@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: seas-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - seas-network
+    # Redis 不暴露到宿主机，仅 seas 服务内网访问
+
+  seas:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # 从环境变量读取敏感信息，构建时注入配置
+        - LLM_API_KEY=${LLM_API_KEY:-}
+        - JWT_SECRET=${JWT_SECRET:-}
+        - WECHAT_TOKEN=${WECHAT_TOKEN:-}
+    container_name: seas-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - seas_data:/app/data    # SQLite 数据库持久化
+    depends_on:
+      - redis
+    networks:
+      - seas-network
+
+volumes:
+  seas_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  seas-network:
+    driver: bridge
