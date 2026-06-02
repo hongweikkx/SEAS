@@ -119,6 +119,60 @@ make all      # api + config + generate
 
 ---
 
+## Docker 部署
+
+### 前置条件
+
+- Docker
+- Docker Compose（v2，即 `docker compose`）
+
+### 准备环境变量
+
+项目使用 `configs/config.docker.yaml` 作为容器内配置，其中敏感信息（API Key、JWT Secret、WeChat Token）通过环境变量注入。
+
+创建 `.env` 文件：
+
+```bash
+cat > .env <<EOF
+LLM_API_KEY=your-ark-api-key
+JWT_SECRET=your-jwt-secret
+WECHAT_TOKEN=your-wechat-token
+EOF
+```
+
+### 一键启动
+
+```bash
+make docker-compose-up
+```
+
+该命令会构建 `seas:latest` 镜像并启动两个容器：
+- `seas-app`：SEAS 后端服务，暴露 **8000** 端口
+- `seas-redis`：Redis 7（仅内网访问，AOF 持久化）
+
+SQLite 数据库和 Redis 数据均通过 Docker Volume 持久化，容器重启不丢失。
+
+### 常用命令
+
+```bash
+make docker-build          # 仅构建镜像
+make docker-compose-up     # 启动完整环境（后台运行）
+make docker-compose-down   # 停止并移除容器
+make docker-clean          # 停止容器 + 删除镜像和 volume
+make docker-run            # 单容器运行（无 Redis，仅快速验证容器能否启动）
+```
+
+### 配置文件说明
+
+Docker 环境使用专用配置 `configs/config.docker.yaml`，与本地开发配置的区别：
+
+| 配置项 | 本地（config.yaml） | Docker（config.docker.yaml） |
+|---|---|---|
+| 数据库路径 | `file:./data/seas.db` | `file:/app/data/seas.db` |
+| Redis 地址 | `localhost:6379` | `redis:6379` |
+
+---
+
 ## 配置说明
 
 `configs/config.yaml` 关键项：
