@@ -3,6 +3,7 @@
 /bin
 /logs
 /configs/config.yaml
+.env
 /docs/*
 
 # SQLite 数据库文件(数据库本体不入库,WAL/SHM 辅助文件亦不入库,保留 data/.gitkeep)

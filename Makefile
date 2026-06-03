@@ -1,6 +1,7 @@
 GOHOSTOS:=$(shell go env GOHOSTOS)
 GOPATH:=$(shell go env GOPATH)
 VERSION=$(shell git describe --tags --always)
+DOCKER_COMPOSE=$(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; fi)
 
 ifeq ($(GOHOSTOS), windows)
 	#the `find.exe` is different from `find` in bash/shell.
@@ -84,17 +85,45 @@ docker-run:
 .PHONY: docker-compose-up
 # docker compose up (full environment with redis)
 docker-compose-up:
-	docker compose up -d --build
+	@if [ -z "$(DOCKER_COMPOSE)" ]; then \
+		echo "Docker Compose is not installed. Install Compose v2 so 'docker compose version' works, or install legacy 'docker-compose'."; \
+		exit 1; \
+	fi
+	@if [ ! -f .env ]; then \
+		echo ".env file is missing. Copy .env.example to .env and fill in LLM_API_KEY, JWT_SECRET, and WECHAT_TOKEN."; \
+		exit 1; \
+	fi
+	@if ! docker info >/dev/null 2>&1; then \
+		echo "Docker daemon is not running. Start Docker Desktop or your Docker service, then retry."; \
+		exit 1; \
+	fi
+	$(DOCKER_COMPOSE) up -d --build
 
 .PHONY: docker-compose-down
 # docker compose down
 docker-compose-down:
-	docker compose down
+	@if [ -z "$(DOCKER_COMPOSE)" ]; then \
+		echo "Docker Compose is not installed. Install Compose v2 so 'docker compose version' works, or install legacy 'docker-compose'."; \
+		exit 1; \
+	fi
+	@if ! docker info >/dev/null 2>&1; then \
+		echo "Docker daemon is not running. Start Docker Desktop or your Docker service, then retry."; \
+		exit 1; \
+	fi
+	$(DOCKER_COMPOSE) down
 
 .PHONY: docker-clean
 # docker clean images and volumes
 docker-clean:
-	docker compose down -v --remove-orphans
+	@if [ -z "$(DOCKER_COMPOSE)" ]; then \
+		echo "Docker Compose is not installed. Install Compose v2 so 'docker compose version' works, or install legacy 'docker-compose'."; \
+		exit 1; \
+	fi
+	@if ! docker info >/dev/null 2>&1; then \
+		echo "Docker daemon is not running. Start Docker Desktop or your Docker service, then retry."; \
+		exit 1; \
+	fi
+	$(DOCKER_COMPOSE) down -v --remove-orphans
 	docker rmi seas:latest 2>/dev/null || true
 
 # show help
