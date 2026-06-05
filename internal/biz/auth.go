@@ -144,12 +144,17 @@ func GetCurrentUserID(ctx context.Context) (uint64, error) {
 }
 
 // CheckExamOwnership 校验当前用户是否有权访问该考试
+// user_id=0 的公开考试允许任何人访问
 func CheckExamOwnership(ctx context.Context, examRepo ExamRepo, examID int64) error {
-	userID, err := GetCurrentUserID(ctx)
+	ownerID, err := examRepo.GetUserIDByExamID(ctx, examID)
 	if err != nil {
 		return err
 	}
-	ownerID, err := examRepo.GetUserIDByExamID(ctx, examID)
+	// 公开考试允许任何人访问
+	if ownerID == 0 {
+		return nil
+	}
+	userID, err := GetCurrentUserID(ctx)
 	if err != nil {
 		return err
 	}
