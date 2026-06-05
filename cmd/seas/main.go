@@ -133,7 +133,9 @@ func main() {
 	// 初始化 JWT 密钥
 	jwt.Init(bc.Auth.GetJwtSecret())
 
-	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Llm, bc.Auth, logger)
+	log.Infof("server env=%s, dev_mode=%v", bc.Env, bc.Env == conf.EnvDev)
+
+	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Llm, bc.Auth, bc.Env, logger)
 	if err != nil {
 		panic(err)
 	}
