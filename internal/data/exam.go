@@ -80,6 +80,39 @@ func (r *examRepo) ListByUserID(ctx context.Context, userID uint64, pageIndex, p
 	return exams, total, nil
 }
 
+// ListExams 获取考试列表
+// userID=0：只返回 user_id=0 的公开考试
+// userID>0：返回 user_id=0 或 user_id=指定值的考试
+func (r *examRepo) ListExams(ctx context.Context, userID uint64, pageIndex, pageSize int32, keyword string) ([]*biz.Exam, int64, error) {
+	var exams []*biz.Exam
+	var total int64
+
+	query := r.data.db.WithContext(ctx).Model(&biz.Exam{})
+
+	if userID > 0 {
+		query = query.Where("user_id = ? OR user_id = 0", userID)
+	} else {
+		query = query.Where("user_id = 0")
+	}
+
+	if keyword != "" {
+		query = query.Where("name LIKE ?", "%"+keyword+"%")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		log.Context(ctx).Errorf("examRepo.ListExams count err: %+v", err)
+		return nil, 0, err
+	}
+
+	offset := int((pageIndex - 1) * pageSize)
+	if err := query.Order("exam_date DESC").Offset(offset).Limit(int(pageSize)).Find(&exams).Error; err != nil {
+		log.Context(ctx).Errorf("examRepo.ListExams find err: %+v", err)
+		return nil, 0, err
+	}
+
+	return exams, total, nil
+}
+
 // GetUserIDByExamID 获取考试的创建者 user_id
 func (r *examRepo) GetUserIDByExamID(ctx context.Context, examID int64) (uint64, error) {
 	var exam biz.Exam

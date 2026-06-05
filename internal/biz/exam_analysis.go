@@ -6,6 +6,8 @@ import (
 	"math"
 	"sort"
 	"strconv"
+
+	"seas/internal/server/middleware"
 )
 
 // ExamAnalysisUseCase 考试分析业务逻辑
@@ -26,12 +28,11 @@ func NewExamAnalysisUseCase(examRepo ExamRepo, subjectRepo SubjectRepo, scoreRep
 }
 
 // ListExams 获取考试列表
+// userID=0（未登录）：只返回 user_id=0 的公开考试
+// userID>0（已登录）：返回 user_id=0 的公开考试 + user_id=当前用户的私有考试
 func (uc *ExamAnalysisUseCase) ListExams(ctx context.Context, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error) {
-	userID, err := GetCurrentUserID(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	return uc.examRepo.ListByUserID(ctx, userID, pageIndex, pageSize, keyword)
+	userID := middleware.GetUserID(ctx)
+	return uc.examRepo.ListExams(ctx, userID, pageIndex, pageSize, keyword)
 }
 
 // ListSubjectsByExam 获取考试关联的学科列表

@@ -38,6 +38,8 @@ type ExamRepo interface {
 	ListAll(ctx context.Context, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error)
 	// ListByUserID 按用户 ID 查询考试列表
 	ListByUserID(ctx context.Context, userID uint64, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error)
+	// ListExams 获取考试列表（userID=0 时只返回公开考试，userID>0 时返回公开+自己的）
+	ListExams(ctx context.Context, userID uint64, pageIndex, pageSize int32, keyword string) ([]*Exam, int64, error)
 	// GetExamName 获取考试名称
 	GetExamName(ctx context.Context, id int64) (string, error)
 	// Create 创建考试记录
