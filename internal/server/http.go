@@ -22,7 +22,7 @@ import (
 )
 
 // NewHTTPServer new an HTTP server.
-func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport *service.ExamImportService, auth *service.AuthService, aiAnalysis *AIAnalysisHandler, authHandler *AuthHandler, sseHandler *LoginSSEHandler, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
+func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport *service.ExamImportService, auth *service.AuthService, aiAnalysis *AIAnalysisHandler, authHandler *AuthHandler, sseHandler *LoginSSEHandler, env string, tp trace.TracerProvider, logger log.Logger) *httptransport.Server {
 	var opts = []httptransport.ServerOption{
 		httptransport.Middleware(
 			recovery.Recovery(),

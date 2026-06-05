@@ -24,7 +24,7 @@ func GetUserID(ctx context.Context) uint64 {
 }
 
 // Auth 从 Authorization header 解析 JWT，将 user_id 注入 context
-// 采用宽松策略：没有 token 也允许继续，权限校验在业务层完成
+// 无有效 token 时 user_id 保持为 0（未登录状态）
 func Auth() middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (interface{}, error) {
