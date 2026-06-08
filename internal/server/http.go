@@ -1,10 +1,13 @@
 package server
 
 import (
+	"strings"
+
 	v1 "seas/api/seas/v1"
 	"seas/internal/conf"
 	"seas/internal/server/middleware"
 	"seas/internal/service"
+	"seas/pkg/jwt"
 	prometheusmetrics "seas/pkg/prometheus"
 
 	"strconv"
@@ -77,7 +80,20 @@ func NewHTTPServer(c *conf.Server, analysis *service.AnalysisService, examImport
 			return ctx.Result(400, map[string]string{"error": "invalid exam_id"})
 		}
 
-		reply, err := examImport.ImportScoresFromMultipart(ctx, examID, file)
+		// 自定义路由的 context 未正确传递中间件注入的 user_id，需手动解析 token 注入
+		stdCtx := ctx.Request().Context()
+		auth := ctx.Request().Header.Get("Authorization")
+		if auth != "" {
+			parts := strings.SplitN(auth, " ", 2)
+			if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+				claims, err := jwt.ParseToken(parts[1])
+				if err == nil && claims.UserID > 0 {
+					stdCtx = middleware.WithUserID(stdCtx, claims.UserID)
+				}
+			}
+		}
+
+		reply, err := examImport.ImportScoresFromMultipart(stdCtx, examID, file)
 		if err != nil {
 			return ctx.Result(500, map[string]string{"error": err.Error()})
 		}
