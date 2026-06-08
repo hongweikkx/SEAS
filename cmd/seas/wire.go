@@ -21,3 +21,6 @@ import (
 func wireApp(*conf.Server, *conf.Data, *conf.LLM, *conf.Auth, string, log.Logger) (*kratos.App, func(), error) {
 	panic(wire.Build(server.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, NewTraceProvider, newApp))
 }
+
+// 注：当前已禁用 gRPC 服务器，仅保留 HTTP 服务器。
+// 如需恢复 gRPC，将 newApp 签名改回 (logger, gs, hs) 并在 kratos.Server() 中加入 gs 即可。

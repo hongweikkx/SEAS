@@ -43,12 +43,11 @@ func wireApp(confServer *conf.Server, confData *conf.Data, llm *conf.LLM, auth *
 	authUsecase := biz.NewAuthUsecase(authRepo, logger)
 	authService := service.NewAuthService(authUsecase, auth, logger)
 	tracerProvider := NewTraceProvider()
-	grpcServer := server.NewGRPCServer(confServer, analysisService, examImportService, authService, tracerProvider, logger)
 	aiAnalysisHandler := server.NewAIAnalysisHandler(analysisService, llm, logger)
 	authHandler := server.NewAuthHandler(authUsecase, auth, logger)
 	loginSSEHandler := server.NewLoginSSEHandler(authUsecase, logger)
 	httpServer := server.NewHTTPServer(confServer, analysisService, examImportService, authService, aiAnalysisHandler, authHandler, loginSSEHandler, env, tracerProvider, logger)
-	app := newApp(logger, grpcServer, httpServer)
+	app := newApp(logger, httpServer)
 	return app, func() {
 		cleanup()
 	}, nil
